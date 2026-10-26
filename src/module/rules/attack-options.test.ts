@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readRepoFile } from '../testing/repo-file.ts';
 import {
     aggregateSituationalDamageEffects,
+    getAvailableAttackModes,
     getSituationalModifiers,
     MELEE_ATTACK_MODES,
     MELEE_SITUATIONAL_MODIFIERS,
@@ -10,6 +11,37 @@ import {
     RANGED_SITUATIONAL_MODIFIERS,
 } from './attack-options';
 import { allCombatActions } from './combat-actions';
+
+describe('attack mode cards show the modifier the roll applies on the actor’s line', () => {
+    const ranged = { isRanged: true, system: { attack: { rateOfFire: { semi: 3, full: 6 } } } };
+    const melee = { isRanged: false, system: { attack: { rateOfFire: { semi: 0, full: 0 } } } };
+    const card = (modes: ReturnType<typeof getAvailableAttackModes>, key: string): ReturnType<typeof getAvailableAttackModes>[number] | undefined =>
+        modes.find((m) => m.key === key);
+
+    it('Only War: single shot and melee strike are +10; the burst cards are unchanged', () => {
+        const modes = getAvailableAttackModes(ranged, 'ow');
+        expect(card(modes, 'standard')?.modifier).toBe(10);
+        expect(card(modes, 'standard')?.tooltip).toContain('+10');
+        expect(card(modes, 'semiAuto')?.modifier).toBe(0);
+        expect(card(modes, 'fullAuto')?.modifier).toBe(-10);
+        expect(card(getAvailableAttackModes(melee, 'ow'), 'standard')?.modifier).toBe(10);
+    });
+
+    it('other lines (and no line) keep the shared figure', () => {
+        expect(card(getAvailableAttackModes(ranged, 'dh2'), 'standard')?.modifier).toBe(0);
+        expect(card(getAvailableAttackModes(ranged), 'standard')?.modifier).toBe(0);
+        expect(card(getAvailableAttackModes(ranged), 'standard')?.tooltip).toContain('+0');
+    });
+
+    it('every per-line card figure agrees with the combat action it maps to', () => {
+        const actions = allCombatActions();
+        for (const mode of [...RANGED_ATTACK_MODES, ...MELEE_ATTACK_MODES]) {
+            if (mode.modifierByLine === undefined) continue;
+            const action = actions.find((a) => a.name === mode.actionName);
+            expect(action?.attack?.byLine, `${mode.actionName} must declare the same per-line modifier`).toEqual(mode.modifierByLine);
+        }
+    });
+});
 
 describe('attack-options situational modifiers', () => {
     describe('ranged set', () => {

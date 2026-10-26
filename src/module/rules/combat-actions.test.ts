@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { allCombatActions, calculateCombatActionModifier, type CombatActionModifierInput } from './combat-actions';
+import { allCombatActions, attackModifierFor, calculateCombatActionModifier, type CombatActionModifierInput } from './combat-actions';
 
 /** An owned talent as the stub actor carries it: document identifier + picked specialisation. */
 interface StubTalent {
@@ -168,6 +168,32 @@ describe('calculateCombatActionModifier — combat-action modifier keying (#408)
         expect(rd.modifiers['combat-action']).toBe(0);
         expect(rd.modifiers['attack']).toBe(5);
         expect(rd.isCalledShot).toBe(false);
+    });
+
+    it('Standard Attack is an Ordinary (+10) test on Only War and carries no bonus elsewhere', () => {
+        stubGame();
+        const standard = allCombatActions().find((a) => a.name === 'Standard Attack')?.attack;
+        expect(attackModifierFor(standard, 'ow')).toBe(10);
+        expect(attackModifierFor(standard, 'dh2')).toBe(0);
+        expect(attackModifierFor(standard, undefined)).toBe(0);
+
+        const ow = { ...mockRollData('Standard Attack', 0), gameSystemId: 'ow' };
+        calculateCombatActionModifier(ow);
+        expect(ow.modifiers['combat-action']).toBe(10);
+
+        const dh2 = { ...mockRollData('Standard Attack', 0), gameSystemId: 'dh2' };
+        calculateCombatActionModifier(dh2);
+        expect(dh2.modifiers['combat-action']).toBe(0);
+    });
+
+    it("a line's override does not touch the other burst modes (Semi-Auto +0, Full Auto −10)", () => {
+        stubGame();
+        const semi = { ...mockRollData('Semi-Auto Burst', 0), gameSystemId: 'ow' };
+        calculateCombatActionModifier(semi);
+        expect(semi.modifiers['combat-action']).toBe(0);
+        const full = { ...mockRollData('Full Auto Burst', 0), gameSystemId: 'ow' };
+        calculateCombatActionModifier(full);
+        expect(full.modifiers['combat-action']).toBe(-10);
     });
 
     it('Charge (+20) and All Out Attack (+30) key their bonus on combat-action', () => {
