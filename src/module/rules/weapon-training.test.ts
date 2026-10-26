@@ -23,7 +23,7 @@ function actorWith(talents: string[]): ChkActor {
     return a as unknown as ChkActor;
 }
 
-function weaponNeeding(requiredTraining?: string, special?: string): ChkWeapon {
+function weaponNeeding(requiredTraining?: string, special?: string | Iterable<string>): ChkWeapon {
     const w = {
         system: {
             ...(requiredTraining === undefined ? {} : { requiredTraining }),
@@ -45,6 +45,13 @@ describe('checkWeaponTraining', () => {
         const result = checkWeaponTraining(actorWith([]), weaponNeeding('Las', 'grenade, blast'));
         expect(result.trained).toBe(true);
         expect(result.talent).toBeNull();
+    });
+
+    it("reads the weapon's quality Set, which is what a live weapon carries", () => {
+        const talentless = actorWith([]);
+        expect(checkWeaponTraining(talentless, weaponNeeding('Weapon Training (Las)', new Set(['reliable', 'blast-3']))).trained).toBe(false);
+        expect(checkWeaponTraining(talentless, weaponNeeding('Weapon Training (Las)', new Set(['grenade']))).trained).toBe(true);
+        expect(checkWeaponTraining(talentless, weaponNeeding('Weapon Training (Las)', ['grenade'])).trained).toBe(true);
     });
 
     it('matches a "Weapon Training (X)" talent against the required specialization', () => {

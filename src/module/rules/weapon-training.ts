@@ -9,7 +9,8 @@ type WeaponTrainingTalent = WH40KItemDocument & { type: string; name: string };
 type WeaponTrainingWeapon = WH40KItemDocument & {
     system: WH40KItemDocument['system'] & {
         requiredTraining?: string;
-        special?: string;
+        /** The weapon's quality ids: a Set on a live document (SetField), a string only in legacy data. */
+        special?: string | Iterable<string>;
     };
 };
 
@@ -17,6 +18,13 @@ type WeaponTrainingResult = {
     trained: boolean;
     talent: WeaponTrainingTalent | null;
 };
+
+/** Does the weapon carry this quality? `special` is a Set on a live weapon, so `.includes` is not available. */
+function carriesSpecial(special: string | Iterable<string> | undefined, id: string): boolean {
+    if (special === undefined) return false;
+    if (typeof special === 'string') return special.includes(id);
+    return Array.from(special).some((quality) => quality === id);
+}
 
 /**
  * Check if an actor has the required weapon training for a weapon.
@@ -33,7 +41,7 @@ export function checkWeaponTraining(actor: WH40KBaseActorDocument, weapon: Weapo
     }
 
     // Grenades don't require weapon training
-    const isGrenade = weapon.system.special?.includes('grenade') ?? false;
+    const isGrenade = carriesSpecial(weapon.system.special, 'grenade');
     if (isGrenade) {
         return { trained: true, talent: null };
     }

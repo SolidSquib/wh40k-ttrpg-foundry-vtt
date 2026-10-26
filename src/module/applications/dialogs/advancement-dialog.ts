@@ -1798,18 +1798,24 @@ export default class AdvancementDialog extends HandlebarsApplicationMixin(Applic
                     if (existing) {
                         // eslint-disable-next-line no-restricted-syntax -- stackable talents default to rank 1 when not previously incremented
                         const currentRank = (existing.system as { rank?: number }).rank ?? 1;
-                        await existing.update({ 'system.rank': currentRank + 1 });
+                        // Spent XP is derived from each owned talent's stored `system.cost`, so a further rank adds its price to it.
+                        // eslint-disable-next-line no-restricted-syntax -- boundary: a stored cost may be a number or a legacy string
+                        const spentSoFar = parseInt(String((existing.system as { cost?: number | string }).cost ?? '0'), 10) || 0;
+                        await existing.update({ 'system.rank': currentRank + 1, 'system.cost': spentSoFar + entry.cost });
                     } else {
                         // eslint-disable-next-line no-restricted-syntax -- boundary: Foundry Document#toObject() returns a plain data payload typed as object
                         const data = sourceDoc.toObject() as Record<string, unknown> & { system: Record<string, unknown> };
                         data['_id'] = foundry.utils.randomID();
                         data.system['rank'] = 1;
+                        data.system['cost'] = entry.cost;
                         await this.actor.createEmbeddedDocuments('Item', [data] as never[]);
                     }
                 } else {
                     // eslint-disable-next-line no-restricted-syntax -- boundary: Foundry Document#toObject() returns a plain data payload typed as object
                     const data = sourceDoc.toObject() as Record<string, unknown> & { system: Record<string, unknown> };
                     data['_id'] = foundry.utils.randomID();
+                    // The XP spent is derived from the owned talent's stored cost; the compendium copy carries none.
+                    data.system['cost'] = entry.cost;
                     if (specialization) {
                         data['name'] = `${entry.name} (${specialization})`;
                         data.system['specialization'] = specialization;
@@ -1857,7 +1863,10 @@ export default class AdvancementDialog extends HandlebarsApplicationMixin(Applic
                     },
                 },
                 default: 'ok',
-            }).render();
+                // A V1 application only opens when forced: a bare `.render()` is a silent no-op, so the
+                // prompt never appeared and the purchase promise never settled (no visible effect).
+                // eslint-disable-next-line @typescript-eslint/no-deprecated -- render(true) is the V14-compatible force-open idiom for a V1 Dialog; render({ force: true }) fails the overloaded type.
+            }).render(true);
         });
     }
 
