@@ -7,6 +7,7 @@ import type { WeaponRollData } from '../rolls/roll-data.ts';
 import type { WH40KItemDocument } from '../types/global.d.ts';
 import { resolveBurst } from './auto-fire.ts';
 import { consumeRounds, type MagazineSegment, refundRounds } from './magazine.ts';
+import { modeAmmoMultiplier, type WeaponFiringMode } from './weapon-modes.ts';
 import { chosenQualityEffects } from './weapon-quality-payloads.ts';
 
 /** The loaded (chambered) round's cached effect fields, read from the weapon's front segment. */
@@ -23,6 +24,7 @@ type AmmoItem = WH40KItemDocument & {
         loadedAmmo?: LoadedAmmoEffects & { name?: string };
         clip: { value: number; magazine?: MagazineSegment[] };
         activeModeSingleUse?: boolean;
+        activeFiringModeProfile?: WeaponFiringMode | null;
         effectiveClipMax?: number;
         attack?: {
             rateOfFire?: {
@@ -173,6 +175,8 @@ export function calculateAmmoInformation(rollData: AmmoRollData): void {
     }
     // A chosen firing option's rounds-per-shot factor (Maximal: ×3), authored on the quality.
     ammoPerShot *= chosenQualityEffects(rollData.chosenQualities, rollData.gameSystemId).ammoMultiplier;
+    // The active firing mode's own factor (a lasgun's overcharge / overload settings), authored on the mode.
+    ammoPerShot *= modeAmmoMultiplier(rollData.weapon.system.activeFiringModeProfile);
 
     // A weapon that consumes no ammunition still has a rate of fire, and RAW caps
     // its burst by it — so the ceiling is resolved for EVERY weapon and only the

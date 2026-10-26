@@ -457,6 +457,7 @@ function firingMode(addedQualities: string[], removedQualities: string[]): Weapo
         rateOfFire: null,
         singleUse: false,
         clipMax: 0,
+        ammoMultiplier: 1,
         reload: '',
     };
 }

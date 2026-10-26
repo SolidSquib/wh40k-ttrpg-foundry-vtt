@@ -468,6 +468,9 @@ export default class WeaponData extends ItemDataModel.mixin(
                     // own clip size (0 = share the weapon's clip).
                     singleUse: new fields.BooleanField({ required: false, initial: false }),
                     clipMax: new fields.NumberField({ required: false, initial: 0, min: 0, integer: true }),
+                    // Ammunition drawn per shot in this mode, as a multiple of the weapon's own
+                    // (a lasgun's overcharge / overload settings: 2 / 4). 1 = normal.
+                    ammoMultiplier: new fields.NumberField({ required: false, initial: 1, min: 1, integer: true }),
                     // The mode's own reload time ('' inherits the weapon's `reload`).
                     reload: new fields.StringField({ required: false, blank: true, initial: '', choices: ['', ...WEAPON_RELOAD_CHOICES] }),
                 }),

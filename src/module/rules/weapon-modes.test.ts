@@ -3,6 +3,7 @@ import {
     activeFiringMode,
     applyModeQualities,
     hasFiringModes,
+    modeAmmoMultiplier,
     modeAttackType,
     modeCharacteristic,
     modeDamageBonus,
@@ -33,10 +34,21 @@ function mode(over: Partial<WeaponFiringMode> = {}): WeaponFiringMode {
         rateOfFire: null,
         singleUse: false,
         clipMax: 0,
+        ammoMultiplier: 1,
         reload: '',
         ...over,
     };
 }
+
+describe('modeAmmoMultiplier', () => {
+    it('is the mode factor, and 1 for no mode or a mode that sets none', () => {
+        expect(modeAmmoMultiplier(null)).toBe(1);
+        expect(modeAmmoMultiplier(undefined)).toBe(1);
+        expect(modeAmmoMultiplier(mode({ ammoMultiplier: 1 }))).toBe(1);
+        expect(modeAmmoMultiplier(mode({ ammoMultiplier: 2 }))).toBe(2);
+        expect(modeAmmoMultiplier(mode({ ammoMultiplier: 4 }))).toBe(4);
+    });
+});
 
 describe('weapon firing modes (#430)', () => {
     describe('hasFiringModes', () => {

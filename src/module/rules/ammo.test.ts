@@ -19,6 +19,7 @@ interface WeaponStub {
         clip: { value: number };
         attack: { rateOfFire: { semi: number; full: number } };
         loadedAmmo?: { fireRateOverride?: number | null };
+        activeFiringModeProfile?: { ammoMultiplier: number } | null;
     };
 }
 
@@ -44,6 +45,7 @@ function rollData(action: string, weapon: Partial<WeaponStub> = {}, specials: re
                 clip: { value: weapon.system?.clip.value ?? 100 },
                 attack: { rateOfFire: weapon.system?.attack.rateOfFire ?? { semi: 3, full: 6 } },
                 ...(weapon.system?.loadedAmmo !== undefined ? { loadedAmmo: weapon.system.loadedAmmo } : {}),
+                ...(weapon.system?.activeFiringModeProfile !== undefined ? { activeFiringModeProfile: weapon.system.activeFiringModeProfile } : {}),
             },
         },
         hasAttackSpecial: (name: string) => specials.includes(name),
@@ -119,6 +121,51 @@ describe('calculateAmmoInformation — bursts', () => {
         expect(d.shotsFired).toBe(4); // floor(8 / 2)
         expect(d.ammoUsed).toBe(8);
         expect(d.fireRate).toBe(4);
+    });
+
+    it("the active firing mode's ammunition factor draws that many shots' worth per shot (lasgun overcharge ×2, overload ×4)", () => {
+        const standard = calculate(
+            rollData('Standard Attack', {
+                system: { clip: { value: 60 }, attack: { rateOfFire: { semi: 3, full: 0 } }, activeFiringModeProfile: { ammoMultiplier: 1 } },
+            }),
+        );
+        expect(standard.ammoUsed).toBe(1);
+        const overcharge = calculate(
+            rollData('Standard Attack', {
+                system: { clip: { value: 60 }, attack: { rateOfFire: { semi: 3, full: 0 } }, activeFiringModeProfile: { ammoMultiplier: 2 } },
+            }),
+        );
+        expect(overcharge.ammoPerShot).toBe(2);
+        expect(overcharge.ammoUsed).toBe(2);
+        const overload = calculate(
+            rollData('Semi-Auto Burst', {
+                system: { clip: { value: 60 }, attack: { rateOfFire: { semi: 3, full: 0 } }, activeFiringModeProfile: { ammoMultiplier: 4 } },
+            }),
+        );
+        expect(overload.ammoPerShot).toBe(4);
+        expect(overload.shotsFired).toBe(3);
+        expect(overload.ammoUsed).toBe(12); // three shots at four charges each
+    });
+
+    it("a mode's factor stacks with Twin-Linked and cuts the burst the clip can afford", () => {
+        const d = calculate(
+            rollData(
+                'Full Auto Burst',
+                { system: { clip: { value: 8 }, attack: { rateOfFire: { semi: 3, full: 6 } }, activeFiringModeProfile: { ammoMultiplier: 2 } } },
+                ['Twin-Linked'],
+            ),
+        );
+        expect(d.ammoPerShot).toBe(4);
+        expect(d.shotsFired).toBe(2); // floor(8 / 4)
+        expect(d.ammoUsed).toBe(8);
+    });
+
+    it('a weapon with no active mode draws one shot per shot', () => {
+        expect(
+            calculate(
+                rollData('Standard Attack', { system: { clip: { value: 10 }, attack: { rateOfFire: { semi: 0, full: 0 } }, activeFiringModeProfile: null } }),
+            ).ammoPerShot,
+        ).toBe(1);
     });
 
     it("a chambered round's fire-rate override re-rates the weapon for both shots and hits", () => {

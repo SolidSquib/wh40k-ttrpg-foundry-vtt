@@ -60,6 +60,11 @@ export interface WeaponFiringMode {
     /** This mode's clip size (0 = share the weapon's clip). A single-use secondary is 1. */
     clipMax: number;
     /**
+     * Ammunition drawn per shot while this mode is active, as a multiple of the weapon's own (1 = normal).
+     * A lasgun's overcharge and overload settings burn two and four shots' worth of charge per shot fired.
+     */
+    ammoMultiplier: number;
+    /**
      * Reload-time override (a reload choice such as `2-full`), or '' to inherit — a
      * sub-profile printed with its own Rld (Kroot Rifle "Pulse Round": 2 Full).
      */
@@ -69,6 +74,11 @@ export interface WeaponFiringMode {
 /** Whether the given mode is a spent-after-one-shot secondary (combi). */
 export function modeIsSingleUse(mode: WeaponFiringMode | null): boolean {
     return mode?.singleUse === true;
+}
+
+/** The active mode's ammunition-per-shot factor; 1 when the weapon has no active mode (or the mode sets none). */
+export function modeAmmoMultiplier(mode: WeaponFiringMode | null | undefined): number {
+    return mode !== null && mode !== undefined && mode.ammoMultiplier > 1 ? mode.ammoMultiplier : 1;
 }
 
 /** Whether the weapon has any authored firing modes. */
