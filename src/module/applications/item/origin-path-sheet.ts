@@ -135,8 +135,9 @@ export default class OriginPathSheet extends BaseItemSheet {
         const step = system.step;
         // Every step the schema allows, so the Step Type select never shows (and then saves) the wrong one.
         context['stepOptions'] = ORIGIN_STEP_CHOICES.map((value) => ({ value, label: this._getStepLabel(value), selected: value === step }));
-        // An Only War item in the Regiment step is a regiment preset: it can be built without a character.
-        context['isRegimentStep'] = this.canEdit && step === 'regiment' && (this.document.system as { gameSystem?: string }).gameSystem === 'ow';
+        // An item in the Regiment step is a regiment preset (only Only War has that step): it can be built
+        // without a character. A new item defaults to another line, so the step alone decides.
+        context['isRegimentStep'] = this.canEdit && step === 'regiment';
         const descriptionObj = system.description;
         const sourceObj = system.source ?? {};
         const requirementsObj = system.requirements ?? {};

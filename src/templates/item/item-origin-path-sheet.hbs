@@ -28,7 +28,7 @@
         <div class="tw-flex tw-gap-2 tw-mt-1">
           <div class="tw-flex tw-flex-col tw-gap-1 tw-flex-1">
             <label class="tw-text-xs tw-opacity-70">{{localize "WH40K.ItemSheet.OriginPath.StepType"}}</label>
-            <select name="system.step" class="tw-px-2 tw-py-1 tw-rounded-sm tw-text-sm">
+            <select name="system.step" class="tw-w-full tw-min-w-0 tw-px-2 tw-py-1 tw-rounded-sm tw-text-sm">
               {{#each stepOptions}}
               <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
               {{/each}}

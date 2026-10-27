@@ -49,6 +49,9 @@ type SimpleD100Opts = {
 };
 /* eslint-enable no-restricted-syntax */
 
+/** The game line a newly created origin path item starts in. */
+const NEW_ORIGIN_PATH_LINE = 'ow';
+
 export class WH40KItem extends WH40KItemContainer {
     // eslint-disable-next-line no-restricted-syntax -- boundary: Foundry V14 nested-container ref is opaque
     declare system: WH40KItemSystemData & { state: { container: unknown } };
@@ -504,6 +507,11 @@ export class WH40KItem extends WH40KItemContainer {
         if (current !== undefined) {
             const next = identifierFromNameIfBlank(this.name, current);
             if (next !== undefined) this.updateSource({ system: { identifier: next } });
+        }
+        // A new origin path item starts as an Only War one unless its data names a line (copies and imports do).
+        if (this.type === 'originPath') {
+            const given: { system?: { gameSystem?: string } } = data;
+            if (given.system?.gameSystem === undefined) this.updateSource({ system: { gameSystem: NEW_ORIGIN_PATH_LINE } });
         }
         return undefined;
     }

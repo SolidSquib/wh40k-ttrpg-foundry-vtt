@@ -147,7 +147,7 @@
          rows, inline control clusters). Absent for non-block callers, so
          output stays byte-identical for the original consumers. --}}
     {{#if @partial-block}}
-        <div class="tw-[grid-column:1/-1]">
+        <div class="tw-col-span-full">
             {{> @partial-block}}
         </div>
     {{/if}}
