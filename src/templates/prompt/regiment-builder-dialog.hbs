@@ -7,6 +7,24 @@
         {{localize "WH40K.OW.Regiment.DialogTitle"}}
     </div>
 
+    {{!-- Saved regiments to start from, and the lock notice --}}
+    {{#if presets.length}}
+        <div class="tw-flex tw-flex-wrap tw-items-center tw-gap-1.5 tw-mb-3" data-regiment-presets>
+            <span class="tw-text-xs tw-uppercase tw-tracking-[0.08em] tw-text-amber-200">{{localize "WH40K.OW.Regiment.Preset.StartFrom"}}</span>
+            {{#each presets}}
+                <button type="button" data-action="loadPreset" data-preset-id="{{this.id}}" data-selected="{{#if this.selected}}1{{else}}0{{/if}}"
+                        class="tw-px-2 tw-py-0.5 tw-rounded tw-border tw-text-xs tw-cursor-pointer {{#if this.selected}}tw-border-amber-400 tw-bg-[rgba(180,120,40,0.25)] tw-text-amber-50{{else}}tw-border-[rgba(180,120,40,0.3)] tw-bg-transparent tw-text-amber-100/80 hover:tw-bg-[rgba(180,120,40,0.1)]{{/if}}">
+                    {{#if this.locked}}<i class="fas fa-lock tw-mr-1"></i>{{/if}}{{this.label}}
+                </button>
+            {{/each}}
+        </div>
+    {{/if}}
+    {{#if locked}}
+        <div class="tw-mb-3 tw-px-3 tw-py-1.5 tw-rounded-md tw-border tw-border-amber-500/40 tw-bg-[rgba(180,120,40,0.12)] tw-text-xs tw-text-amber-100" data-regiment-locked>
+            <i class="fas fa-lock tw-mr-1"></i>{{localize "WH40K.OW.Regiment.Preset.LockedNotice"}}
+        </div>
+    {{/if}}
+
     {{!-- Live Regiment Creation budget readout --}}
     <div class="tw-flex tw-items-center tw-justify-between tw-gap-2 tw-px-3 tw-py-2 tw-mb-1 tw-rounded-md tw-border tw-border-[rgba(180,120,40,0.3)] tw-bg-[rgba(0,0,0,0.25)]"
          data-regiment-budget>
@@ -49,7 +67,8 @@
                                     data-option-id="{{this.id}}"
                                     data-option-cost="{{this.cost}}"
                                     data-selected="{{#if this.selected}}1{{else}}0{{/if}}"
-                                    class="tw-flex tw-items-center tw-justify-between tw-px-2 tw-py-1 tw-rounded tw-border tw-cursor-pointer {{#if this.selected}}tw-border-amber-400 tw-bg-[rgba(180,120,40,0.18)] tw-text-amber-100{{else}}tw-border-[rgba(180,120,40,0.2)] tw-bg-transparent tw-text-amber-100/80 hover:tw-bg-[rgba(180,120,40,0.1)]{{/if}}">
+                                    {{#if @root.locked}}disabled{{/if}}
+                                    class="disabled:tw-cursor-not-allowed tw-flex tw-items-center tw-justify-between tw-px-2 tw-py-1 tw-rounded tw-border tw-cursor-pointer {{#if this.selected}}tw-border-amber-400 tw-bg-[rgba(180,120,40,0.18)] tw-text-amber-100{{else}}tw-border-[rgba(180,120,40,0.2)] tw-bg-transparent tw-text-amber-100/80 hover:tw-bg-[rgba(180,120,40,0.1)]{{/if}}">
                                 <span class="tw-text-xs">{{this.label}}</span>
                                 <span class="tw-text-xs tw-font-bold tw-tabular-nums tw-text-amber-200">{{this.cost}}</span>
                             </button>
@@ -70,7 +89,8 @@
                                                         data-choice-key="{{../key}}"
                                                         data-value="{{this.value}}"
                                                         data-picked="{{#if this.picked}}1{{else}}0{{/if}}"
-                                                        class="tw-px-2 tw-py-0.5 tw-rounded tw-border tw-text-[0.72rem] tw-cursor-pointer {{#if this.picked}}tw-border-amber-400 tw-bg-[rgba(180,120,40,0.25)] tw-text-amber-50{{else}}tw-border-[rgba(180,120,40,0.2)] tw-bg-transparent tw-text-amber-100/80 hover:tw-bg-[rgba(180,120,40,0.1)]{{/if}}">
+                                                        {{#unless ../editable}}disabled{{/unless}}
+                                                        class="disabled:tw-cursor-not-allowed tw-px-2 tw-py-0.5 tw-rounded tw-border tw-text-[0.72rem] tw-cursor-pointer {{#if this.picked}}tw-border-amber-400 tw-bg-[rgba(180,120,40,0.25)] tw-text-amber-50{{else}}tw-border-[rgba(180,120,40,0.2)] tw-bg-transparent tw-text-amber-100/80 hover:tw-bg-[rgba(180,120,40,0.1)]{{/if}}">
                                                     {{this.label}}
                                                 </button>
                                             {{/each}}
@@ -105,11 +125,11 @@
                     </span>
                     <span class="tw-flex tw-items-center tw-gap-1">
                         <span class="tw-text-xs tw-font-bold tw-tabular-nums tw-text-amber-200">{{this.cost}}</span>
-                        <button type="button" data-action="removeKit" data-option-id="{{this.id}}" {{#unless this.count}}disabled{{/unless}}
+                        <button type="button" data-action="removeKit" data-option-id="{{this.id}}" {{#if @root.locked}}disabled{{else}}{{#unless this.count}}disabled{{/unless}}{{/if}}
                                 class="tw-w-5 tw-h-5 tw-leading-none tw-rounded tw-border tw-border-[rgba(180,120,40,0.3)] tw-bg-transparent tw-text-amber-100 disabled:tw-opacity-30">−</button>
                         <span class="tw-w-4 tw-text-center tw-text-xs tw-tabular-nums tw-text-amber-100">{{this.count}}</span>
-                        <button type="button" data-action="addKit" data-option-id="{{this.id}}"
-                                class="tw-w-5 tw-h-5 tw-leading-none tw-rounded tw-border tw-border-[rgba(180,120,40,0.3)] tw-bg-transparent tw-text-amber-100">+</button>
+                        <button type="button" data-action="addKit" data-option-id="{{this.id}}" {{#if @root.locked}}disabled{{/if}}
+                                class="disabled:tw-opacity-30 tw-w-5 tw-h-5 tw-leading-none tw-rounded tw-border tw-border-[rgba(180,120,40,0.3)] tw-bg-transparent tw-text-amber-100">+</button>
                     </span>
                 </div>
             {{else}}
@@ -119,6 +139,14 @@
     </section>
 
     {{!-- Action buttons --}}
+    {{#if canSavePreset}}
+        <div class="tw-flex tw-justify-end tw-mt-3">
+            <button type="button" data-action="savePreset" title="{{localize 'WH40K.OW.Regiment.Preset.SaveHint'}}"
+                    class="tw-inline-flex tw-items-center tw-gap-1.5 tw-px-3 tw-py-1 tw-rounded tw-border tw-border-[rgba(180,120,40,0.4)] tw-bg-transparent tw-text-xs tw-text-amber-100 tw-cursor-pointer hover:tw-bg-[rgba(180,120,40,0.1)]">
+                <i class="fas fa-bookmark"></i> {{localize "WH40K.OW.Regiment.Preset.Save"}}
+            </button>
+        </div>
+    {{/if}}
     <div class="tw-flex tw-gap-2.5 tw-mt-4 tw-pt-4 tw-border-t tw-border-[rgba(180,120,40,0.25)]">
         <button type="button"
                 data-action="commitRegiment"

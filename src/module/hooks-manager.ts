@@ -8,6 +8,7 @@
 
 import { DHBasicActionManager } from './actions/basic-action-manager.ts';
 import { DHCombatActionManager } from './actions/combat-action-manager.ts';
+import { onRegimentPresetCreated } from './actions/ow-regiment-apply.ts';
 import {
     // Player sheets (default for {system}-character)
     DarkHeresy1PlayerSheet,
@@ -284,6 +285,13 @@ export class HooksManager {
         // Stacked-token bust palette: pick a specific token out of an overlapping
         // stack instead of Foundry's invisible click-to-cycle (#569).
         registerStackedTokenPicker();
+        // A regiment preset added to a character (the Origin Path Builder's Regiment step) starts their regiment.
+        hooksOn('createItem', (item: Parameters<typeof onRegimentPresetCreated>[0], _options: object, userId: string) => {
+            // eslint-disable-next-line no-restricted-syntax -- boundary: a Promise rejection reason is untyped; it is logged, never propagated
+            onRegimentPresetCreated(item, userId).catch((err: unknown) => {
+                console.error('regiment-preset: applying the preset failed', err);
+            });
+        });
         hooksOn('getActorSheetClass', (actor: Actor, sheetData: Record<string, { id: string; default?: boolean }>) =>
             HooksManager.getActorSheetClass(actor, sheetData),
         );

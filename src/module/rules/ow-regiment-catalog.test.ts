@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
     choicesComplete,
     drawbackDescriptorFor,
+    presetEntryFromDoc,
     entriesInCategory,
     type RegimentBlockLike,
     type RegimentCatalogEntry,
@@ -135,5 +136,28 @@ describe('drawbackDescriptorFor', () => {
     it('does not describe an option of another category, or an unknown id', () => {
         expect(drawbackDescriptorFor(catalog, 'u1')).toBeUndefined();
         expect(drawbackDescriptorFor(catalog, 'ghost')).toBeUndefined();
+    });
+});
+
+describe('presetEntryFromDoc', () => {
+    const data = {
+        homeWorld: 'h',
+        commandingOfficer: 'c',
+        regimentType: 'r',
+        trainingDoctrines: [],
+        specialEquipmentDoctrines: [],
+        drawbacks: [],
+        kit: [],
+        choices: {},
+        locked: true,
+    };
+
+    it('describes a document that holds a regiment', () => {
+        expect(presetEntryFromDoc('u1', { name: 'Crimson Guard', system: { regimentPreset: data } })).toEqual({ id: 'u1', label: 'Crimson Guard', data });
+    });
+
+    it('ignores an ordinary origin and an empty preset block', () => {
+        expect(presetEntryFromDoc('u1', { name: 'Plain' })).toBeUndefined();
+        expect(presetEntryFromDoc('u1', { name: 'Blank', system: { regimentPreset: { ...data, regimentType: '' } } })).toBeUndefined();
     });
 });

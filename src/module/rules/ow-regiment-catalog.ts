@@ -10,6 +10,7 @@
 import { iterateResolvedChoices } from '../utils/origin-choices.ts';
 import { REGIMENT_OPTION_CATEGORIES, type RegimentGrants, type RegimentOption, type RegimentOptionCategory } from './ow-regiment-creation.ts';
 import type { RegimentDrawback } from './ow-regiment-drawback.ts';
+import type { RegimentPresetData } from './ow-regiment-preset.ts';
 
 /** The `system.regiment` block of an `originPath` document. */
 export interface RegimentBlockLike {
@@ -36,6 +37,7 @@ export interface RegimentDocLike {
     readonly name: string;
     readonly system?: {
         readonly regiment?: RegimentBlockLike;
+        readonly regimentPreset?: RegimentPresetData;
         readonly grants?: { readonly choices?: ReadonlyArray<RegimentChoiceDocLike> };
     };
 }
@@ -129,4 +131,18 @@ export function picksFor(all: Readonly<Record<string, RegimentPicks>>, optionId:
 export function drawbackDescriptorFor(catalog: ReadonlyArray<RegimentCatalogEntry>, id: string): RegimentDrawback | undefined {
     const entry = catalog.find((candidate) => candidate.id === id && candidate.category === 'drawback');
     return entry === undefined ? undefined : { id, description: entry.label, refund: entry.cost, penalty: {} };
+}
+
+/** A saved regiment the player can start from. */
+export interface RegimentPresetEntry {
+    /** UUID of the preset item. */
+    readonly id: string;
+    readonly label: string;
+    readonly data: RegimentPresetData;
+}
+
+/** The preset a document holds, or `undefined` for an ordinary origin. */
+export function presetEntryFromDoc(uuid: string, doc: RegimentDocLike): RegimentPresetEntry | undefined {
+    const data = doc.system?.regimentPreset;
+    return data !== undefined && data.regimentType !== '' ? { id: uuid, label: doc.name, data } : undefined;
 }

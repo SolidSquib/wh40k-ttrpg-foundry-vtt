@@ -1,4 +1,5 @@
 import { REGIMENT_OPTION_CATEGORIES, type RegimentOptionCategory } from '../../rules/ow-regiment-creation.ts';
+import type { RegimentPresetData } from '../../rules/ow-regiment-preset.ts';
 import { formatSigned } from '../../utils/format.ts';
 import { iterateResolvedChoices } from '../../utils/origin-choices.ts';
 import ItemDataModel from '../abstract/item-data-model.ts';
@@ -75,6 +76,7 @@ export default class OriginPathData extends ItemDataModel.mixin(DescriptionTempl
     declare isAdvancedOrigin: boolean;
     declare replacesOrigins: string[];
     declare requirements: { text: string; previousSteps: string[]; excludedSteps: string[] };
+    declare regimentPreset: RegimentPresetData;
     declare regiment: {
         category: RegimentOptionCategory | '';
         cost: number;
@@ -267,6 +269,27 @@ export default class OriginPathData extends ItemDataModel.mixin(DescriptionTempl
                         }),
                         { required: true, initial: [] },
                     ),
+                },
+                { required: false },
+            ),
+
+            // Only War regiment preset: a whole regiment (the options chosen, their picks, the kit bought) to
+            // start a character from. A preset sits in the Regiment step; empty everywhere else. Plain values:
+            // the preset list reads them straight from the pack index.
+            regimentPreset: new fields.SchemaField(
+                {
+                    homeWorld: new fields.StringField({ required: true, blank: true, initial: '' }),
+                    commandingOfficer: new fields.StringField({ required: true, blank: true, initial: '' }),
+                    regimentType: new fields.StringField({ required: true, blank: true, initial: '' }),
+                    trainingDoctrines: new fields.ArrayField(new fields.StringField({ required: true, blank: false }), { required: true, initial: [] }),
+                    specialEquipmentDoctrines: new fields.ArrayField(new fields.StringField({ required: true, blank: false }), { required: true, initial: [] }),
+                    drawbacks: new fields.ArrayField(new fields.StringField({ required: true, blank: false }), { required: true, initial: [] }),
+                    // Standard Kit purchases; an id repeats once per copy.
+                    kit: new fields.ArrayField(new fields.StringField({ required: true, blank: false }), { required: true, initial: [] }),
+                    // Picks made for the options: option id → choice key → picked values.
+                    choices: new fields.ObjectField({ required: true, initial: {} }),
+                    // A locked preset cannot be edited by players (the GM may).
+                    locked: new fields.BooleanField({ required: true, initial: false }),
                 },
                 { required: false },
             ),

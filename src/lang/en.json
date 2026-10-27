@@ -7258,6 +7258,17 @@
                 "Choice": {
                     "Pick": "choose {count}"
                 },
+                "Preset": {
+                    "StartFrom": "Start from",
+                    "Save": "Save as Preset",
+                    "SaveHint": "Save this regiment so it can be chosen again, for any character",
+                    "SaveTitle": "Save Regiment Preset",
+                    "Name": "Name",
+                    "Locked": "Locked",
+                    "LockedHint": "Players cannot change a locked regiment's options or kit, only the picks it leaves open. The GM always can.",
+                    "LockedNotice": "This regiment is locked to its preset. Only the GM can change it; you can still fill in any pick it leaves open.",
+                    "Saved": "Saved the regiment preset \"{name}\"."
+                },
                 "Kit": {
                     "Total": "Standard Kit Points",
                     "Spent": "Spent",

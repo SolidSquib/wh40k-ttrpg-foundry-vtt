@@ -8,7 +8,13 @@
  */
 
 import { SystemConfigRegistry } from '../config/game-systems/index.ts';
-import { type RegimentCatalogEntry, type RegimentDocLike, regimentEntryFromDoc } from '../rules/ow-regiment-catalog.ts';
+import {
+    presetEntryFromDoc,
+    type RegimentCatalogEntry,
+    type RegimentDocLike,
+    type RegimentPresetEntry,
+    regimentEntryFromDoc,
+} from '../rules/ow-regiment-catalog.ts';
 import { resolvePack } from './compendium-query.ts';
 
 const REGIMENT_INDEX_FIELDS = ['system.regiment', 'system.grants.choices'];
@@ -46,4 +52,32 @@ export async function loadRegimentCatalog(): Promise<ReadonlyArray<RegimentCatal
 export function loadedRegimentCatalog(): ReadonlyArray<RegimentCatalogEntry> {
     if (loaded === undefined) void loadRegimentCatalog();
     return loaded ?? [];
+}
+
+const PRESET_INDEX_FIELDS = ['system.regimentPreset'];
+
+/**
+ * Every saved regiment: the presets in the Only War packs and in the world's own items. Not cached — a
+ * GM saves new ones while the game is running.
+ */
+export async function loadRegimentPresets(): Promise<RegimentPresetEntry[]> {
+    const presets: RegimentPresetEntry[] = [];
+    for (const packName of SystemConfigRegistry.get('ow').getOriginStepConfig().packs) {
+        const pack = resolvePack(packName);
+        if (pack === undefined) continue;
+        // eslint-disable-next-line no-await-in-loop -- sequential: packs are walked in config order so duplicate names resolve predictably
+        const index = await pack.getIndex({ fields: PRESET_INDEX_FIELDS });
+        for (const raw of index) {
+            // eslint-disable-next-line no-restricted-syntax -- boundary: Foundry getIndex() yields minimally-typed index entries; RegimentDocLike is the narrowed surface the preset reads
+            const doc = raw as unknown as RegimentDocLike & { _id: string; uuid?: string };
+            const entry = presetEntryFromDoc(doc.uuid ?? `Compendium.${pack.metadata.id}.Item.${doc._id}`, doc);
+            if (entry !== undefined) presets.push(entry);
+        }
+    }
+    for (const item of game.items) {
+        // eslint-disable-next-line no-restricted-syntax -- boundary: a world Item's system is an untyped DataModel union; RegimentDocLike is the narrowed surface the preset reads
+        const entry = item.type === 'originPath' ? presetEntryFromDoc(item.uuid, item as unknown as RegimentDocLike) : undefined;
+        if (entry !== undefined) presets.push(entry);
+    }
+    return presets.sort((a, b) => a.label.localeCompare(b.label));
 }

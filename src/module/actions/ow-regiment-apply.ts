@@ -15,7 +15,11 @@
 import { cloneGrantedItemData } from '../applications/character-creation/grant-materialize.ts';
 import OriginPathData from '../data/item/origin-path.ts';
 import type { WH40KBaseActor } from '../documents/base-actor.ts';
+import type { RegimentCatalogEntry } from '../rules/ow-regiment-catalog.ts';
+import { aggregateRegimentGrants } from '../rules/ow-regiment-creation.ts';
+import { isRegimentPreset, type RegimentPresetData, type RegimentState, selectedOptionIds, stateFromPreset } from '../rules/ow-regiment-preset.ts';
 import { dedupeTalentPlans, dedupeTraitPlans, talentPlansFor, traitPlansFor } from '../rules/ow-regiment-talents.ts';
+import { loadRegimentCatalog } from '../utils/regiment-catalog.ts';
 
 const FLAG_SCOPE = 'wh40k-rpg';
 
@@ -23,6 +27,10 @@ const FLAG_SCOPE = 'wh40k-rpg';
 const OPTION_FLAG = 'regimentOption';
 /** Marks a talent granted by a regiment option. */
 const GRANT_FLAG = 'regimentGranted';
+/** Marks an owned preset item the Regiment Builder created (its regiment is already applied). */
+const PRESET_APPLIED_FLAG = 'regimentPresetApplied';
+/** The squad Logistics Rating bonus last applied by a regiment commit, kept so a re-commit swaps rather than stacks. */
+const LOGISTICS_FLAG = 'regimentLogisticsApplied';
 
 /** Flags this module and the grant pipeline stamp on the items it creates. */
 interface OwnedItemFlags {
@@ -30,6 +38,7 @@ interface OwnedItemFlags {
     originPathGranted?: boolean;
     regimentOption?: boolean;
     regimentGranted?: boolean;
+    regimentPresetApplied?: boolean;
 }
 
 /** Embedded-item create payload: a cloned compendium document with extra flags stamped on. */
@@ -102,4 +111,86 @@ export async function applyRegimentToActor(
     }
     // eslint-disable-next-line no-restricted-syntax -- boundary: createEmbeddedDocuments takes Foundry's generated create-data union; OwnedItemData is a cloned compendium payload
     if (talents.length + traits.length > 0) await actor.createEmbeddedDocuments('Item', [...talents, ...traits] as CreateItemData);
+}
+
+/** Swap the squad Logistics Rating bonus a regiment gives, so a re-commit replaces the last one. */
+async function applyRegimentLogistics(actor: WH40KBaseActor, bonus: number): Promise<void> {
+    const previous = actor.getFlag(FLAG_SCOPE, LOGISTICS_FLAG);
+    const applied = typeof previous === 'number' ? previous : 0;
+    if (applied === bonus) return;
+    // eslint-disable-next-line no-restricted-syntax -- boundary: logisticsRating lives on the per-system OW actor schema; not exposed on the abstract WH40KBaseActor system surface
+    const current = (actor.system as { logisticsRating?: number }).logisticsRating;
+    if (typeof current === 'number') await actor.update({ 'system.logisticsRating': current - applied + bonus });
+    await actor.setFlag(FLAG_SCOPE, LOGISTICS_FLAG, bonus);
+}
+
+/**
+ * Save a regiment onto an actor and apply it: the selection and kit are stored on the actor, each option is
+ * copied on as an owned origin, the talents and traits they grant are created, and the Logistics bonus is
+ * swapped in. The Regiment Builder's Commit button and a preset chosen in character creation both end here.
+ */
+export async function commitRegiment(actor: WH40KBaseActor, state: RegimentState, catalog: ReadonlyArray<RegimentCatalogEntry>): Promise<void> {
+    const { selection } = state;
+    const kit = state.kitIds.map((id) => ({ id, cost: catalog.find((entry) => entry.id === id)?.cost ?? 0 }));
+    await actor.update({
+        'system.regimentSelection.homeWorld': selection.homeWorld ?? '',
+        'system.regimentSelection.commandingOfficer': selection.commandingOfficer ?? '',
+        'system.regimentSelection.regimentType': selection.regimentType ?? '',
+        'system.regimentSelection.trainingDoctrines': [...selection.trainingDoctrines],
+        'system.regimentSelection.specialEquipmentDoctrines': [...selection.specialEquipmentDoctrines],
+        'system.regimentDrawbacks': [...selection.drawbacks],
+        'system.regimentKit': kit,
+        'system.==regimentChoices': state.picks,
+    });
+    await applyRegimentToActor(actor, selectedOptionIds(selection), state.picks);
+    await applyRegimentLogistics(actor, aggregateRegimentGrants(selection, catalog).logistics ?? 0);
+}
+
+/** The preset items an actor owns (a regiment chosen in character creation, or a locked one the Builder loaded). */
+function ownedPresetItems(actor: WH40KBaseActor): WH40KBaseActor['items']['contents'] {
+    return actor.items.filter(
+        (item) => item.system instanceof OriginPathData && item.system.step === 'regiment' && isRegimentPreset(item.system.regimentPreset),
+    );
+}
+
+/** The preset block of the regiment the actor was started from, or null if it has none. */
+export function ownedPresetOf(actor: WH40KBaseActor): RegimentPresetData | null {
+    const item = ownedPresetItems(actor).at(0);
+    return item !== undefined && item.system instanceof OriginPathData ? item.system.regimentPreset : null;
+}
+
+/**
+ * Make the preset item the actor's own, replacing any it had, so the regiment's name shows in the header and a
+ * locked preset stays locked. `presetUuid` is the compendium or world item the player picked. Marked applied so the
+ * create hook does not apply it a second time.
+ */
+export async function adoptPreset(actor: WH40KBaseActor, presetUuid: string): Promise<void> {
+    const stale = ownedPresetItems(actor).map((item) => item.id);
+    if (stale.length > 0) await actor.deleteEmbeddedDocuments('Item', stale);
+    const source = await fromUuid(presetUuid);
+    if (!source) return;
+    const cloned = cloneGrantedItemData(source, { sourceId: presetUuid });
+    // eslint-disable-next-line no-restricted-syntax -- boundary: createEmbeddedDocuments takes Foundry's generated create-data union; OwnedItemData is a cloned compendium payload
+    await actor.createEmbeddedDocuments('Item', [{ ...cloned, flags: { ...cloned.flags, [FLAG_SCOPE]: { regimentPresetApplied: true } } }] as CreateItemData);
+}
+
+/** Drop the actor's owned preset, for a regiment now built by hand. */
+export async function forgetPreset(actor: WH40KBaseActor): Promise<void> {
+    const stale = ownedPresetItems(actor).map((item) => item.id);
+    if (stale.length > 0) await actor.deleteEmbeddedDocuments('Item', stale);
+}
+
+/**
+ * `createItem` hook: a regiment preset added to a character (by the Origin Path Builder's Regiment step, or
+ * dropped on the sheet) starts that character's regiment. The Builder's own commit marks its copy applied, so it
+ * is skipped here. A preset with a pick left open applies what it can; the player finishes it in the Builder.
+ */
+export async function onRegimentPresetCreated(item: WH40KBaseActor['items']['contents'][number], userId: string): Promise<void> {
+    if (game.user.id !== userId) return;
+    const actor = item.parent;
+    // only an Only War character carries the regiment fields
+    if (actor === null || !('regimentSelection' in actor.system) || !(item.system instanceof OriginPathData)) return;
+    if (item.system.step !== 'regiment' || !isRegimentPreset(item.system.regimentPreset)) return;
+    if (item.getFlag(FLAG_SCOPE, PRESET_APPLIED_FLAG) === true) return;
+    await commitRegiment(actor, stateFromPreset(item.system.regimentPreset), await loadRegimentCatalog());
 }

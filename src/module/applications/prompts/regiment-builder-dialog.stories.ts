@@ -7,6 +7,7 @@ interface ChoiceRow {
     key: string;
     label: string;
     count: number;
+    editable: boolean;
     options: Array<{ value: string; label: string; picked: boolean }>;
 }
 
@@ -40,6 +41,9 @@ interface Args {
         rows: Array<{ id: string; label: string; cost: number; restriction: string; count: number; maxCount: number }>;
     };
     canCommit: boolean;
+    presets: Array<{ id: string; label: string; locked: boolean; selected: boolean }>;
+    locked: boolean;
+    canSavePreset: boolean;
 }
 
 const EMPTY_CATEGORIES: CategoryRow[] = [
@@ -125,6 +129,9 @@ const meta = {
         categories: EMPTY_CATEGORIES,
         kit: EMPTY_KIT,
         canCommit: false,
+        presets: [],
+        locked: false,
+        canSavePreset: false,
     },
 } satisfies Meta<Args>;
 export default meta;
@@ -140,6 +147,9 @@ export const EmptyCatalog: Story = {
         categories: EMPTY_CATEGORIES,
         kit: EMPTY_KIT,
         canCommit: false,
+        presets: [],
+        locked: false,
+        canSavePreset: false,
     },
 };
 
@@ -158,6 +168,9 @@ export const PartialBuild: Story = {
             rows: [{ id: 'kit:knife', label: 'Add an additional knife', cost: 2, restriction: '', count: 1, maxCount: 2 }],
         },
         canCommit: false,
+        presets: [],
+        locked: false,
+        canSavePreset: false,
     },
 };
 
@@ -176,5 +189,44 @@ export const ValidRegiment: Story = {
             rows: [{ id: 'kit:knife', label: 'Add an additional knife', cost: 2, restriction: '', count: 1, maxCount: 2 }],
         },
         canCommit: true,
+    },
+};
+
+/** Saved regiments to start from, one of them locked; a valid regiment can be saved as a new preset. */
+export const WithPresets: Story = {
+    args: {
+        budget: { spent: 10, total: 12, remaining: 2, valid: true, over: false, refund: 0 },
+        doctrines: { count: 3, max: 3 },
+        issues: [],
+        categories: SAMPLE_CATEGORIES,
+        kit: { spent: 0, allowance: 34, remaining: 34, over: false, rows: [] },
+        canCommit: true,
+        presets: [
+            { id: 'preset:line', label: 'Line Infantry Company', locked: false, selected: true },
+            { id: 'preset:crimson', label: 'Crimson Guard', locked: true, selected: false },
+        ],
+        locked: false,
+        canSavePreset: true,
+    },
+};
+
+/** A locked preset: players cannot change the options or kit (the GM can). */
+export const LockedToPreset: Story = {
+    args: {
+        budget: { spent: 10, total: 12, remaining: 2, valid: true, over: false, refund: 0 },
+        doctrines: { count: 3, max: 3 },
+        issues: [],
+        categories: SAMPLE_CATEGORIES,
+        kit: {
+            spent: 0,
+            allowance: 34,
+            remaining: 34,
+            over: false,
+            rows: [{ id: 'kit:knife', label: 'Add an additional knife', cost: 2, restriction: '', count: 0, maxCount: 2 }],
+        },
+        canCommit: true,
+        presets: [],
+        locked: true,
+        canSavePreset: false,
     },
 };

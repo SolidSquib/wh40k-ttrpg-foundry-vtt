@@ -14,9 +14,17 @@
  * (`actions/ow-regiment-apply.ts`).
  */
 
-import { applyRegimentToActor } from '../../actions/ow-regiment-apply.ts';
+import { adoptPreset, commitRegiment, ownedPresetOf } from '../../actions/ow-regiment-apply.ts';
 import type { WH40KBaseActor } from '../../documents/base-actor.ts';
-import { choicesComplete, entriesInCategory, picksFor, type RegimentCatalogEntry, type RegimentPicks, togglePick } from '../../rules/ow-regiment-catalog.ts';
+import {
+    choicesComplete,
+    entriesInCategory,
+    picksFor,
+    type RegimentCatalogEntry,
+    type RegimentPicks,
+    type RegimentPresetEntry,
+    togglePick,
+} from '../../rules/ow-regiment-catalog.ts';
 import {
     aggregateRegimentGrants,
     computeKitAllowance,
@@ -30,7 +38,18 @@ import {
     type RegimentIssue,
     type RegimentSelection,
 } from '../../rules/ow-regiment-creation.ts';
-import { loadRegimentCatalog } from '../../utils/regiment-catalog.ts';
+import {
+    canEditChoice,
+    canEditOptions,
+    isSoundPreset,
+    presetFromState,
+    type RegimentPresetData,
+    type RegimentState,
+    reportState,
+    selectedOptionIds,
+    stateFromPreset,
+} from '../../rules/ow-regiment-preset.ts';
+import { loadRegimentCatalog, loadRegimentPresets } from '../../utils/regiment-catalog.ts';
 import type { ApplicationV2Ctor } from '../api/application-types.ts';
 import ApplicationV2Mixin from '../api/application-v2-mixin.ts';
 
@@ -60,6 +79,8 @@ interface ChoiceRow {
     readonly key: string;
     readonly label: string;
     readonly count: number;
+    /** False when a locked preset has already made this pick and the user may not change it. */
+    readonly editable: boolean;
     readonly options: ReadonlyArray<{ readonly value: string; readonly label: string; readonly picked: boolean }>;
 }
 
@@ -97,6 +118,11 @@ interface RegimentBuilderContext extends Record<string, unknown> {
     readonly categories: ReadonlyArray<CategoryRow>;
     readonly kit: { spent: number; allowance: number; remaining: number; over: boolean; rows: ReadonlyArray<KitRow> };
     readonly canCommit: boolean;
+    /** Saved regiments the user can start from (empty when the regiment is locked to them). */
+    readonly presets: ReadonlyArray<{ id: string; label: string; locked: boolean; selected: boolean }>;
+    /** True when a locked preset stops this user changing the options and kit. */
+    readonly locked: boolean;
+    readonly canSavePreset: boolean;
 }
 
 function isRegimentCategory(value: string): value is RegimentCategory {
@@ -122,18 +148,6 @@ function isSelected(selection: RegimentSelection, category: RegimentCategory, id
     return selection[category] === id;
 }
 
-/** Every option id the selection holds, in category order. */
-function selectedIds(selection: RegimentSelection): string[] {
-    return [
-        selection.homeWorld,
-        selection.commandingOfficer,
-        selection.regimentType,
-        ...selection.trainingDoctrines,
-        ...selection.specialEquipmentDoctrines,
-        ...selection.drawbacks,
-    ].filter((id): id is string => id !== undefined && id !== '');
-}
-
 // eslint-disable-next-line no-restricted-syntax -- boundary: ApplicationV2 global lacks the typed constructor Mixin needs; cast through unknown is the established pattern (matches colony-growth-dialog)
 export default class RegimentBuilderDialog extends ApplicationV2Mixin(ApplicationV2 as unknown as ApplicationV2Ctor) {
     declare selection: RegimentSelection;
@@ -144,12 +158,19 @@ export default class RegimentBuilderDialog extends ApplicationV2Mixin(Applicatio
     declare kitIds: string[];
     /** Owning actor whose `system.regimentSelection` is the source of truth. Null in story / probe contexts. */
     declare actor: WH40KBaseActor | null;
+    /** Saved regiments to start from. */
+    declare presets: RegimentPresetEntry[];
+    /** The preset loaded in this session, if any. */
+    declare loadedPreset: RegimentPresetEntry | null;
+    /** The locked preset in force (the actor's own, or one just loaded), or null. */
+    declare lockedPreset: RegimentPresetData | null;
 
     constructor(
         options: ApplicationV2Config.DefaultOptions & {
             actor?: WH40KBaseActor | null;
             selection?: RegimentSelection;
             catalog?: ReadonlyArray<RegimentCatalogEntry>;
+            presets?: RegimentPresetEntry[];
         } = {},
     ) {
         super(options);
@@ -158,6 +179,19 @@ export default class RegimentBuilderDialog extends ApplicationV2Mixin(Applicatio
         this.catalog = options.catalog ?? [];
         this.picks = readPicksFromActor(this.actor);
         this.kitIds = readKitFromActor(this.actor);
+        this.presets = options.presets ?? [];
+        this.loadedPreset = null;
+        const owned = this.actor === null ? null : ownedPresetOf(this.actor);
+        this.lockedPreset = owned?.locked === true ? owned : null;
+    }
+
+    /** May the current user change the options and kit? A locked preset stops players, never the GM. */
+    #canEdit(): boolean {
+        return canEditOptions(this.lockedPreset !== null, game.user.isGM);
+    }
+
+    #state(): RegimentState {
+        return { selection: this.selection, picks: this.picks, kitIds: this.kitIds };
     }
 
     /** @override */
@@ -173,6 +207,10 @@ export default class RegimentBuilderDialog extends ApplicationV2Mixin(Applicatio
             addKit: RegimentBuilderDialog.#onAddKit,
             // eslint-disable-next-line @typescript-eslint/unbound-method
             removeKit: RegimentBuilderDialog.#onRemoveKit,
+            // eslint-disable-next-line @typescript-eslint/unbound-method
+            loadPreset: RegimentBuilderDialog.#onLoadPreset,
+            // eslint-disable-next-line @typescript-eslint/unbound-method
+            savePreset: RegimentBuilderDialog.#onSavePreset,
             // eslint-disable-next-line @typescript-eslint/unbound-method
             commitRegiment: RegimentBuilderDialog.#onCommit,
             // eslint-disable-next-line @typescript-eslint/unbound-method
@@ -196,7 +234,7 @@ export default class RegimentBuilderDialog extends ApplicationV2Mixin(Applicatio
 
     /** Ids of every selected non-kit option the player still owes picks on. */
     #incompleteChoices(): boolean {
-        return selectedIds(this.selection).some((id) => {
+        return selectedOptionIds(this.selection).some((id) => {
             const entry = this.catalog.find((candidate) => candidate.id === id);
             return entry !== undefined && !choicesComplete(entry, this.picks[id]);
         });
@@ -226,6 +264,11 @@ export default class RegimentBuilderDialog extends ApplicationV2Mixin(Applicatio
                               key: choice.key,
                               label: choice.label,
                               count: choice.count,
+                              editable: canEditChoice(this.lockedPreset, game.user.isGM, entry.id, {
+                                  key: choice.key,
+                                  count: choice.count,
+                                  optionCount: choice.options.length,
+                              }),
                               options: choice.options.map((opt) => ({ ...opt, picked: picksFor(this.picks, entry.id, choice.key).includes(opt.value) })),
                           }))
                         : [],
@@ -263,6 +306,11 @@ export default class RegimentBuilderDialog extends ApplicationV2Mixin(Applicatio
             categories,
             kit: { spent: kitBudget.spent, allowance, remaining: kitBudget.remaining, over: !kitBudget.valid, rows: kitRows },
             canCommit,
+            presets: this.#canEdit()
+                ? this.presets.map((entry) => ({ id: entry.id, label: entry.label, locked: entry.data.locked, selected: entry.id === this.loadedPreset?.id }))
+                : [],
+            locked: !this.#canEdit(),
+            canSavePreset: game.user.can('ITEM_CREATE') && isSoundPreset(reportState(this.#state(), this.catalog)),
         };
     }
 
@@ -271,10 +319,10 @@ export default class RegimentBuilderDialog extends ApplicationV2Mixin(Applicatio
         const categoryStr = target.dataset['category'];
         const optionId = target.dataset['optionId'];
         if (typeof categoryStr !== 'string' || typeof optionId !== 'string' || optionId === '') return;
-        if (!isRegimentCategory(categoryStr)) return;
+        if (!isRegimentCategory(categoryStr) || !this.#canEdit()) return;
         this.selection = toggleSelection(this.selection, categoryStr, optionId);
         // Picks belong to a selected option; drop those of any option no longer held.
-        const held = new Set(selectedIds(this.selection));
+        const held = new Set(selectedOptionIds(this.selection));
         this.picks = Object.fromEntries(Object.entries(this.picks).filter(([id]) => held.has(id)));
         await this.render();
     }
@@ -284,7 +332,11 @@ export default class RegimentBuilderDialog extends ApplicationV2Mixin(Applicatio
         const { optionId, choiceKey, value } = target.dataset;
         if (optionId === undefined || choiceKey === undefined || value === undefined) return;
         const choice = this.catalog.find((entry) => entry.id === optionId)?.choices.find((candidate) => candidate.key === choiceKey);
-        if (choice === undefined) return;
+        if (
+            choice === undefined ||
+            !canEditChoice(this.lockedPreset, game.user.isGM, optionId, { key: choiceKey, count: choice.count, optionCount: choice.options.length })
+        )
+            return;
         const forOption = this.picks[optionId] ?? {};
         this.picks = { ...this.picks, [optionId]: { ...forOption, [choiceKey]: togglePick(forOption[choiceKey] ?? [], value, choice.count) } };
         await this.render();
@@ -293,7 +345,7 @@ export default class RegimentBuilderDialog extends ApplicationV2Mixin(Applicatio
     static async #onAddKit(this: RegimentBuilderDialog, event: Event, target: HTMLElement): Promise<void> {
         event.preventDefault();
         const optionId = target.dataset['optionId'];
-        if (optionId === undefined || optionId === '') return;
+        if (optionId === undefined || optionId === '' || !this.#canEdit()) return;
         const max = this.catalog.find((entry) => entry.id === optionId)?.maxCount ?? 1;
         if (this.kitIds.filter((id) => id === optionId).length >= max) return;
         this.kitIds = [...this.kitIds, optionId];
@@ -304,8 +356,38 @@ export default class RegimentBuilderDialog extends ApplicationV2Mixin(Applicatio
         event.preventDefault();
         const optionId = target.dataset['optionId'];
         const at = this.kitIds.lastIndexOf(optionId ?? '');
-        if (at < 0) return;
+        if (at < 0 || !this.#canEdit()) return;
         this.kitIds = this.kitIds.filter((_id, index) => index !== at);
+        await this.render();
+    }
+
+    /** Start from a saved regiment: its options, picks and kit replace what is on screen. */
+    static async #onLoadPreset(this: RegimentBuilderDialog, event: Event, target: HTMLElement): Promise<void> {
+        event.preventDefault();
+        const entry = this.presets.find((candidate) => candidate.id === target.dataset['presetId']);
+        if (entry === undefined || !this.#canEdit()) return;
+        const state = stateFromPreset(entry.data);
+        this.selection = state.selection;
+        this.picks = { ...state.picks };
+        this.kitIds = [...state.kitIds];
+        this.loadedPreset = entry;
+        this.lockedPreset = entry.data.locked ? entry.data : null;
+        await this.render();
+    }
+
+    /** Save what is on screen as a regiment preset (a world item in the Regiment step), optionally locked. */
+    static async #onSavePreset(this: RegimentBuilderDialog, event: Event, _target: HTMLElement): Promise<void> {
+        event.preventDefault();
+        if (!isSoundPreset(reportState(this.#state(), this.catalog))) return;
+        const choice = await promptPresetDetails();
+        if (choice === null || choice.name === '') return;
+        await Item.create({
+            name: choice.name,
+            type: 'originPath',
+            system: { step: 'regiment', stepIndex: 1, gameSystem: 'ow', positions: [], regimentPreset: presetFromState(this.#state(), choice.locked) },
+        });
+        ui.notifications.info(game.i18n.format('WH40K.OW.Regiment.Preset.Saved', { name: choice.name }));
+        this.presets = await loadRegimentPresets();
         await this.render();
     }
 
@@ -315,19 +397,9 @@ export default class RegimentBuilderDialog extends ApplicationV2Mixin(Applicatio
         if (!result.valid || this.#incompleteChoices()) return; // template also disables the button
 
         if (this.actor !== null) {
-            const kit = this.kitIds.map((id) => ({ id, cost: this.catalog.find((entry) => entry.id === id)?.cost ?? 0 }));
-            await this.actor.update({
-                'system.regimentSelection.homeWorld': this.selection.homeWorld ?? '',
-                'system.regimentSelection.commandingOfficer': this.selection.commandingOfficer ?? '',
-                'system.regimentSelection.regimentType': this.selection.regimentType ?? '',
-                'system.regimentSelection.trainingDoctrines': [...this.selection.trainingDoctrines],
-                'system.regimentSelection.specialEquipmentDoctrines': [...this.selection.specialEquipmentDoctrines],
-                'system.regimentDrawbacks': [...this.selection.drawbacks],
-                'system.regimentKit': kit,
-                'system.==regimentChoices': this.picks,
-            });
-            await applyRegimentToActor(this.actor, selectedIds(this.selection), this.picks);
-            await applyRegimentLogistics(this.actor, aggregateRegimentGrants(this.selection, this.catalog).logistics ?? 0);
+            await commitRegiment(this.actor, this.#state(), this.catalog);
+            // a locked preset loaded here stays on the character so its lock holds the next time they open this
+            if (this.loadedPreset?.data.locked === true) await adoptPreset(this.actor, this.loadedPreset.id);
         }
         await this.close();
     }
@@ -339,23 +411,41 @@ export default class RegimentBuilderDialog extends ApplicationV2Mixin(Applicatio
 
     /** Convenience opener, mirrors `ColonyGrowthDialog.show`. Loads the catalog from the OW packs first. */
     static async show(actor: WH40KBaseActor, catalog?: ReadonlyArray<RegimentCatalogEntry>): Promise<RegimentBuilderDialog> {
-        const dialog = new RegimentBuilderDialog({ actor, catalog: catalog ?? (await loadRegimentCatalog()) });
+        const dialog = new RegimentBuilderDialog({ actor, catalog: catalog ?? (await loadRegimentCatalog()), presets: await loadRegimentPresets() });
         void dialog.render({ force: true });
         return dialog;
     }
 }
 
-/** The squad Logistics Rating bonus last applied by a regiment commit, kept so a re-commit swaps rather than stacks. */
-const LOGISTICS_FLAG = 'regimentLogisticsApplied';
-
-async function applyRegimentLogistics(actor: WH40KBaseActor, bonus: number): Promise<void> {
-    const previous = actor.getFlag('wh40k-rpg', LOGISTICS_FLAG);
-    const applied = typeof previous === 'number' ? previous : 0;
-    if (applied === bonus) return;
-    // eslint-disable-next-line no-restricted-syntax -- boundary: logisticsRating lives on the per-system OW actor schema; not exposed on the abstract WH40KBaseActor system surface
-    const current = (actor.system as { logisticsRating?: number }).logisticsRating;
-    if (typeof current === 'number') await actor.update({ 'system.logisticsRating': current - applied + bonus });
-    await actor.setFlag('wh40k-rpg', LOGISTICS_FLAG, bonus);
+/** Ask for the new preset's name and whether it is locked. */
+async function promptPresetDetails(): Promise<{ name: string; locked: boolean } | null> {
+    const result = await foundry.applications.api.DialogV2.prompt({
+        window: { title: 'WH40K.OW.Regiment.Preset.SaveTitle' },
+        content: `
+            <div class="form-group">
+                <label>${game.i18n.localize('WH40K.OW.Regiment.Preset.Name')}</label>
+                <input type="text" name="presetName" value="" autofocus />
+            </div>
+            <div class="form-group">
+                <label>${game.i18n.localize('WH40K.OW.Regiment.Preset.Locked')}</label>
+                <input type="checkbox" name="presetLocked" />
+                <p class="hint">${game.i18n.localize('WH40K.OW.Regiment.Preset.LockedHint')}</p>
+            </div>
+        `,
+        ok: {
+            label: 'WH40K.OW.Regiment.Preset.Save',
+            callback: (_evt: Event, button: HTMLButtonElement) => {
+                const form = button.form;
+                if (form === null) return null;
+                const name = form.elements.namedItem('presetName');
+                const locked = form.elements.namedItem('presetLocked');
+                return { name: name instanceof HTMLInputElement ? name.value.trim() : '', locked: locked instanceof HTMLInputElement && locked.checked };
+            },
+        },
+        rejectClose: false,
+    });
+    // eslint-disable-next-line no-restricted-syntax -- boundary: DialogV2 prompt return is typed as unknown; the callback above narrows the shape
+    return result === null ? null : (result as unknown as { name: string; locked: boolean });
 }
 
 /** Pull the persisted selection off an actor's `system.regimentSelection` / `regimentDrawbacks` slots. */
