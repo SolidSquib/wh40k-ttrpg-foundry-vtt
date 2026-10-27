@@ -55,6 +55,7 @@ import {
 import {
     canEditChoice,
     canEditOptions,
+    decodePicks,
     isRegimentPreset,
     isSoundPreset,
     presetFromState,
@@ -770,12 +771,7 @@ function readSelectionFromActor(actor: WH40KBaseActor | null): RegimentSelection
 function readPicksFromActor(actor: WH40KBaseActor | null): Record<string, Record<string, string[]>> {
     // eslint-disable-next-line no-restricted-syntax -- boundary: regimentChoices lives on the per-system OW actor schema; not exposed on the abstract WH40KBaseActor system surface
     const stored = actor === null ? undefined : (actor.system as { regimentChoices?: Record<string, RegimentPicks> }).regimentChoices;
-    return Object.fromEntries(
-        Object.entries(stored ?? {}).map(([optionId, picks]) => [
-            optionId,
-            Object.fromEntries(Object.entries(picks).map(([key, values]) => [key, [...values]])),
-        ]),
-    );
+    return decodePicks(stored ?? {});
 }
 
 function readKitFromActor(actor: WH40KBaseActor | null): KitPurchase[] {

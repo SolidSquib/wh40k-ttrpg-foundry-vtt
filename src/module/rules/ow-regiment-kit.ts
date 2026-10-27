@@ -8,8 +8,9 @@
  * simply lists what it gives.
  */
 
-import type { RegimentCatalogEntry, RegimentKitItem } from './ow-regiment-catalog.ts';
+import type { KitGear, RegimentCatalogEntry, RegimentKitItem } from './ow-regiment-catalog.ts';
 import type { RegimentSelection } from './ow-regiment-creation.ts';
+import { type GearPlan, mergeGearPlans } from './starting-gear.ts';
 
 /** One line of kit. `count` is set when the same purchase was taken more than once. */
 export interface KitLine {
@@ -18,6 +19,8 @@ export interface KitLine {
     readonly count?: number;
     /** Set when a craftsmanship upgrade has improved this item. */
     readonly craftsmanship?: Craftsmanship;
+    /** The compendium items the line issues, when the packs hold them. */
+    readonly items?: ReadonlyArray<KitGear>;
 }
 
 /** The craftsmanship a kit upgrade raises an item to (kit items start at Common). */
@@ -109,7 +112,11 @@ export function resolveKit(
     const issue = (id: string, source: string, items: ReadonlyArray<RegimentKitItem>, into?: WorkingLine[]): void => {
         const lines = into ?? [];
         for (const item of items) {
-            const line: WorkingLine = { label: item.label, scope: item.scope };
+            const line: WorkingLine = {
+                label: item.label,
+                scope: item.scope,
+                ...(item.items === undefined || item.items.length === 0 ? {} : { items: item.items }),
+            };
             if (item.mainWeapon === true) {
                 if (standing.holder !== undefined) standing.holder.lines.splice(standing.holder.lines.indexOf(standing.holder.line), 1);
                 standing.holder = { lines, line, weapon: item.weapon ?? '' };
@@ -159,12 +166,16 @@ export function resolveKit(
         }
         if (entry.additionalItem !== '') {
             if (pick === '') unpicked.push(position);
-            purchased.push({ label: pick === '' ? entry.label : options.itemNames?.get(pick) ?? entry.label, scope: 'character' });
+            purchased.push({
+                label: pick === '' ? entry.label : options.itemNames?.get(pick) ?? entry.label,
+                scope: 'character',
+                ...(pick === '' ? {} : { items: [{ uuid: pick, quantity: 1 }] }),
+            });
             return;
         }
         const taken = counts.get(id);
         if (taken === undefined) {
-            const line: WorkingLine = { label: entry.label, scope: 'character' };
+            const line: WorkingLine = { label: entry.label, scope: 'character', ...(entry.items.length === 0 ? {} : { items: entry.items }) };
             counts.set(id, line);
             purchased.push(line);
         } else taken.count = (taken.count ?? 1) + 1;
@@ -245,4 +256,22 @@ export interface KitPurchaseLimit {
 export function kitPurchaseLimit(count: number, maxCount: number): KitPurchaseLimit {
     const limited = maxCount < KIT_UNLIMITED;
     return { limited, once: limited && maxCount === 1, atLimit: count >= maxCount };
+}
+
+/**
+ * The gear a resolved kit puts in each character's inventory: every character-scope line's items, once per copy
+ * bought, at the craftsmanship an upgrade raised the line to. Squad-scope lines (vehicles) and lines the packs hold
+ * no items for issue nothing here.
+ */
+export function kitGearPlans(kit: ResolvedKit): GearPlan[] {
+    const plans: GearPlan[] = [];
+    for (const group of kit.groups) {
+        for (const line of group.lines) {
+            if (line.scope !== 'character') continue;
+            for (const gear of line.items ?? []) {
+                plans.push({ uuid: gear.uuid, quantity: gear.quantity * (line.count ?? 1), craftsmanship: line.craftsmanship ?? '' });
+            }
+        }
+    }
+    return mergeGearPlans(plans);
 }

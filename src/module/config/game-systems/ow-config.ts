@@ -25,6 +25,8 @@ export class OWSystemConfig extends AptitudeBasedSystemConfig {
                 { key: 'speciality', step: 'speciality', icon: 'fa-crosshairs', descKey: 'SpecialityDesc', stepIndex: 2 },
             ],
             optionalStep: null,
+            // Only War has no Divination table; starting Fate comes from Table 3–13.
+            hasDivination: false,
             packs: [
                 'ow-core-origins-homeworlds',
                 'ow-core-origins-regiment-types',

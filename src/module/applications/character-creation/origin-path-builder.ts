@@ -17,6 +17,7 @@ import type { WH40KBaseActor } from '../../documents/base-actor.ts';
 import type { WH40KItem } from '../../documents/item.ts';
 import { GrantsManager, generateDeterministicId } from '../../managers/grants-manager.ts';
 import { deltaFromModifiers, originDeltaFlagPath, originIdentityKey, type OriginModifierBag } from '../../origin-grant-ledger.ts';
+import { gearPlansFor, mergeGearPlans } from '../../rules/starting-gear.ts';
 import type { WH40KCharacteristic, WH40KItemModifiers } from '../../types/global.d.ts';
 import { resolvePack } from '../../utils/compendium-query.ts';
 import { capitalize } from '../../utils/format.ts';
@@ -1297,6 +1298,7 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
             anyRolls,
             canApply,
             divination: this._divination,
+            hasDivination: this.systemConfig.hasDivination !== false,
             mode: this._charGenMode,
             isModePointBuy,
             isModeRoll,
@@ -4827,6 +4829,9 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
             // (see OriginPathData._calculateActiveModifiers).
             await this._applyTalentGrantsFromOrigins();
 
+            // Put the gear the origins issue (a Speciality's Specialist Equipment) into the inventory.
+            await this._applyEquipmentGrantsFromOrigins();
+
             // Materialize freeform content-item grants (special abilities,
             // malignancies, mutations, mental disorders) that carry no UUID.
             await this._applyContentItemGrantsFromOrigins();
@@ -5413,6 +5418,36 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
             toCreate.push(itemData);
         }
 
+        if (toCreate.length > 0) {
+            await this.actor.createEmbeddedDocuments('Item', toCreate as Parameters<typeof this.actor.createEmbeddedDocuments>[1]);
+        }
+    }
+
+    /**
+     * Put the gear the committed origins issue into the character's inventory: each origin's fixed equipment and
+     * the equipment its choices resolved to, merged into stacks and issued at the craftsmanship the content names.
+     * Lines with an equipment step choose their own gear there, so they are left to it.
+     */
+    async _applyEquipmentGrantsFromOrigins(): Promise<void> {
+        if (this.systemConfig.equipmentStep) return;
+        const plans = mergeGearPlans(Array.from(this.selections.values()).flatMap((selection) => gearPlansFor(this._getSelectionSystem(selection))));
+        if (plans.length === 0) return;
+
+        const held = new Set(
+            this.actor.items
+                .filter((i) => i.getFlag('wh40k-rpg', 'originPathGranted') === true)
+                .map((i) => foundry.utils.getProperty(i, 'flags.core.sourceId')),
+        );
+        const toCreate: ItemDataLike[] = [];
+        for (const plan of plans) {
+            if (held.has(plan.uuid)) continue;
+            // eslint-disable-next-line no-await-in-loop -- sequential: each UUID resolves to a distinct source item before it is cloned
+            const source = await fromUuid(plan.uuid);
+            if (!source) continue;
+            toCreate.push(
+                cloneGrantedItemData(source, { sourceId: plan.uuid, originPathGranted: true, quantity: plan.quantity, craftsmanship: plan.craftsmanship }),
+            );
+        }
         if (toCreate.length > 0) {
             await this.actor.createEmbeddedDocuments('Item', toCreate as Parameters<typeof this.actor.createEmbeddedDocuments>[1]);
         }

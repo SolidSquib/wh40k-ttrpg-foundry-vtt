@@ -22,7 +22,7 @@ interface GrantItemData {
     type?: string;
     img?: string;
     uuid?: string;
-    system?: { specialization?: string; quantity?: number };
+    system?: { specialization?: string; quantity?: number; craftsmanship?: string };
     flags?: { core?: { sourceId?: string } } & Record<string, { sourceId?: string } | undefined>;
 }
 
@@ -34,6 +34,10 @@ interface GrantStamp {
     originPathGranted?: boolean;
     /** Specialization to stamp onto `system.specialization` (talents). */
     specialization?: string | undefined;
+    /** How many of a physical item to issue; stamped onto `system.quantity`. */
+    quantity?: number | undefined;
+    /** Craftsmanship to issue a physical item at; stamped onto `system.craftsmanship`. */
+    craftsmanship?: string | undefined;
 }
 
 /**
@@ -52,6 +56,15 @@ export function cloneGrantedItemData(source: object, stamp: GrantStamp = {}): Gr
         const system: { specialization?: string; quantity?: number } = itemData.system === undefined ? {} : itemData.system;
         system.specialization = stamp.specialization;
         itemData.system = system;
+    }
+
+    const stampsGear = (stamp.quantity !== undefined && stamp.quantity !== 1) || (stamp.craftsmanship !== undefined && stamp.craftsmanship !== '');
+    if (stampsGear) {
+        itemData.system = {
+            ...itemData.system,
+            ...(stamp.quantity !== undefined && stamp.quantity !== 1 ? { quantity: stamp.quantity } : {}),
+            ...(stamp.craftsmanship !== undefined && stamp.craftsmanship !== '' ? { craftsmanship: stamp.craftsmanship } : {}),
+        };
     }
 
     if (stamp.sourceId !== undefined || stamp.originPathGranted === true) {

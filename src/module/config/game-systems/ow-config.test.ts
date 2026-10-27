@@ -37,3 +37,9 @@ describe('OWSystemConfig: isPsyker (shared origin-path predicate)', () => {
         expect(cfg.isPsyker(asBaseActor({ items: [] }))).toBe(false);
     });
 });
+
+describe('OWSystemConfig: origin step config', () => {
+    it('has no Divination table at character creation (starting Fate comes from the Fate table)', () => {
+        expect(new OWSystemConfig().getOriginStepConfig().hasDivination).toBe(false);
+    });
+});

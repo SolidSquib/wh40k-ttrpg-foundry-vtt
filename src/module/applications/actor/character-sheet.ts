@@ -360,7 +360,10 @@ type DwRequisitionPanelContext = {
 };
 
 /** OW Regiment panel (#151). */
-type OwRegimentPanelContext = RegimentPanelSummary;
+type OwRegimentPanelContext = RegimentPanelSummary & {
+    /** The regiment's chosen options by category, named; a category with nothing chosen is left out. */
+    chosen: Array<{ category: string; label: string; names: string[] }>;
+};
 
 /** OW Comrade panel (#152). */
 type OwComradePanelContext = {
@@ -1809,7 +1812,20 @@ export default class CharacterSheet extends BaseActorSheet {
      */
     _prepareOwRegimentPanel(): OwRegimentPanelContext {
         const sys = this.actor.system;
-        return buildRegimentPanelSummary({ ...sys.regimentSelection, drawbacks: sys.regimentDrawbacks }, sys.regimentKit, resolveRegimentCatalog());
+        const selection = { ...sys.regimentSelection, drawbacks: sys.regimentDrawbacks };
+        const single = (id: string | undefined): string[] => (id === undefined || id === '' ? [] : [id]);
+        const categories: Array<[string, string, string[]]> = [
+            ['homeWorld', 'WH40K.OW.Regiment.Category.HomeWorld', single(selection.homeWorld)],
+            ['commandingOfficer', 'WH40K.OW.Regiment.Category.CommandingOfficer', single(selection.commandingOfficer)],
+            ['regimentType', 'WH40K.OW.Regiment.Category.RegimentType', single(selection.regimentType)],
+            ['trainingDoctrine', 'WH40K.OW.Regiment.Category.TrainingDoctrine', selection.trainingDoctrines],
+            ['specialEquipmentDoctrine', 'WH40K.OW.Regiment.Category.SpecialEquipmentDoctrine', selection.specialEquipmentDoctrines],
+            ['drawback', 'WH40K.OW.Regiment.Category.Drawback', selection.drawbacks],
+        ];
+        const chosen = categories
+            .filter(([, , ids]) => ids.length > 0)
+            .map(([category, label, ids]) => ({ category, label, names: ids.map((id) => uuidNameCache.getName(id)) }));
+        return { ...buildRegimentPanelSummary(selection, sys.regimentKit, resolveRegimentCatalog()), chosen };
     }
 
     /* -------------------------------------------- */

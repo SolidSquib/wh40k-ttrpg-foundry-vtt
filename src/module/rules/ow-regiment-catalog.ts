@@ -20,6 +20,14 @@ export interface RegimentKitItem {
     readonly mainWeapon?: boolean;
     /** Which weapon a Main Weapon line is, so a kit upgrade can say which weapon it replaces. Blank when the choice is the player's. */
     readonly weapon?: string;
+    /** The compendium items this line issues; empty where the book names none the packs hold. */
+    readonly items?: ReadonlyArray<KitGear>;
+}
+
+/** One stack of a compendium item a kit line or purchase issues. */
+export interface KitGear {
+    readonly uuid: string;
+    readonly quantity: number;
 }
 
 /** The `system.regiment` block of an `originPath` document. */
@@ -36,6 +44,8 @@ export interface RegimentBlockLike {
     readonly craftsmanship?: string;
     readonly additionalItem?: string;
     readonly kit?: ReadonlyArray<RegimentKitItem>;
+    /** Kit purchases that add fixed items to the Standard Kit. */
+    readonly items?: ReadonlyArray<KitGear>;
 }
 
 /** One entry of an `originPath` document's `system.grants.choices`. */
@@ -76,6 +86,8 @@ export interface RegimentCatalogEntry extends RegimentOption {
     /** Kit purchases that add one chosen item of this availability (a slug such as `rare`). */
     readonly additionalItem: string;
     readonly kit: ReadonlyArray<RegimentKitItem>;
+    /** What a plain kit purchase issues. */
+    readonly items: ReadonlyArray<KitGear>;
     readonly choices: ReadonlyArray<RegimentChoice>;
 }
 
@@ -113,6 +125,7 @@ export function regimentEntryFromDoc(uuid: string, doc: RegimentDocLike): Regime
         craftsmanship: regiment.craftsmanship === 'good' || regiment.craftsmanship === 'best' ? regiment.craftsmanship : '',
         additionalItem: regiment.additionalItem ?? '',
         kit: regiment.kit ?? [],
+        items: regiment.items ?? [],
         choices,
         ...(regiment.category === 'kitItem' && regiment.maxCount !== undefined ? { maxCount: regiment.maxCount } : {}),
         ...(regiment.favouredSlot === 'basic' || regiment.favouredSlot === 'heavy' ? { favouredSlot: regiment.favouredSlot } : {}),

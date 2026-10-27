@@ -17,7 +17,8 @@ import OriginPathData from '../data/item/origin-path.ts';
 import type { WH40KBaseActor } from '../documents/base-actor.ts';
 import type { RegimentCatalogEntry } from '../rules/ow-regiment-catalog.ts';
 import { aggregateRegimentGrants } from '../rules/ow-regiment-creation.ts';
-import { isRegimentPreset, type RegimentPresetData, type RegimentState, selectedOptionIds, stateFromPreset } from '../rules/ow-regiment-preset.ts';
+import { kitGearPlans, resolveKit } from '../rules/ow-regiment-kit.ts';
+import { encodePicks, isRegimentPreset, type RegimentPresetData, type RegimentState, selectedOptionIds, stateFromPreset } from '../rules/ow-regiment-preset.ts';
 import { dedupeTalentPlans, dedupeTraitPlans, talentPlansFor, traitPlansFor } from '../rules/ow-regiment-talents.ts';
 import { loadRegimentCatalog } from '../utils/regiment-catalog.ts';
 
@@ -29,6 +30,8 @@ const OPTION_FLAG = 'regimentOption';
 const GRANT_FLAG = 'regimentGranted';
 /** Marks an owned preset item the Regiment Builder created (its regiment is already applied). */
 const PRESET_APPLIED_FLAG = 'regimentPresetApplied';
+/** Marks an inventory item the regiment's Standard Kit issued, so a re-commit replaces rather than stacks it. */
+const KIT_GEAR_FLAG = 'regimentKitGear';
 /** The squad Logistics Rating bonus last applied by a regiment commit, kept so a re-commit swaps rather than stacks. */
 const LOGISTICS_FLAG = 'regimentLogisticsApplied';
 
@@ -39,6 +42,7 @@ interface OwnedItemFlags {
     regimentOption?: boolean;
     regimentGranted?: boolean;
     regimentPresetApplied?: boolean;
+    regimentKitGear?: boolean;
 }
 
 /** Embedded-item create payload: a cloned compendium document with extra flags stamped on. */
@@ -113,6 +117,27 @@ export async function applyRegimentToActor(
     if (talents.length + traits.length > 0) await actor.createEmbeddedDocuments('Item', [...talents, ...traits] as CreateItemData);
 }
 
+/**
+ * Issue the regiment's Standard Kit into the character's inventory: the items of every character-scope kit line
+ * and purchase, at the craftsmanship the kit raised them to. Gear a previous commit issued is replaced.
+ */
+async function applyRegimentKit(actor: WH40KBaseActor, state: RegimentState, catalog: ReadonlyArray<RegimentCatalogEntry>): Promise<void> {
+    const stale = actor.items.filter((item) => item.getFlag(FLAG_SCOPE, KIT_GEAR_FLAG) === true).map((item) => item.id);
+    if (stale.length > 0) await actor.deleteEmbeddedDocuments('Item', stale);
+
+    const plans = kitGearPlans(resolveKit(state.selection, state.kitIds, catalog, { picks: state.kitPicks }));
+    const gear: OwnedItemData[] = [];
+    for (const plan of plans) {
+        // eslint-disable-next-line no-await-in-loop -- sequential: each item resolves to its own compendium document before it is cloned
+        const source = await fromUuid(plan.uuid);
+        if (!source) continue;
+        const cloned = cloneGrantedItemData(source, { sourceId: plan.uuid, quantity: plan.quantity, craftsmanship: plan.craftsmanship });
+        gear.push({ ...cloned, flags: { ...cloned.flags, [FLAG_SCOPE]: { regimentKitGear: true } } });
+    }
+    // eslint-disable-next-line no-restricted-syntax -- boundary: createEmbeddedDocuments takes Foundry's generated create-data union; OwnedItemData is a cloned compendium payload
+    if (gear.length > 0) await actor.createEmbeddedDocuments('Item', gear as CreateItemData);
+}
+
 /** Swap the squad Logistics Rating bonus a regiment gives, so a re-commit replaces the last one. */
 async function applyRegimentLogistics(actor: WH40KBaseActor, bonus: number): Promise<void> {
     const previous = actor.getFlag(FLAG_SCOPE, LOGISTICS_FLAG);
@@ -142,9 +167,10 @@ export async function commitRegiment(actor: WH40KBaseActor, state: RegimentState
         'system.regimentSelection.favouredWeapons.basic': [...selection.favouredWeapons.basic],
         'system.regimentSelection.favouredWeapons.heavy': [...selection.favouredWeapons.heavy],
         'system.regimentKit': kit,
-        'system.==regimentChoices': state.picks,
+        'system.==regimentChoices': encodePicks(state.picks),
     });
     await applyRegimentToActor(actor, selectedOptionIds(selection), state.picks);
+    await applyRegimentKit(actor, state, catalog);
     await applyRegimentLogistics(actor, aggregateRegimentGrants(selection, catalog).logistics ?? 0);
 }
 

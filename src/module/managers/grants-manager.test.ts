@@ -136,3 +136,38 @@ describe('GrantsManager._getSkillLevelUpdates', () => {
         });
     });
 });
+
+describe('GrantsManager._extractGrants', () => {
+    // eslint-disable-next-line no-restricted-syntax -- boundary: _extractGrants takes a WH40KItem; only `system.grants` is read, so a structural stub stands in
+    const itemWith = (grants: object): Parameters<typeof GrantsManager._extractGrants>[0] =>
+        ({ system: { grants } } as Parameters<typeof GrantsManager._extractGrants>[0]);
+
+    it('carries a talent’s specialisation as a field override on the created item', () => {
+        const [grant] = GrantsManager._extractGrants(
+            itemWith({
+                talents: [
+                    { name: 'Weapon Training', specialization: 'Las', uuid: 'T1' },
+                    { name: 'Ambush', specialization: '', uuid: 'T2' },
+                ],
+            }),
+        );
+        expect(grant).toMatchObject({
+            type: 'item',
+            items: [{ uuid: 'T1', overrides: { 'system.specialization': 'Las' } }, { uuid: 'T2' }],
+        });
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- boundary: GrantConfig is a loose union; only the second item's keys matter
+        expect(Object.keys((grant as { items: object[] }).items[1] ?? {})).toEqual(['uuid']);
+    });
+
+    it('carries a trait’s level as a field override', () => {
+        const [grant] = GrantsManager._extractGrants(
+            itemWith({
+                traits: [
+                    { name: 'Machine', uuid: 'M1', level: 2 },
+                    { name: 'Fear', uuid: 'M2' },
+                ],
+            }),
+        );
+        expect(grant).toMatchObject({ items: [{ uuid: 'M1', overrides: { 'system.level': 2 } }, { uuid: 'M2' }] });
+    });
+});

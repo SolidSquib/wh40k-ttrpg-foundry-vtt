@@ -12,7 +12,7 @@
 
 import { iterateResolvedChoices } from '../utils/origin-choices.ts';
 import type { RegimentBlockLike } from './ow-regiment-catalog.ts';
-import { isRegimentPreset, type RegimentPresetData, selectedOptionIds, stateFromPreset } from './ow-regiment-preset.ts';
+import { decodePicks, encodePicks, isRegimentPreset, type RegimentPresetData, selectedOptionIds, stateFromPreset } from './ow-regiment-preset.ts';
 
 /** A skill, talent or trait an option grants outright. */
 interface GrantEntry {
@@ -136,7 +136,7 @@ export function buildRegimentPreview(preset: RegimentPresetData, docs: ReadonlyM
         selectedChoices: {},
         keyMap: {},
     };
-    const held = new Map(Object.entries(preset.choices));
+    const held = new Map(Object.entries(decodePicks(preset.choices)));
 
     for (const id of selectedOptionIds(stateFromPreset(preset).selection)) {
         const doc = docs.get(id);
@@ -207,9 +207,7 @@ export function applyRegimentPreview(system: PreviewableSystem, preview: Regimen
 export function finishRegimentSelection<T extends PreviewableSystem>(system: T): T {
     const { regimentPreview, regimentPreset } = system;
     if (regimentPreview === undefined || regimentPreset === undefined) return system;
-    const choices: Record<string, Record<string, string[]>> = Object.fromEntries(
-        Object.entries(regimentPreset.choices).map(([optionId, picks]) => [optionId, { ...picks }]),
-    );
+    const choices = decodePicks(regimentPreset.choices);
     const chosen = new Map(Object.entries(system.selectedChoices ?? {}));
     for (const [label, target] of Object.entries(regimentPreview.keyMap)) {
         const picks = chosen.get(label);
@@ -223,7 +221,7 @@ export function finishRegimentSelection<T extends PreviewableSystem>(system: T):
         grants: regimentPreview.original.grants,
         modifiers: regimentPreview.original.modifiers,
         selectedChoices: {},
-        regimentPreset: { ...regimentPreset, choices },
+        regimentPreset: { ...regimentPreset, choices: encodePicks(choices) },
     } as T;
 }
 

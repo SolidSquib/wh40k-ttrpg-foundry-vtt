@@ -67,6 +67,18 @@
         {{/if}}
     </div>
 
+    {{!-- The options this regiment was built from --}}
+    {{#if regimentPanel.chosen.length}}
+        <div class="tw-flex tw-flex-col tw-gap-0.5">
+            {{#each regimentPanel.chosen}}
+                <div data-wh40k-hook="ow-regiment-chosen" class="tw-flex tw-items-baseline tw-justify-between tw-gap-2 tw-px-2 tw-py-0.5 tw-rounded tw-bg-[rgba(0,0,0,0.12)]" data-category="{{category}}">
+                    <span class="tw-text-[0.7rem] tw-uppercase tw-tracking-[0.04em] tw-text-[color:var(--wh40k-text-muted)]">{{localize label}}</span>
+                    <span class="tw-text-[0.75rem] tw-font-semibold tw-text-right tw-text-[color:var(--wh40k-text-bright)]">{{#each names}}{{#unless @first}}, {{/unless}}{{this}}{{/each}}</span>
+                </div>
+            {{/each}}
+        </div>
+    {{/if}}
+
     {{!-- Per-category breakdown --}}
     <div class="tw-grid tw-grid-cols-2 tw-gap-1">
         <div data-wh40k-hook="ow-regiment-category" class="tw-flex tw-items-center tw-justify-between tw-px-2 tw-py-0.5 tw-rounded tw-bg-[rgba(0,0,0,0.12)]" data-category="homeWorld">

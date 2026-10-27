@@ -54,6 +54,36 @@ export function isRegimentPreset(preset: Pick<RegimentPresetData, 'regimentType'
     return preset !== undefined && preset.regimentType !== '';
 }
 
+/** Picks per option: option id → choice key → picked values. */
+export type RegimentPickMap = Record<string, Record<string, string[]>>;
+
+/**
+ * The key an option's picks are stored under. An option id is a compendium UUID, and Foundry reads a dot in a
+ * key as a path, expanding `a.b.c` into nested objects whenever data is saved — so the picks are keyed by this
+ * dot-free form instead. Tilde never occurs in a UUID.
+ */
+export function encodePickKey(optionId: string): string {
+    return optionId.replaceAll('.', '~');
+}
+
+/** The picks as stored (keyed by {@link encodePickKey}) back to option ids, dropping anything that is not a pick list. */
+export function decodePicks(stored: Readonly<Record<string, object>>): RegimentPickMap {
+    const picks: RegimentPickMap = {};
+    for (const [key, byChoice] of Object.entries(stored)) {
+        const choices: Record<string, string[]> = {};
+        for (const [choiceKey, values] of Object.entries(byChoice)) {
+            if (Array.isArray(values) && values.every((value) => typeof value === 'string')) choices[choiceKey] = [...values];
+        }
+        picks[key.replaceAll('~', '.')] = choices;
+    }
+    return picks;
+}
+
+/** The picks as they are stored: keyed by {@link encodePickKey}. */
+export function encodePicks(picks: Readonly<RegimentPickMap>): RegimentPickMap {
+    return Object.fromEntries(Object.entries(picks).map(([optionId, byChoice]) => [encodePickKey(optionId), byChoice]));
+}
+
 /** The builder state a preset starts from. */
 export function stateFromPreset(preset: RegimentPresetData): RegimentState {
     return {
@@ -67,9 +97,7 @@ export function stateFromPreset(preset: RegimentPresetData): RegimentState {
             drawbacks: [...preset.drawbacks],
             favouredWeapons: { basic: [...preset.favouredWeapons.basic], heavy: [...preset.favouredWeapons.heavy] },
         },
-        picks: Object.fromEntries(
-            Object.entries(preset.choices).map(([id, picks]) => [id, Object.fromEntries(Object.entries(picks).map(([key, values]) => [key, [...values]]))]),
-        ),
+        picks: decodePicks(preset.choices),
         kitIds: [...preset.kit],
         kitPicks: [...preset.kit.keys()].map((index) => preset.kitPicks.at(index) ?? ''),
     };
@@ -90,7 +118,7 @@ export function presetFromState(state: RegimentState, locked: boolean): Regiment
         kitPicks: [...state.kitIds.keys()].map((index) => state.kitPicks.at(index) ?? ''),
         favouredWeapons: { basic: [...selection.favouredWeapons.basic], heavy: [...selection.favouredWeapons.heavy] },
         // only the picks of options the preset actually holds
-        choices: Object.fromEntries(Object.entries(state.picks).filter(([id]) => held.has(id))),
+        choices: encodePicks(Object.fromEntries(Object.entries(state.picks).filter(([id]) => held.has(id)))),
         locked,
     };
 }
@@ -165,5 +193,5 @@ export function canEditChoice(
     choice: { key: string; count: number; optionCount: number },
 ): boolean {
     if (lockedPreset === null || isGM) return true;
-    return picksFor(lockedPreset.choices, optionId, choice.key).length < Math.min(choice.count, choice.optionCount);
+    return picksFor(decodePicks(lockedPreset.choices), optionId, choice.key).length < Math.min(choice.count, choice.optionCount);
 }

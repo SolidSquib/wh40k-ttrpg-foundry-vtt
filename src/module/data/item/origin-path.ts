@@ -20,7 +20,7 @@ interface OriginChoiceOptionGrants {
     skills?: Array<{ name: string }>;
     talents?: Array<{ name: string; uuid?: string }>;
     traits?: Array<{ name: string; level?: number; uuid?: string }>;
-    equipment?: Array<{ name: string; quantity?: number; uuid?: string }>;
+    equipment?: Array<{ name: string; quantity?: number; uuid?: string; craftsmanship?: string }>;
 }
 
 /**
@@ -32,6 +32,9 @@ interface OriginChoiceOption {
     value?: string;
     name?: string;
     uuid?: string;
+    /** For an equipment option: how many are issued, and at what craftsmanship. */
+    quantity?: number;
+    craftsmanship?: string;
     grants?: OriginChoiceOptionGrants;
 }
 
@@ -53,6 +56,15 @@ interface CareerAdvancePrerequisite {
     type: string;
     key: string;
     value?: number;
+}
+
+/** One stack of a compendium item a regiment kit line issues. */
+function regimentGearField(): foundry.data.fields.SchemaField<foundry.data.fields.DataSchema> {
+    const fields = foundry.data.fields;
+    return new fields.SchemaField({
+        uuid: new fields.StringField({ required: true, blank: false }),
+        quantity: new fields.NumberField({ required: true, initial: 1, min: 1, integer: true }),
+    });
 }
 
 /**
@@ -90,7 +102,8 @@ export default class OriginPathData extends ItemDataModel.mixin(DescriptionTempl
         replacesMainWeapon: string[];
         craftsmanship: '' | 'good' | 'best';
         additionalItem: string;
-        kit: Array<{ label: string; scope: 'character' | 'squad'; mainWeapon: boolean; weapon: string }>;
+        kit: Array<{ label: string; scope: 'character' | 'squad'; mainWeapon: boolean; weapon: string; items: Array<{ uuid: string; quantity: number }> }>;
+        items: Array<{ uuid: string; quantity: number }>;
     };
     declare grants: {
         woundsFormula: string;
@@ -103,7 +116,7 @@ export default class OriginPathData extends ItemDataModel.mixin(DescriptionTempl
         talents: Array<{ name: string; specialization: string; uuid: string }>;
         traits: Array<{ name: string; level: number; uuid: string }>;
         aptitudes: string[];
-        equipment: Array<{ name: string; quantity: number; uuid: string }>;
+        equipment: Array<{ name: string; quantity: number; uuid: string; craftsmanship?: string }>;
         specialAbilities: Array<{ name: string; description: string }>;
         choices: Array<{ type: string; label: string; name?: string; options: OriginChoiceOption[]; count: number; xpCost: number }>;
     };
@@ -124,7 +137,15 @@ export default class OriginPathData extends ItemDataModel.mixin(DescriptionTempl
     declare effectText: string;
     declare notes: string;
     declare selectedChoices: Record<string, string[]>;
-    declare activeModifiers: Array<{ source: string; type: string; key: string; value: number | null; itemUuid: string | null; specialization?: string }>;
+    declare activeModifiers: Array<{
+        source: string;
+        type: string;
+        key: string;
+        value: number | null;
+        itemUuid: string | null;
+        specialization?: string;
+        craftsmanship?: string;
+    }>;
     declare homebrew: { throneGelt: string; thrones: string };
     declare rollResults: {
         wounds: { formula: string; rolled: number; breakdown: string; timestamp: number };
@@ -250,9 +271,13 @@ export default class OriginPathData extends ItemDataModel.mixin(DescriptionTempl
                             mainWeapon: new fields.BooleanField({ required: true, initial: false }),
                             // Which weapon it is (a slug), blank when the player picks between several.
                             weapon: new fields.StringField({ required: true, blank: true, initial: '' }),
+                            // The compendium items the line issues (blank when the book names none the packs hold).
+                            items: new fields.ArrayField(regimentGearField(), { required: true, initial: [] }),
                         }),
                         { required: true, initial: [] },
                     ),
+                    // Kit purchases that add fixed items to the Standard Kit.
+                    items: new fields.ArrayField(regimentGearField(), { required: true, initial: [] }),
                 },
                 { required: true },
             ),
@@ -365,6 +390,8 @@ export default class OriginPathData extends ItemDataModel.mixin(DescriptionTempl
                         name: new fields.StringField({ required: true }),
                         quantity: new fields.NumberField({ required: true, initial: 1 }),
                         uuid: new fields.StringField({ required: false, blank: true }),
+                        // Issued at this craftsmanship (blank = the item's own)
+                        craftsmanship: new fields.StringField({ required: false, blank: true }),
                     }),
                     { required: true, initial: [] },
                 ),
@@ -436,6 +463,7 @@ export default class OriginPathData extends ItemDataModel.mixin(DescriptionTempl
                     value: new fields.NumberField({ required: false }),
                     itemUuid: new fields.StringField({ required: false, blank: true }), // For fetching item details
                     specialization: new fields.StringField({ required: false, blank: true }), // For talents with composite specs e.g. "Weapon Training (Chain)"
+                    craftsmanship: new fields.StringField({ required: false, blank: true }), // For equipment picks: issued at this craftsmanship (`value` is the quantity)
                 }),
                 { required: true, initial: [] },
             ),
@@ -613,8 +641,15 @@ export default class OriginPathData extends ItemDataModel.mixin(DescriptionTempl
      */
     // eslint-disable-next-line complexity -- choice resolution spans fixed grants, generic choice synthesis, and specialization splitting; refactoring it is larger than this lint-focused change
     _calculateActiveModifiers(): void {
-        const activeModifiers: Array<{ source: string; type: string; key: string; value: number | null; itemUuid: string | null; specialization?: string }> =
-            [];
+        const activeModifiers: Array<{
+            source: string;
+            type: string;
+            key: string;
+            value: number | null;
+            itemUuid: string | null;
+            specialization?: string;
+            craftsmanship?: string;
+        }> = [];
 
         /**
          * Composite picks land in selectedChoices as e.g. "Weapon Training (Chain)".
@@ -649,8 +684,10 @@ export default class OriginPathData extends ItemDataModel.mixin(DescriptionTempl
                     if (choiceType === '') continue;
                     const parts = splitComposite(selectedStr);
                     const optionUuid = typeof option?.uuid === 'string' ? option.uuid : null;
-                    const base = { source: choiceKey, type: choiceType, key: parts.base, value: null, itemUuid: optionUuid };
-                    activeModifiers.push(parts.specialization === undefined ? base : { ...base, specialization: parts.specialization });
+                    const base = { source: choiceKey, type: choiceType, key: parts.base, value: option?.quantity ?? null, itemUuid: optionUuid };
+                    const withGear =
+                        option?.craftsmanship === undefined || option.craftsmanship === '' ? base : { ...base, craftsmanship: option.craftsmanship };
+                    activeModifiers.push(parts.specialization === undefined ? withGear : { ...withGear, specialization: parts.specialization });
                     continue;
                 }
                 const grants = option.grants;
@@ -720,6 +757,7 @@ export default class OriginPathData extends ItemDataModel.mixin(DescriptionTempl
                             key: equip.name,
                             value: equip.quantity ?? null,
                             itemUuid: equip.uuid ?? null,
+                            ...(equip.craftsmanship === undefined || equip.craftsmanship === '' ? {} : { craftsmanship: equip.craftsmanship }),
                         });
                     }
                 }

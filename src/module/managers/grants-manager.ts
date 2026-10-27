@@ -836,7 +836,12 @@ export class GrantsManager {
             );
             out.push({
                 type: 'item',
-                items: filteredTalents.map((t) => ({ uuid: t.uuid, specialization: t.specialization })),
+                // an item grant carries a specialisation as a field override on the created item; a bare
+                // `specialization` key on the config is not part of its schema and would be dropped
+                items: filteredTalents.map((t) => ({
+                    uuid: t.uuid,
+                    ...(t.specialization === undefined || t.specialization === '' ? {} : { overrides: { 'system.specialization': t.specialization } }),
+                })),
             });
         }
         if (Array.isArray(legacy.traits) && legacy.traits.length > 0) {
@@ -845,7 +850,10 @@ export class GrantsManager {
             );
             out.push({
                 type: 'item',
-                items: filteredTraits.map((t) => ({ uuid: t.uuid, level: t.level })),
+                items: filteredTraits.map((t) => ({
+                    uuid: t.uuid,
+                    ...(t.level === undefined ? {} : { overrides: { 'system.level': t.level } }),
+                })),
             });
         }
         return out;

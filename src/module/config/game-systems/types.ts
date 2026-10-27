@@ -59,6 +59,8 @@ export interface OriginStepConfig {
     equipmentStep?: OriginStepDef | null;
     /** Compendium packs to browse for the equipment step (Item packs). */
     equipmentPacks?: string[];
+    /** False where the line has no Divination table at character creation (Only War); the panel is hidden. Absent means it has one. */
+    hasDivination?: boolean;
 }
 
 /** Result of computing an advancement cost */
