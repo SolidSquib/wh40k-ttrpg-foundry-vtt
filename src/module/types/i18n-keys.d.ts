@@ -3736,6 +3736,7 @@ export type I18nKey =
     | 'WH40K.OriginPath.AddTalent'
     | 'WH40K.OriginPath.AddTrait'
     | 'WH40K.OriginPath.Advanced'
+    | 'WH40K.OriginPath.AdvancedSpeciality'
     | 'WH40K.OriginPath.AllChoicesComplete'
     | 'WH40K.OriginPath.AlreadySelected'
     | 'WH40K.OriginPath.AptitudeDouble.BannerBody'

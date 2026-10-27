@@ -22,6 +22,8 @@ export const ORIGIN_STEP_CHOICES = [
     // Only War / Deathwatch steps
     'regiment',
     'speciality',
+    // A Speciality taken at an experience milestone, not chosen in character creation.
+    'advancedSpeciality',
     'chapter',
     // Only War regiment-creation options. These are picked in the Regiment Builder
     // (12-point budget), not in the origin-path chart, so they are deliberately
