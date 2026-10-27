@@ -4,8 +4,10 @@
  */
 
 import { capitalize } from '../../utils/format.ts';
+import { ORIGIN_STEP_CHOICES } from '../../utils/origin-step-choices.ts';
 import { getCharacteristicDisplayInfo, getTrainingLabel, getChoiceTypeLabel } from '../../utils/origin-ui-labels.ts';
 import { WH40KSettings } from '../../wh40k-rpg-settings.ts';
+import RegimentBuilderDialog, { type RegimentPresetItem } from '../prompts/regiment-builder-dialog.ts';
 import BaseItemSheet from './base-item-sheet.ts';
 
 /**
@@ -71,6 +73,8 @@ export default class OriginPathSheet extends BaseItemSheet {
         },
         actions: {
             // eslint-disable-next-line @typescript-eslint/unbound-method -- Foundry V2 actions table receives method references and rebinds `this` to the sheet instance at dispatch time
+            editRegimentPreset: OriginPathSheet.#editRegimentPreset,
+            // eslint-disable-next-line @typescript-eslint/unbound-method -- Foundry V2 actions table receives method references and rebinds `this` to the sheet instance at dispatch time
             addGrant: OriginPathSheet.#addGrant,
             // eslint-disable-next-line @typescript-eslint/unbound-method -- Foundry V2 actions table receives method references and rebinds `this` to the sheet instance at dispatch time
             removeGrant: OriginPathSheet.#removeGrant,
@@ -129,6 +133,10 @@ export default class OriginPathSheet extends BaseItemSheet {
         const modifiers = system.modifiers?.characteristics ?? {};
 
         const step = system.step;
+        // Every step the schema allows, so the Step Type select never shows (and then saves) the wrong one.
+        context['stepOptions'] = ORIGIN_STEP_CHOICES.map((value) => ({ value, label: this._getStepLabel(value), selected: value === step }));
+        // An Only War item in the Regiment step is a regiment preset: it can be built without a character.
+        context['isRegimentStep'] = this.canEdit && step === 'regiment' && (this.document.system as { gameSystem?: string }).gameSystem === 'ow';
         const descriptionObj = system.description;
         const sourceObj = system.source ?? {};
         const requirementsObj = system.requirements ?? {};
@@ -255,6 +263,13 @@ export default class OriginPathSheet extends BaseItemSheet {
         const key = capitalize(step);
         const localizationKey = `WH40K.OriginPath.${key}`;
         return game.i18n.has(localizationKey) ? game.i18n.localize(localizationKey) : labels[step] ?? step;
+    }
+
+    /** Open the Regiment Builder on this item, to build or edit the regiment preset it holds. */
+    static async #editRegimentPreset(this: OriginPathSheet, event: Event, _target: HTMLElement): Promise<void> {
+        event.preventDefault();
+        // eslint-disable-next-line no-restricted-syntax -- boundary: this.document is the untyped Foundry Item union; RegimentPresetItem is the narrow update/read surface the dialog needs
+        await RegimentBuilderDialog.showForItem(this.document as unknown as RegimentPresetItem);
     }
 
     /* -------------------------------------------- */

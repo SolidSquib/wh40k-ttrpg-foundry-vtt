@@ -3714,6 +3714,12 @@
             "Pride": "Pride",
             "Disgrace": "Disgrace",
             "Regiment": "Regiment",
+            "RegimentType": "Regiment Type",
+            "CommandingOfficer": "Commanding Officer",
+            "TrainingDoctrine": "Training Doctrine",
+            "EquipmentDoctrine": "Special Equipment Doctrine",
+            "RegimentalDrawback": "Regimental Drawback",
+            "KitItem": "Standard Kit Item",
             "Speciality": "Speciality",
             "Chapter": "Chapter",
             "CareerPath": "Career Path",
@@ -7267,7 +7273,11 @@
                     "Locked": "Locked",
                     "LockedHint": "Players cannot change a locked regiment's options or kit, only the picks it leaves open. The GM always can.",
                     "LockedNotice": "This regiment is locked to its preset. Only the GM can change it; you can still fill in any pick it leaves open.",
-                    "Saved": "Saved the regiment preset \"{name}\"."
+                    "Saved": "Saved the regiment preset \"{name}\".",
+                    "SavePreset": "Save Preset",
+                    "EditTitle": "Regiment Preset: {name}",
+                    "EditButton": "Edit Regiment Preset",
+                    "EditButtonHint": "Choose this regiment's options and kit without a character"
                 },
                 "Kit": {
                     "Total": "Standard Kit Points",

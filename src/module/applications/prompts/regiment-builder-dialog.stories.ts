@@ -44,6 +44,8 @@ interface Args {
     presets: Array<{ id: string; label: string; locked: boolean; selected: boolean }>;
     locked: boolean;
     canSavePreset: boolean;
+    presetMode: boolean;
+    presetLocked: boolean;
 }
 
 const EMPTY_CATEGORIES: CategoryRow[] = [
@@ -132,6 +134,8 @@ const meta = {
         presets: [],
         locked: false,
         canSavePreset: false,
+        presetMode: false,
+        presetLocked: false,
     },
 } satisfies Meta<Args>;
 export default meta;
@@ -150,6 +154,8 @@ export const EmptyCatalog: Story = {
         presets: [],
         locked: false,
         canSavePreset: false,
+        presetMode: false,
+        presetLocked: false,
     },
 };
 
@@ -171,6 +177,8 @@ export const PartialBuild: Story = {
         presets: [],
         locked: false,
         canSavePreset: false,
+        presetMode: false,
+        presetLocked: false,
     },
 };
 
@@ -207,6 +215,8 @@ export const WithPresets: Story = {
         ],
         locked: false,
         canSavePreset: true,
+        presetMode: false,
+        presetLocked: false,
     },
 };
 
@@ -228,5 +238,24 @@ export const LockedToPreset: Story = {
         presets: [],
         locked: true,
         canSavePreset: false,
+        presetMode: false,
+        presetLocked: false,
+    },
+};
+
+/** Editing a preset item with no character: Save Preset replaces Commit, a Locked toggle appears, and open picks are fine. */
+export const EditingAPreset: Story = {
+    args: {
+        budget: { spent: 10, total: 12, remaining: 2, valid: true, over: false, refund: 0 },
+        doctrines: { count: 3, max: 3 },
+        issues: [],
+        categories: SAMPLE_CATEGORIES,
+        kit: { spent: 0, allowance: 34, remaining: 34, over: false, rows: [] },
+        canCommit: true,
+        presets: [],
+        locked: false,
+        canSavePreset: false,
+        presetMode: true,
+        presetLocked: true,
     },
 };

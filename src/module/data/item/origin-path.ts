@@ -2,6 +2,7 @@ import { REGIMENT_OPTION_CATEGORIES, type RegimentOptionCategory } from '../../r
 import type { RegimentPresetData } from '../../rules/ow-regiment-preset.ts';
 import { formatSigned } from '../../utils/format.ts';
 import { iterateResolvedChoices } from '../../utils/origin-choices.ts';
+import { ORIGIN_STEP_CHOICES } from '../../utils/origin-step-choices.ts';
 import ItemDataModel from '../abstract/item-data-model.ts';
 import IdentifierField from '../fields/identifier-field.ts';
 import DescriptionTemplate from '../shared/description-template.ts';
@@ -154,40 +155,7 @@ export default class OriginPathData extends ItemDataModel.mixin(DescriptionTempl
             step: new fields.StringField({
                 required: true,
                 initial: 'homeWorld',
-                choices: [
-                    // Rogue Trader steps
-                    'homeWorld',
-                    'birthright',
-                    'lureOfTheVoid',
-                    'trialsAndTravails',
-                    'motivation',
-                    'career',
-                    'lineage', // Optional step for dynasty lineage
-                    'eliteAdvance',
-                    // Dark Heresy 2e steps
-                    'background',
-                    'role',
-                    'elite',
-                    'divination',
-                    // Black Crusade steps
-                    'race',
-                    'archetype',
-                    'pride',
-                    'disgrace',
-                    // Only War / Deathwatch steps
-                    'regiment',
-                    'speciality',
-                    'chapter',
-                    // Only War regiment-creation options. These are picked in the Regiment Builder
-                    // (12-point budget), not in the origin-path chart, so they are deliberately
-                    // absent from the actor's `originPath` step map.
-                    'regimentType',
-                    'commandingOfficer',
-                    'trainingDoctrine',
-                    'equipmentDoctrine',
-                    'regimentalDrawback',
-                    'kitItem',
-                ],
+                choices: [...ORIGIN_STEP_CHOICES],
             }),
 
             // Step order (for display)
