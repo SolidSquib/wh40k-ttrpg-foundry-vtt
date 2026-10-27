@@ -5,6 +5,7 @@
 
 import WH40K from '../../config.ts';
 import type { WH40KItemDocument } from '../../types/global.d.ts';
+import { flattenNestedForms } from '../../utils/dom-forms.ts';
 import { getMaterializedItemSource, remapSubmitDataToVariantPaths } from '../../utils/item-variant-utils.ts';
 import { WH40KSettings } from '../../wh40k-rpg-settings.ts';
 import ApplicationV2Mixin, { setupNumberInputAutoSelect } from '../api/application-v2-mixin.ts';
@@ -326,6 +327,10 @@ export default class BaseItemSheet<TItem extends WH40KItemDocument = WH40KItemDo
     // eslint-disable-next-line no-restricted-syntax -- boundary: ApplicationV2 _onRender accepts untyped context record
     override async _onRender(context: Record<string, unknown>, options: ApplicationV2Config.RenderOptions): Promise<void> {
         await super._onRender(context, options);
+
+        // Many item templates wrap themselves in a second <form>; its fields would not belong to this sheet's
+        // root form, so the form reader would skip them and an edit would never save (see flattenNestedForms).
+        flattenNestedForms(this.element);
 
         // Handle delta inputs for numeric fields
         if (this.isEditable) {

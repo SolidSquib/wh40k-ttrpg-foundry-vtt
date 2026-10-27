@@ -1033,11 +1033,11 @@ export default class AdvancementDialog extends HandlebarsApplicationMixin(Applic
         // Two-pass build so tree-path prerequisites (UUIDs) can be resolved
         // to display names. First pass: index every entry across all packs
         // into a uuid→name map. Second pass: build the prepared power list.
-        type RawEntry = CompendiumIndexEntry & { system?: { prCost?: number; discipline?: string; requires?: string[] }; uuid?: string };
+        type RawEntry = CompendiumIndexEntry & { system?: { prCost?: number; xpCost?: number; discipline?: string; requires?: string[] }; uuid?: string };
         const rawEntries: RawEntry[] = [];
         for (const pack of packs) {
             // eslint-disable-next-line no-await-in-loop -- Foundry compendium pack indexes must be loaded sequentially; cannot be parallelised safely
-            const index = await pack.getIndex({ fields: ['name', 'type', 'system.discipline', 'system.prCost', 'system.requires'] });
+            const index = await pack.getIndex({ fields: ['name', 'type', 'system.discipline', 'system.prCost', 'system.xpCost', 'system.requires'] });
             for (const rawEntry of index) {
                 const entry = rawEntry as RawEntry;
                 if (entry.type !== 'psychicPower') continue;
@@ -1057,7 +1057,8 @@ export default class AdvancementDialog extends HandlebarsApplicationMixin(Applic
             const prCost = entrySys.prCost ?? 1;
             // Heuristic XP cost (shared with the DataModel's derived-spend calc — see
             // rules/xp-costs.ts, #240): max(100, 200 × prCost). DH2 core powers: 100-600 XP.
-            const cost = psychicPowerCost(prCost);
+            // A power that prints its own price (Only War: "Value: 200xp") uses it; the others use the Psy Rating heuristic.
+            const cost = entrySys.xpCost !== undefined && entrySys.xpCost > 0 ? entrySys.xpCost : psychicPowerCost(prCost);
             const owned = ownedPowers.has(entry.name.toLowerCase());
             const prGate = prCost > currentRating;
             const discipline = normalizeDiscipline(entrySys.discipline);

@@ -106,3 +106,24 @@ export function* iterateResolvedChoices<C extends ChoiceLike>(choices: readonly 
         yield { choice, baseLabel, choiceKey, selectedValues, resolveOption };
     }
 }
+
+/** The grants an option gives, spelled out. */
+export interface TypedOptionGrants {
+    skills?: Array<{ name: string }>;
+    talents?: Array<{ name: string; uuid: string }>;
+    traits?: Array<{ name: string; uuid: string }>;
+}
+
+/**
+ * What picking an option grants, when the option itself says nothing: a talent, skill or trait option is left
+ * bare in the compendium, since the choice's `type` says what it is (the actor's origin pipeline reads it that
+ * way). Anything that totals up picks needs it spelled out. Other choice types give nothing this way.
+ */
+export function typedOptionGrants(type: string | undefined, option: ChoiceOptionLike & { uuid?: string | undefined }): TypedOptionGrants | undefined {
+    const name = option.name ?? option.label ?? option.value ?? '';
+    if (name === '') return undefined;
+    if (type === 'talent') return { talents: [{ name, uuid: option.uuid ?? '' }] };
+    if (type === 'skill') return { skills: [{ name }] };
+    if (type === 'trait') return { traits: [{ name, uuid: option.uuid ?? '' }] };
+    return undefined;
+}

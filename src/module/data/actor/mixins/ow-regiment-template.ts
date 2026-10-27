@@ -48,15 +48,18 @@ export interface OwRegimentDeclarations {
         regimentType: string;
         trainingDoctrines: string[];
         specialEquipmentDoctrines: string[];
+        /** Favoured Weapon UUIDs, one per slot (one of each class is free; kit purchases add more). */
         favouredWeapons: {
-            basic: string;
-            heavy: string;
+            basic: string[];
+            heavy: string[];
         };
     };
     /** Kit entries bought from the Standard Kit allowance; the same id may repeat. */
     regimentKit: ReadonlyArray<{
         id: string;
         cost: number;
+        /** What the player chose for this purchase (a kit line to improve, an item UUID); blank if nothing is asked. */
+        pick: string;
     }>;
     /** Player picks for each selected option's choices: option id → choice key → picked option ids. */
     regimentChoices: Record<string, Record<string, string[]>>;
@@ -84,8 +87,8 @@ export function owRegimentSchemaFields(): Record<string, foundry.data.fields.Dat
             trainingDoctrines: new ArrayField(new StringField({ required: true, blank: false }), { required: true, initial: [] }),
             specialEquipmentDoctrines: new ArrayField(new StringField({ required: true, blank: false }), { required: true, initial: [] }),
             favouredWeapons: new SchemaField({
-                basic: new StringField({ required: true, initial: '', blank: true }),
-                heavy: new StringField({ required: true, initial: '', blank: true }),
+                basic: new ArrayField(new StringField({ required: true, blank: true }), { required: true, initial: [] }),
+                heavy: new ArrayField(new StringField({ required: true, blank: true }), { required: true, initial: [] }),
             }),
         }),
         regimentChoices: new ObjectField({ required: true, initial: {} }),
@@ -93,6 +96,7 @@ export function owRegimentSchemaFields(): Record<string, foundry.data.fields.Dat
             new SchemaField({
                 id: new StringField({ required: true, blank: false }),
                 cost: new NumberField({ required: true, initial: 0, integer: true }),
+                pick: new StringField({ required: true, blank: true, initial: '' }),
             }),
             { required: true, initial: [] },
         ),

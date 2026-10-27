@@ -131,7 +131,7 @@ async function applyRegimentLogistics(actor: WH40KBaseActor, bonus: number): Pro
  */
 export async function commitRegiment(actor: WH40KBaseActor, state: RegimentState, catalog: ReadonlyArray<RegimentCatalogEntry>): Promise<void> {
     const { selection } = state;
-    const kit = state.kitIds.map((id) => ({ id, cost: catalog.find((entry) => entry.id === id)?.cost ?? 0 }));
+    const kit = state.kitIds.map((id, index) => ({ id, cost: catalog.find((entry) => entry.id === id)?.cost ?? 0, pick: state.kitPicks.at(index) ?? '' }));
     await actor.update({
         'system.regimentSelection.homeWorld': selection.homeWorld ?? '',
         'system.regimentSelection.commandingOfficer': selection.commandingOfficer ?? '',
@@ -139,6 +139,8 @@ export async function commitRegiment(actor: WH40KBaseActor, state: RegimentState
         'system.regimentSelection.trainingDoctrines': [...selection.trainingDoctrines],
         'system.regimentSelection.specialEquipmentDoctrines': [...selection.specialEquipmentDoctrines],
         'system.regimentDrawbacks': [...selection.drawbacks],
+        'system.regimentSelection.favouredWeapons.basic': [...selection.favouredWeapons.basic],
+        'system.regimentSelection.favouredWeapons.heavy': [...selection.favouredWeapons.heavy],
         'system.regimentKit': kit,
         'system.==regimentChoices': state.picks,
     });

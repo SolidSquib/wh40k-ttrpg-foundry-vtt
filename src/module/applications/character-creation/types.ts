@@ -168,7 +168,7 @@ interface GrantChoiceRaw {
     name?: string;
     type?: string;
     count?: number;
-    options?: Array<{ value?: string; name?: string; label?: string; grants?: WH40KItemModifiers }>;
+    options?: Array<{ value?: string; name?: string; label?: string; uuid?: string; grants?: WH40KItemModifiers }>;
 }
 
 interface GrantEquipmentRaw {

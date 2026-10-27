@@ -7,6 +7,7 @@ import {
     computeRegimentBudget,
     emptyRegimentSelection,
     kitOverLimit,
+    favouredWeaponSlots,
     KIT_POINTS_PER_UNSPENT,
     MAX_DOCTRINES,
     REGIMENT_BUDGET,
@@ -71,7 +72,7 @@ describe('emptyRegimentSelection', () => {
         expect(BLANK.trainingDoctrines).toEqual([]);
         expect(BLANK.specialEquipmentDoctrines).toEqual([]);
         expect(BLANK.drawbacks).toEqual([]);
-        expect(BLANK.favouredWeapons).toEqual({});
+        expect(BLANK.favouredWeapons).toEqual({ basic: [], heavy: [] });
     });
 });
 
@@ -284,5 +285,30 @@ describe('buildRegimentPanelSummary', () => {
         const s = buildRegimentPanelSummary(BLANK, [], []);
         expect(s.regiment.valid).toBe(false);
         expect(s.kit.spent).toBe(0);
+    });
+});
+
+describe('favouredWeaponSlots', () => {
+    const withSlots: ReadonlyArray<RegimentOption> = [
+        ...CATALOG,
+        { id: 'fav-basic', category: 'kitItem', cost: 10, favouredSlot: 'basic' },
+        { id: 'fav-heavy', category: 'kitItem', cost: 15, favouredSlot: 'heavy' },
+    ];
+
+    it('every regiment has one Basic and one Heavy slot free', () => {
+        expect(favouredWeaponSlots([], withSlots)).toEqual({ basic: 1, heavy: 1 });
+    });
+
+    it('each purchased Favoured Weapon item adds a slot of its class', () => {
+        expect(
+            favouredWeaponSlots(
+                [
+                    { id: 'fav-basic', cost: 10 },
+                    { id: 'fav-heavy', cost: 15 },
+                    { id: 'kit-a', cost: 5 },
+                ],
+                withSlots,
+            ),
+        ).toEqual({ basic: 2, heavy: 2 });
     });
 });

@@ -16,6 +16,8 @@
 
 import { adoptPreset, commitRegiment, ownedPresetOf } from '../../actions/ow-regiment-apply.ts';
 import type { WH40KBaseActor } from '../../documents/base-actor.ts';
+import { favouredRows, fitToSlots, type WeaponChoice } from '../../rules/ow-favoured-weapons.ts';
+import { itemNameIndex, itemsOfTier, type KitItemChoice } from '../../rules/ow-kit-items.ts';
 import {
     choicesComplete,
     entriesInCategory,
@@ -31,6 +33,8 @@ import {
     computeKitBudget,
     computeRegimentBudget,
     emptyRegimentSelection,
+    type FavouredClass,
+    favouredWeaponSlots,
     kitOverLimit,
     MAX_DOCTRINES,
     REGIMENT_CATEGORIES,
@@ -38,6 +42,16 @@ import {
     type RegimentIssue,
     type RegimentSelection,
 } from '../../rules/ow-regiment-creation.ts';
+import {
+    dropInapplicableUpgrades,
+    type KitGroup,
+    type KitPurchase,
+    kitPickKind,
+    kitPurchaseLimit,
+    kitPurchases,
+    mainWeaponUpgradeApplies,
+    resolveKit,
+} from '../../rules/ow-regiment-kit.ts';
 import {
     canEditChoice,
     canEditOptions,
@@ -50,6 +64,8 @@ import {
     selectedOptionIds,
     stateFromPreset,
 } from '../../rules/ow-regiment-preset.ts';
+import { loadFavouredWeaponChoices } from '../../utils/favoured-weapons.ts';
+import { loadKitItemChoices } from '../../utils/kit-items.ts';
 import { loadRegimentCatalog, loadRegimentPresets } from '../../utils/regiment-catalog.ts';
 import type { ApplicationV2Ctor } from '../api/application-types.ts';
 import ApplicationV2Mixin from '../api/application-v2-mixin.ts';
@@ -64,6 +80,11 @@ const CATEGORY_LABEL_KEYS: Readonly<Record<RegimentCategory, string>> = Object.f
     trainingDoctrine: 'WH40K.OW.Regiment.Category.TrainingDoctrine',
     specialEquipmentDoctrine: 'WH40K.OW.Regiment.Category.SpecialEquipmentDoctrine',
     drawback: 'WH40K.OW.Regiment.Category.Drawback',
+});
+
+const FAVOURED_LABEL_KEYS: Readonly<Record<FavouredClass, string>> = Object.freeze({
+    basic: 'WH40K.OW.Regiment.Favoured.Basic',
+    heavy: 'WH40K.OW.Regiment.Favoured.Heavy',
 });
 
 const ISSUE_KEYS: Readonly<Record<RegimentIssue, string>> = Object.freeze({
@@ -109,6 +130,39 @@ interface KitRow {
     readonly restriction: string;
     readonly count: number;
     readonly maxCount: number;
+    /** The table limits how often this can be bought. */
+    readonly limited: boolean;
+    /** It may only be bought once. */
+    readonly once: boolean;
+    /** No more can be bought. */
+    readonly atLimit: boolean;
+    /** A Main Weapon upgrade with no matching Main Weapon to replace right now. */
+    readonly blocked: boolean;
+    /** One picker per copy bought, for purchases that ask the player to choose (an item to improve, an item to add). */
+    readonly picks: ReadonlyArray<KitPickRow>;
+}
+
+interface KitPickRow {
+    /** Position of the purchase in the kit. */
+    readonly position: number;
+    readonly kind: 'line' | 'item';
+    readonly editable: boolean;
+    /** Nothing chosen yet. */
+    readonly empty: boolean;
+    readonly options: ReadonlyArray<{ readonly value: string; readonly label: string; readonly selected: boolean }>;
+}
+
+interface FavouredSlotRow {
+    readonly weaponClass: FavouredClass;
+    readonly index: number;
+    readonly editable: boolean;
+    readonly options: ReadonlyArray<{ readonly id: string; readonly name: string; readonly selected: boolean }>;
+}
+
+interface FavouredClassRow {
+    readonly weaponClass: FavouredClass;
+    readonly labelKey: string;
+    readonly slots: ReadonlyArray<FavouredSlotRow>;
 }
 
 // eslint-disable-next-line no-restricted-syntax -- boundary: Handlebars context is an open bag; Record<string, unknown> matches the mixin's return type
@@ -119,6 +173,12 @@ interface RegimentBuilderContext extends Record<string, unknown> {
     readonly categories: ReadonlyArray<CategoryRow>;
     readonly kit: { spent: number; allowance: number; remaining: number; over: boolean; rows: ReadonlyArray<KitRow> };
     readonly canCommit: boolean;
+    /** One picker per Favoured Weapon slot, by class. */
+    readonly favoured: ReadonlyArray<FavouredClassRow>;
+    /** The regiment's Standard Kit, grouped by where each line comes from. */
+    readonly kitGroups: ReadonlyArray<KitGroup>;
+    /** The Favoured Weapons chosen, for the summary list. */
+    readonly favouredList: ReadonlyArray<{ weaponClass: FavouredClass; labelKey: string; name: string }>;
     /** Saved regiments the user can start from (empty when the regiment is locked to them). */
     readonly presets: ReadonlyArray<{ id: string; label: string; locked: boolean; selected: boolean }>;
     /** True when a locked preset stops this user changing the options and kit. */
@@ -177,6 +237,8 @@ export default class RegimentBuilderDialog extends ApplicationV2Mixin(Applicatio
     declare picks: Record<string, Record<string, string[]>>;
     /** Kit entries bought, by option id; an id repeats once per copy. */
     declare kitIds: string[];
+    /** What was chosen for each kit purchase, parallel to `kitIds`. */
+    declare kitPicks: string[];
     /** Owning actor whose `system.regimentSelection` is the source of truth. Null in story / probe contexts. */
     declare actor: WH40KBaseActor | null;
     /** Saved regiments to start from. */
@@ -189,6 +251,10 @@ export default class RegimentBuilderDialog extends ApplicationV2Mixin(Applicatio
     declare presetItem: RegimentPresetItem | null;
     /** The Locked tick while editing a preset item. */
     declare presetLocked: boolean;
+    /** The Basic and Heavy weapons a regiment may favour. */
+    declare weapons: Record<FavouredClass, WeaponChoice[]>;
+    /** Every item a regiment may add to its kit, by availability. */
+    declare items: KitItemChoice[];
 
     constructor(
         options: ApplicationV2Config.DefaultOptions & {
@@ -197,6 +263,8 @@ export default class RegimentBuilderDialog extends ApplicationV2Mixin(Applicatio
             catalog?: ReadonlyArray<RegimentCatalogEntry>;
             presets?: RegimentPresetEntry[];
             presetItem?: RegimentPresetItem;
+            weapons?: Record<FavouredClass, WeaponChoice[]>;
+            items?: KitItemChoice[];
         } = {},
     ) {
         super(options);
@@ -207,8 +275,12 @@ export default class RegimentBuilderDialog extends ApplicationV2Mixin(Applicatio
         this.selection = options.selection ?? stored?.selection ?? readSelectionFromActor(this.actor) ?? emptyRegimentSelection();
         this.catalog = options.catalog ?? [];
         this.picks = stored === null ? readPicksFromActor(this.actor) : { ...stored.picks };
-        this.kitIds = stored === null ? readKitFromActor(this.actor) : [...stored.kitIds];
+        const kit = stored === null ? readKitFromActor(this.actor) : kitPurchases(stored.kitIds, stored.kitPicks);
+        this.kitIds = kit.map((purchase) => purchase.id);
+        this.kitPicks = kit.map((purchase) => purchase.pick);
         this.presets = options.presets ?? [];
+        this.weapons = options.weapons ?? { basic: [], heavy: [] };
+        this.items = options.items ?? [];
         this.loadedPreset = null;
         this.presetLocked = this.presetItem?.system.regimentPreset.locked === true;
         const owned = this.actor === null ? null : ownedPresetOf(this.actor);
@@ -225,8 +297,42 @@ export default class RegimentBuilderDialog extends ApplicationV2Mixin(Applicatio
         return canEditOptions(this.lockedPreset !== null, game.user.isGM);
     }
 
+    /** May the user change this Favoured Weapon slot? A locked preset still leaves its empty slots to the player. */
+    #canEditSlot(weaponClass: FavouredClass, index: number): boolean {
+        if (this.#canEdit()) return true;
+        return (this.lockedPreset?.favouredWeapons[weaponClass].at(index) ?? '') === '';
+    }
+
+    /** Drop Favoured Weapons that no longer have a slot. */
+    #trimFavoured(): void {
+        const slots = favouredWeaponSlots(
+            this.kitIds.map((id) => ({ id, cost: 0 })),
+            this.catalog,
+        );
+        this.selection = {
+            ...this.selection,
+            favouredWeapons: {
+                basic: fitToSlots(this.selection.favouredWeapons.basic, slots.basic),
+                heavy: fitToSlots(this.selection.favouredWeapons.heavy, slots.heavy),
+            },
+        };
+    }
+
+    /** May the user change what was chosen for this kit purchase? A locked preset still leaves its blank choices to the player. */
+    #canEditKitPick(position: number): boolean {
+        if (this.#canEdit()) return true;
+        return (this.lockedPreset?.kitPicks.at(position) ?? '') === '';
+    }
+
+    /** Drop Main Weapon upgrades that no longer have a weapon to replace (the Regiment Type or an earlier upgrade changed). */
+    #trimKit(): void {
+        const kept = dropInapplicableUpgrades(this.selection, kitPurchases(this.kitIds, this.kitPicks), this.catalog);
+        this.kitIds = kept.map((purchase) => purchase.id);
+        this.kitPicks = kept.map((purchase) => purchase.pick);
+    }
+
     #state(): RegimentState {
-        return { selection: this.selection, picks: this.picks, kitIds: this.kitIds };
+        return { selection: this.selection, picks: this.picks, kitIds: this.kitIds, kitPicks: this.kitPicks };
     }
 
     /** @override */
@@ -253,7 +359,8 @@ export default class RegimentBuilderDialog extends ApplicationV2Mixin(Applicatio
             // eslint-disable-next-line @typescript-eslint/unbound-method
             cancelRegiment: RegimentBuilderDialog.#onCancel,
         },
-        position: { width: 620 },
+        // A fixed height, so the window is shorter than the content and the part below scrolls inside it.
+        position: { width: 640, height: 760 },
         window: {
             title: 'WH40K.OW.Regiment.DialogTitle',
             resizable: true,
@@ -264,8 +371,9 @@ export default class RegimentBuilderDialog extends ApplicationV2Mixin(Applicatio
     static override PARTS: Record<string, ApplicationV2Config.PartConfiguration> = {
         form: {
             template: 'systems/wh40k-rpg/templates/prompt/regiment-builder-dialog.hbs',
-            classes: [],
-            scrollable: ['.tw-flex-col'],
+            // The part fills the window and scrolls itself; without this the content grew past the window and could not be scrolled.
+            classes: ['tw-min-h-0', 'tw-flex-1', 'tw-overflow-y-auto'],
+            scrollable: [''],
         },
     };
 
@@ -316,13 +424,65 @@ export default class RegimentBuilderDialog extends ApplicationV2Mixin(Applicatio
         const kitEntries = this.kitIds.map((id) => ({ id, cost: this.catalog.find((entry) => entry.id === id)?.cost ?? 0 }));
         const allowance = computeKitAllowance(result, aggregateRegimentGrants(this.selection, this.catalog));
         const kitBudget = computeKitBudget(kitEntries, allowance);
-        const kitRows: KitRow[] = entriesInCategory(this.catalog, 'kitItem').map((entry) => ({
-            id: entry.id,
-            label: entry.label,
-            cost: entry.cost,
-            restriction: entry.restriction,
-            count: this.kitIds.filter((id) => id === entry.id).length,
-            maxCount: entry.maxCount ?? 1,
+        const kit = resolveKit(this.selection, this.kitIds, this.catalog, { picks: this.kitPicks, itemNames: itemNameIndex(this.items) });
+        const kitRows: KitRow[] = entriesInCategory(this.catalog, 'kitItem').map((entry) => {
+            const count = this.kitIds.filter((id) => id === entry.id).length;
+            const maxCount = entry.maxCount ?? 1;
+            const kind = kitPickKind(entry);
+            const picks: KitPickRow[] =
+                kind === undefined
+                    ? []
+                    : this.kitIds.flatMap((id, position) => {
+                          if (id !== entry.id) return [];
+                          const chosen = this.kitPicks.at(position) ?? '';
+                          const choices =
+                              kind === 'line'
+                                  ? [
+                                        ...new Set(
+                                            kit.improvable.filter((line) => line.takenBy === undefined || line.takenBy === position).map((line) => line.label),
+                                        ),
+                                    ].map((label) => ({ value: label, label, selected: label === chosen }))
+                                  : itemsOfTier(this.items, entry.additionalItem).map((item) => ({
+                                        value: item.id,
+                                        label: item.name,
+                                        selected: item.id === chosen,
+                                    }));
+                          return [
+                              { position, kind, editable: this.#canEditKitPick(position), empty: !choices.some((option) => option.selected), options: choices },
+                          ];
+                      });
+            return {
+                id: entry.id,
+                label: entry.label,
+                cost: entry.cost,
+                restriction: entry.restriction,
+                count,
+                maxCount,
+                blocked: !mainWeaponUpgradeApplies(this.selection, kitPurchases(this.kitIds, this.kitPicks), this.catalog, entry.id),
+                picks,
+                ...kitPurchaseLimit(count, maxCount),
+            };
+        });
+
+        const slots = favouredWeaponSlots(kitEntries, this.catalog);
+        const favoured: FavouredClassRow[] = (['basic', 'heavy'] as const).map((weaponClass) => ({
+            weaponClass,
+            labelKey: FAVOURED_LABEL_KEYS[weaponClass],
+            slots: Array.from({ length: slots[weaponClass] }, (_slot, index) => ({
+                weaponClass,
+                index,
+                editable: this.#canEditSlot(weaponClass, index),
+                options: this.weapons[weaponClass].map((weapon) => ({
+                    id: weapon.id,
+                    name: weapon.name,
+                    selected: this.selection.favouredWeapons[weaponClass].at(index) === weapon.id,
+                })),
+            })),
+        }));
+        const favouredList = favouredRows(this.selection.favouredWeapons, this.weapons).map((row) => ({
+            weaponClass: row.weaponClass,
+            labelKey: FAVOURED_LABEL_KEYS[row.weaponClass],
+            name: row.name,
         }));
 
         const issues = result.issues.map((issue) => game.i18n.localize(ISSUE_KEYS[issue]));
@@ -330,7 +490,12 @@ export default class RegimentBuilderDialog extends ApplicationV2Mixin(Applicatio
         // A preset may leave a pick open for the player; a character's regiment may not.
         const canCommit = presetMode
             ? isSoundPreset(reportState(this.#state(), this.catalog))
-            : result.valid && !this.#incompleteChoices() && kitBudget.valid && kitOverLimit(kitEntries, this.catalog).length === 0;
+            : result.valid &&
+              !this.#incompleteChoices() &&
+              kitBudget.valid &&
+              kitOverLimit(kitEntries, this.catalog).length === 0 &&
+              kit.inapplicable.length === 0 &&
+              kit.unpicked.length === 0;
 
         return {
             ...baseCtx,
@@ -347,6 +512,9 @@ export default class RegimentBuilderDialog extends ApplicationV2Mixin(Applicatio
             categories,
             kit: { spent: kitBudget.spent, allowance, remaining: kitBudget.remaining, over: !kitBudget.valid, rows: kitRows },
             canCommit,
+            favoured,
+            kitGroups: kit.groups,
+            favouredList,
             presets:
                 this.#canEdit() && !presetMode
                     ? this.presets.map((entry) => ({
@@ -363,6 +531,44 @@ export default class RegimentBuilderDialog extends ApplicationV2Mixin(Applicatio
         };
     }
 
+    /** @inheritDoc */
+    // eslint-disable-next-line no-restricted-syntax -- boundary: ApplicationV2 _onRender accepts untyped context record
+    override async _onRender(context: Record<string, unknown>, options: ApplicationV2Config.RenderOptions): Promise<void> {
+        await super._onRender(context, options);
+        // The Favoured Weapon pickers are <select>s; ApplicationV2 actions only handle clicks, so listen for change here.
+        for (const select of this.element.querySelectorAll<HTMLSelectElement>('select[data-favoured-class]')) {
+            select.addEventListener('change', () => {
+                void this.#setFavoured(select.dataset['favouredClass'], Number(select.dataset['slot']), select.value);
+            });
+        }
+        for (const select of this.element.querySelectorAll<HTMLSelectElement>('select[data-kit-pick]')) {
+            select.addEventListener('change', () => {
+                void this.#setKitPick(Number(select.dataset['position']), select.value);
+            });
+        }
+    }
+
+    /** Record what the player chose for one kit purchase (an item to improve, an item to add). */
+    async #setKitPick(position: number, value: string): Promise<void> {
+        if (!Number.isInteger(position) || position < 0 || position >= this.kitIds.length || !this.#canEditKitPick(position)) return;
+        this.kitPicks = this.kitIds.map((_id, index) => (index === position ? value : this.kitPicks.at(index) ?? ''));
+        await this.render();
+    }
+
+    async #setFavoured(weaponClass: string | undefined, index: number, weaponId: string): Promise<void> {
+        if ((weaponClass !== 'basic' && weaponClass !== 'heavy') || !Number.isInteger(index) || !this.#canEditSlot(weaponClass, index)) return;
+        const slots = favouredWeaponSlots(
+            this.kitIds.map((id) => ({ id, cost: 0 })),
+            this.catalog,
+        );
+        if (index >= slots[weaponClass]) return;
+        const picks = [...this.selection.favouredWeapons[weaponClass]];
+        while (picks.length <= index) picks.push('');
+        picks[index] = weaponId;
+        this.selection = { ...this.selection, favouredWeapons: { ...this.selection.favouredWeapons, [weaponClass]: picks } };
+        await this.render();
+    }
+
     static async #onToggleOption(this: RegimentBuilderDialog, event: Event, target: HTMLElement): Promise<void> {
         event.preventDefault();
         const categoryStr = target.dataset['category'];
@@ -373,6 +579,8 @@ export default class RegimentBuilderDialog extends ApplicationV2Mixin(Applicatio
         // Picks belong to a selected option; drop those of any option no longer held.
         const held = new Set(selectedOptionIds(this.selection));
         this.picks = Object.fromEntries(Object.entries(this.picks).filter(([id]) => held.has(id)));
+        this.#trimKit();
+        this.#trimFavoured();
         await this.render();
     }
 
@@ -397,7 +605,9 @@ export default class RegimentBuilderDialog extends ApplicationV2Mixin(Applicatio
         if (optionId === undefined || optionId === '' || !this.#canEdit()) return;
         const max = this.catalog.find((entry) => entry.id === optionId)?.maxCount ?? 1;
         if (this.kitIds.filter((id) => id === optionId).length >= max) return;
+        if (!mainWeaponUpgradeApplies(this.selection, kitPurchases(this.kitIds, this.kitPicks), this.catalog, optionId)) return;
         this.kitIds = [...this.kitIds, optionId];
+        this.kitPicks = [...this.kitPicks, ''];
         await this.render();
     }
 
@@ -407,6 +617,9 @@ export default class RegimentBuilderDialog extends ApplicationV2Mixin(Applicatio
         const at = this.kitIds.lastIndexOf(optionId ?? '');
         if (at < 0 || !this.#canEdit()) return;
         this.kitIds = this.kitIds.filter((_id, index) => index !== at);
+        this.kitPicks = this.kitPicks.filter((_pick, index) => index !== at);
+        this.#trimKit(); // an upgrade built on the removed one goes with it
+        this.#trimFavoured(); // a removed Favoured Weapon purchase takes its slot, and the weapon in it, away
         await this.render();
     }
 
@@ -419,6 +632,7 @@ export default class RegimentBuilderDialog extends ApplicationV2Mixin(Applicatio
         this.selection = state.selection;
         this.picks = { ...state.picks };
         this.kitIds = [...state.kitIds];
+        this.kitPicks = [...state.kitPicks];
         this.loadedPreset = entry;
         this.lockedPreset = entry.data.locked ? entry.data : null;
         await this.render();
@@ -480,14 +694,25 @@ export default class RegimentBuilderDialog extends ApplicationV2Mixin(Applicatio
 
     /** Convenience opener, mirrors `ColonyGrowthDialog.show`. Loads the catalog from the OW packs first. */
     static async show(actor: WH40KBaseActor, catalog?: ReadonlyArray<RegimentCatalogEntry>): Promise<RegimentBuilderDialog> {
-        const dialog = new RegimentBuilderDialog({ actor, catalog: catalog ?? (await loadRegimentCatalog()), presets: await loadRegimentPresets() });
+        const dialog = new RegimentBuilderDialog({
+            actor,
+            catalog: catalog ?? (await loadRegimentCatalog()),
+            presets: await loadRegimentPresets(),
+            weapons: await loadFavouredWeaponChoices(),
+            items: await loadKitItemChoices(),
+        });
         void dialog.render({ force: true });
         return dialog;
     }
 
     /** Open the dialog on a preset item, to build or edit a regiment preset with no character. */
     static async showForItem(presetItem: RegimentPresetItem): Promise<RegimentBuilderDialog> {
-        const dialog = new RegimentBuilderDialog({ presetItem, catalog: await loadRegimentCatalog() });
+        const dialog = new RegimentBuilderDialog({
+            presetItem,
+            catalog: await loadRegimentCatalog(),
+            weapons: await loadFavouredWeaponChoices(),
+            items: await loadKitItemChoices(),
+        });
         void dialog.render({ force: true });
         return dialog;
     }
@@ -538,10 +763,7 @@ function readSelectionFromActor(actor: WH40KBaseActor | null): RegimentSelection
         trainingDoctrines: [...slot.trainingDoctrines],
         specialEquipmentDoctrines: [...slot.specialEquipmentDoctrines],
         drawbacks: [...(sys.regimentDrawbacks ?? [])],
-        favouredWeapons: {
-            basic: slot.favouredWeapons.basic ?? '',
-            heavy: slot.favouredWeapons.heavy ?? '',
-        },
+        favouredWeapons: { basic: [...slot.favouredWeapons.basic], heavy: [...slot.favouredWeapons.heavy] },
     };
 }
 
@@ -556,10 +778,10 @@ function readPicksFromActor(actor: WH40KBaseActor | null): Record<string, Record
     );
 }
 
-function readKitFromActor(actor: WH40KBaseActor | null): string[] {
+function readKitFromActor(actor: WH40KBaseActor | null): KitPurchase[] {
     // eslint-disable-next-line no-restricted-syntax -- boundary: regimentKit lives on the per-system OW actor schema; not exposed on the abstract WH40KBaseActor system surface
-    const stored = actor === null ? undefined : (actor.system as { regimentKit?: ReadonlyArray<{ id: string }> }).regimentKit;
-    return (stored ?? []).map((entry) => entry.id);
+    const stored = actor === null ? undefined : (actor.system as { regimentKit?: ReadonlyArray<{ id: string; pick?: string }> }).regimentKit;
+    return (stored ?? []).map((entry) => ({ id: entry.id, pick: entry.pick ?? '' }));
 }
 
 /** Convenience opener for sheets / chat-card buttons. */

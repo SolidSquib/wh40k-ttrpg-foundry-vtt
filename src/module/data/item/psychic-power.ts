@@ -26,6 +26,10 @@ export default class PsychicPowerData extends ItemDataModel.mixin(DescriptionTem
     declare identifier: string;
     declare discipline: string;
     declare prCost: number;
+    declare xpCost: number;
+    declare prerequisites: { text: string; psyRating: number; characteristics: Record<string, number>; skills: string[]; talents: string[] };
+    declare sustainAction: string;
+    declare subtypes: string[];
     declare focusPower: { characteristic: string; modifier: number; threshold: number; opposed: boolean; opposedCharacteristic: string; skill: string };
     declare effect: string;
     declare overbleed: string;
@@ -60,6 +64,25 @@ export default class PsychicPowerData extends ItemDataModel.mixin(DescriptionTem
 
             // Psy Rating cost
             prCost: new fields.NumberField({ required: true, initial: 1, min: 0, integer: true }),
+
+            // Only War prices a power in Experience Points ("Value: 200xp"). Zero leaves the price to the
+            // Psy Rating heuristic the other lines use.
+            xpCost: new fields.NumberField({ required: true, initial: 0, min: 0, integer: true }),
+
+            // What a psyker needs before learning the power besides the powers listed in `requires`.
+            prerequisites: new fields.SchemaField({
+                text: new fields.StringField({ required: false, blank: true, initial: '' }),
+                psyRating: new fields.NumberField({ required: true, initial: 0, min: 0, integer: true }),
+                characteristics: new fields.ObjectField({ required: false, initial: {} }),
+                skills: new fields.ArrayField(new fields.StringField({ required: true, blank: false }), { required: true, initial: [] }),
+                talents: new fields.ArrayField(new fields.StringField({ required: true, blank: false }), { required: true, initial: [] }),
+            }),
+
+            // The Action it takes to keep a sustained power going ("Free Action", "Half Action", …).
+            sustainAction: new fields.StringField({ required: false, blank: true, initial: '', choices: ['', 'free', 'half', 'full', 'special'] }),
+
+            // The Action Subtypes of the Focus Power Test ("Attack", "Concentration").
+            subtypes: new fields.ArrayField(new fields.StringField({ required: true, blank: false }), { required: true, initial: [] }),
 
             // Focus Power Test
             focusPower: new fields.SchemaField({

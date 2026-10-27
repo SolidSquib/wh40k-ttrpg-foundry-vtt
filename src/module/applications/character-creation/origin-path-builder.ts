@@ -21,7 +21,7 @@ import type { WH40KCharacteristic, WH40KItemModifiers } from '../../types/global
 import { resolvePack } from '../../utils/compendium-query.ts';
 import { capitalize } from '../../utils/format.ts';
 import { OriginChartLayout } from '../../utils/origin-chart-layout.ts';
-import { iterateResolvedChoices } from '../../utils/origin-choices.ts';
+import { iterateResolvedChoices, typedOptionGrants } from '../../utils/origin-choices.ts';
 import { getAllCharacteristicDisplayInfo, getCharacteristicDisplayInfo, getChoiceTypeLabel, getTrainingLabel } from '../../utils/origin-ui-labels.ts';
 import { WH40KSettings } from '../../wh40k-rpg-settings.ts';
 import type { ApplicationV2Ctor } from '../api/application-types.ts';
@@ -32,6 +32,7 @@ import { type NormalizedChoice, type NormalizedChoiceOption, type NormalizedOrig
 import OriginDetailDialog from './origin-detail-dialog.ts';
 import OriginPathChoiceDialog from './origin-path-choice-dialog.ts';
 import OriginRollDialog from './origin-roll-dialog.ts';
+import { openRegimentPicks, previewRegimentPresets, regimentPickBonuses, withoutRegimentPreview } from './regiment-preview.ts';
 import type {
     ActiveModifier,
     BuilderFlagState,
@@ -1005,6 +1006,9 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
             console.warn('No origin path items found in configured compendiums');
             return;
         }
+
+        // Only War regiment presets name their options but grant nothing; show what those options give.
+        if (this.gameSystem === 'ow') previewRegimentPresets(allOriginPaths);
 
         // Separate optional step origins from core origins
         this.allOrigins = allOriginPaths.filter((o) => o.stepIndex !== optionalStepIndex);
@@ -2785,10 +2789,14 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
                     const choiceKey = `${base}${suffix}`;
                     const selectedValues = selectedChoices[choiceKey] ?? [];
                     for (const selectedValue of selectedValues) {
-                        const option = choice.options?.find((o) => o.value === selectedValue);
-                        if (!option?.grants) continue;
+                        const option = choice.options?.find((o) => (o.value ?? o.name) === selectedValue);
+                        if (option === undefined) continue;
+                        // an option that says nothing is a talent, skill or trait by the choice's type
+                        // eslint-disable-next-line no-restricted-syntax -- boundary: typed grants are the same plain { skills, talents, traits } lists WH40KItemModifiers carries on a choice option
+                        const optionGrants = option.grants ?? (typedOptionGrants(choice.type, option) as WH40KItemModifiers | undefined);
+                        if (optionGrants === undefined) continue;
                         // eslint-disable-next-line no-await-in-loop -- sequential: each option may add talent UUIDs whose modifiers feed the next iteration's charTotals
-                        await this._applyChoiceGrantsToPreview(option.grants, { charTotals, skillMap, talentMap, traitMap, equipmentList });
+                        await this._applyChoiceGrantsToPreview(optionGrants, { charTotals, skillMap, talentMap, traitMap, equipmentList });
                     }
 
                     // Aptitude-typed choices: selected values ARE the aptitude names
@@ -3825,6 +3833,10 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
 
         // Re-render
         void this.render();
+
+        // A regiment preset can leave picks open (a Home World's talent, its characteristic modifiers); ask for them now.
+        const chosen = this.showLineage ? this.lineageSelection : this.selections.get(currentStep.step);
+        if (chosen !== null && chosen !== undefined && openRegimentPicks(chosen) > 0) await this._promptChoices(chosen);
     }
 
     /**
@@ -3989,11 +4001,14 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
 
         if (selection === null || selection === undefined || choiceLabel === undefined || choiceLabel === '') return;
 
-        const system = this._getSelectionSystem(selection);
-        const choices: GrantChoiceRaw[] = system.grants?.choices ?? [];
-        const choice = choices.find((c) => (c.label ?? c.name) === choiceLabel);
-        if (!choice) return;
+        const choices: GrantChoiceRaw[] = this._getSelectionSystem(selection).grants?.choices ?? [];
+        if (!choices.some((c) => (c.label ?? c.name) === choiceLabel)) return;
+        await this._promptChoices(selection);
+    }
 
+    /** Ask for the picks a selection still has open, through the choice dialog. */
+    async _promptChoices(selection: NormalizedOrigin): Promise<void> {
+        const system = this._getSelectionSystem(selection);
         // Create a temporary wrapper for the dialog that behaves like an Item
         const itemLike = {
             name: selection.name,
@@ -4702,7 +4717,8 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
             // this.selections so size/completion logic is unaffected).
             await this._resolveDivinationSelection();
             const selectionsToApply: NormalizedOrigin[] = [
-                ...this.selections.values(),
+                // a regiment preset's preview is for display only: take it off and keep the picks on the preset itself
+                ...[...this.selections.values()].map((selection) => withoutRegimentPreview(selection)),
                 ...(this._divinationSelection !== null ? [this._divinationSelection] : []),
             ];
 
@@ -5064,6 +5080,8 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
                     }
                 }
             }
+            // A regiment preset's picks are choices on the options it names, so they appear in no active modifier.
+            for (const [key, value] of Object.entries(regimentPickBonuses(selection))) addToSum(key, value);
         };
 
         for (const [, selection] of this.selections) collectFromSelection(selection);

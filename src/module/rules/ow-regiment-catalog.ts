@@ -12,6 +12,16 @@ import { REGIMENT_OPTION_CATEGORIES, type RegimentGrants, type RegimentOption, t
 import type { RegimentDrawback } from './ow-regiment-drawback.ts';
 import type { RegimentPresetData } from './ow-regiment-preset.ts';
 
+/** One line of Standard Kit a regiment option issues. */
+export interface RegimentKitItem {
+    readonly label: string;
+    readonly scope: 'character' | 'squad';
+    /** True for the line that is the regiment's Main Weapon: it replaces whichever Main Weapon came before. */
+    readonly mainWeapon?: boolean;
+    /** Which weapon a Main Weapon line is, so a kit upgrade can say which weapon it replaces. Blank when the choice is the player's. */
+    readonly weapon?: string;
+}
+
 /** The `system.regiment` block of an `originPath` document. */
 export interface RegimentBlockLike {
     readonly category?: string;
@@ -20,8 +30,12 @@ export interface RegimentBlockLike {
     readonly kitModifier?: number;
     readonly logistics?: number;
     readonly maxCount?: number;
+    readonly favouredSlot?: string;
     readonly restriction?: string;
-    readonly kit?: ReadonlyArray<{ readonly label: string; readonly scope: 'character' | 'squad' }>;
+    readonly replacesMainWeapon?: ReadonlyArray<string>;
+    readonly craftsmanship?: string;
+    readonly additionalItem?: string;
+    readonly kit?: ReadonlyArray<RegimentKitItem>;
 }
 
 /** One entry of an `originPath` document's `system.grants.choices`. */
@@ -55,7 +69,13 @@ export interface RegimentChoice {
 export interface RegimentCatalogEntry extends RegimentOption {
     readonly label: string;
     readonly restriction: string;
-    readonly kit: ReadonlyArray<{ readonly label: string; readonly scope: 'character' | 'squad' }>;
+    /** Kit upgrades: the Main Weapons this purchase can replace. Empty for every other option. */
+    readonly replacesMainWeapon: ReadonlyArray<string>;
+    /** Kit upgrades that improve one chosen kit item to this craftsmanship. */
+    readonly craftsmanship: '' | 'good' | 'best';
+    /** Kit purchases that add one chosen item of this availability (a slug such as `rare`). */
+    readonly additionalItem: string;
+    readonly kit: ReadonlyArray<RegimentKitItem>;
     readonly choices: ReadonlyArray<RegimentChoice>;
 }
 
@@ -89,9 +109,13 @@ export function regimentEntryFromDoc(uuid: string, doc: RegimentDocLike): Regime
         cost: regiment.cost ?? 0,
         label: doc.name,
         restriction: regiment.restriction ?? '',
+        replacesMainWeapon: regiment.replacesMainWeapon ?? [],
+        craftsmanship: regiment.craftsmanship === 'good' || regiment.craftsmanship === 'best' ? regiment.craftsmanship : '',
+        additionalItem: regiment.additionalItem ?? '',
         kit: regiment.kit ?? [],
         choices,
         ...(regiment.category === 'kitItem' && regiment.maxCount !== undefined ? { maxCount: regiment.maxCount } : {}),
+        ...(regiment.favouredSlot === 'basic' || regiment.favouredSlot === 'heavy' ? { favouredSlot: regiment.favouredSlot } : {}),
         grants,
     };
 }

@@ -20,6 +20,7 @@ import {
     type RegimentIssue,
     type RegimentSelection,
 } from './ow-regiment-creation.ts';
+import { resolveKit } from './ow-regiment-kit.ts';
 
 /** The persisted preset block (`system.regimentPreset`). */
 export interface RegimentPresetData {
@@ -30,6 +31,9 @@ export interface RegimentPresetData {
     specialEquipmentDoctrines: string[];
     drawbacks: string[];
     kit: string[];
+    /** What was chosen for each kit purchase, parallel to `kit`; blank where nothing is asked or nothing chosen yet. */
+    kitPicks: string[];
+    favouredWeapons: { basic: string[]; heavy: string[] };
     choices: Record<string, Record<string, string[]>>;
     locked: boolean;
 }
@@ -41,6 +45,8 @@ export interface RegimentState {
     readonly picks: Readonly<Record<string, Record<string, string[]>>>;
     /** Kit entries bought, by option id; an id repeats once per copy. */
     readonly kitIds: ReadonlyArray<string>;
+    /** What was chosen for each kit purchase (a kit line to improve, an item to add), parallel to `kitIds`. */
+    readonly kitPicks: ReadonlyArray<string>;
 }
 
 /** True when a preset block holds a regiment (an ordinary origin has an empty one). */
@@ -59,11 +65,13 @@ export function stateFromPreset(preset: RegimentPresetData): RegimentState {
             trainingDoctrines: [...preset.trainingDoctrines],
             specialEquipmentDoctrines: [...preset.specialEquipmentDoctrines],
             drawbacks: [...preset.drawbacks],
+            favouredWeapons: { basic: [...preset.favouredWeapons.basic], heavy: [...preset.favouredWeapons.heavy] },
         },
         picks: Object.fromEntries(
             Object.entries(preset.choices).map(([id, picks]) => [id, Object.fromEntries(Object.entries(picks).map(([key, values]) => [key, [...values]]))]),
         ),
         kitIds: [...preset.kit],
+        kitPicks: [...preset.kit.keys()].map((index) => preset.kitPicks.at(index) ?? ''),
     };
 }
 
@@ -79,6 +87,8 @@ export function presetFromState(state: RegimentState, locked: boolean): Regiment
         specialEquipmentDoctrines: [...selection.specialEquipmentDoctrines],
         drawbacks: [...selection.drawbacks],
         kit: [...state.kitIds],
+        kitPicks: [...state.kitIds.keys()].map((index) => state.kitPicks.at(index) ?? ''),
+        favouredWeapons: { basic: [...selection.favouredWeapons.basic], heavy: [...selection.favouredWeapons.heavy] },
         // only the picks of options the preset actually holds
         choices: Object.fromEntries(Object.entries(state.picks).filter(([id]) => held.has(id))),
         locked,
@@ -109,6 +119,11 @@ export interface RegimentStateReport {
     readonly kitValid: boolean;
 }
 
+/** True when no Main Weapon upgrade lacks a weapon to replace. A pick left open is fine here; the player may fill it in. */
+function kitFits(state: RegimentState, catalog: ReadonlyArray<RegimentCatalogEntry>): boolean {
+    return resolveKit(state.selection, state.kitIds, catalog, { picks: state.kitPicks }).inapplicable.length === 0;
+}
+
 export function reportState(state: RegimentState, catalog: ReadonlyArray<RegimentCatalogEntry>): RegimentStateReport {
     const known = new Set(catalog.map((entry) => entry.id));
     const ids = [...selectedOptionIds(state.selection), ...state.kitIds];
@@ -122,7 +137,7 @@ export function reportState(state: RegimentState, catalog: ReadonlyArray<Regimen
             const entry = catalog.find((candidate) => candidate.id === id);
             return entry !== undefined && !choicesComplete(entry, new Map(Object.entries(state.picks)).get(id));
         }),
-        kitValid: computeKitBudget(kit, allowance).valid && kitOverLimit(kit, catalog).length === 0,
+        kitValid: computeKitBudget(kit, allowance).valid && kitOverLimit(kit, catalog).length === 0 && kitFits(state, catalog),
     };
 }
 

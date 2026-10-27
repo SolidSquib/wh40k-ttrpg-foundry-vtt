@@ -86,7 +86,11 @@ export default class OriginPathData extends ItemDataModel.mixin(DescriptionTempl
         logistics: number;
         maxCount: number;
         restriction: string;
-        kit: Array<{ label: string; scope: 'character' | 'squad' }>;
+        favouredSlot: '' | 'basic' | 'heavy';
+        replacesMainWeapon: string[];
+        craftsmanship: '' | 'good' | 'best';
+        additionalItem: string;
+        kit: Array<{ label: string; scope: 'character' | 'squad'; mainWeapon: boolean; weapon: string }>;
     };
     declare grants: {
         woundsFormula: string;
@@ -227,18 +231,30 @@ export default class OriginPathData extends ItemDataModel.mixin(DescriptionTempl
                     logistics: new fields.NumberField({ required: true, initial: 0, integer: true }),
                     // Kit items: how many times the regiment may take the item.
                     maxCount: new fields.NumberField({ required: true, initial: 1, min: 1, integer: true }),
+                    // Kit items that grant a further Favoured Weapon of this class when bought.
+                    favouredSlot: new fields.StringField({ required: true, blank: true, initial: '', choices: ['', 'basic', 'heavy'] }),
                     // Rule text limiting who may take the option (kit table "Limitations" column).
                     restriction: new fields.StringField({ required: false, blank: true, initial: '' }),
-                    // Standard Regimental Kit a regiment type or doctrine issues.
+                    // Kit upgrades that swap the Main Weapon: the weapons (keys) the purchase can replace.
+                    replacesMainWeapon: new fields.ArrayField(new fields.StringField({ required: true, blank: false }), { required: true, initial: [] }),
+                    // Kit upgrades that improve one chosen kit item from Common to this craftsmanship.
+                    craftsmanship: new fields.StringField({ required: true, blank: true, initial: '', choices: ['', 'good', 'best'] }),
+                    // Kit purchases that add one chosen item of this availability (a slug such as `rare`).
+                    additionalItem: new fields.StringField({ required: true, blank: true, initial: '' }),
+                    // Standard Regimental Kit a regiment type or doctrine issues, or the item a kit upgrade swaps in.
                     kit: new fields.ArrayField(
                         new fields.SchemaField({
                             label: new fields.StringField({ required: true, blank: false }),
                             scope: new fields.StringField({ required: true, initial: 'character', choices: ['character', 'squad'] }),
+                            // The line is the Main Weapon; it replaces whichever came before it.
+                            mainWeapon: new fields.BooleanField({ required: true, initial: false }),
+                            // Which weapon it is (a slug), blank when the player picks between several.
+                            weapon: new fields.StringField({ required: true, blank: true, initial: '' }),
                         }),
                         { required: true, initial: [] },
                     ),
                 },
-                { required: false },
+                { required: true },
             ),
 
             // Only War regiment preset: a whole regiment (the options chosen, their picks, the kit bought) to
@@ -254,12 +270,21 @@ export default class OriginPathData extends ItemDataModel.mixin(DescriptionTempl
                     drawbacks: new fields.ArrayField(new fields.StringField({ required: true, blank: false }), { required: true, initial: [] }),
                     // Standard Kit purchases; an id repeats once per copy.
                     kit: new fields.ArrayField(new fields.StringField({ required: true, blank: false }), { required: true, initial: [] }),
+                    // What was chosen for each kit purchase (a kit line to improve, an item UUID), parallel to `kit`.
+                    kitPicks: new fields.ArrayField(new fields.StringField({ required: true, blank: true }), { required: true, initial: [] }),
+                    // Favoured Weapon UUIDs, one per slot.
+                    favouredWeapons: new fields.SchemaField({
+                        basic: new fields.ArrayField(new fields.StringField({ required: true, blank: true }), { required: true, initial: [] }),
+                        heavy: new fields.ArrayField(new fields.StringField({ required: true, blank: true }), { required: true, initial: [] }),
+                    }),
                     // Picks made for the options: option id → choice key → picked values.
                     choices: new fields.ObjectField({ required: true, initial: {} }),
                     // A locked preset cannot be edited by players (the GM may).
                     locked: new fields.BooleanField({ required: true, initial: false }),
                 },
-                { required: false },
+                // Required (not `required: false`): an optional SchemaField is left undefined on documents that
+                // never had it, and the Regiment Builder reads `.regimentType` / `.locked` off every origin item.
+                { required: true },
             ),
 
             // What this origin grants

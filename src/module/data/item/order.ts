@@ -13,7 +13,9 @@ export interface GroundOrder {
     /** Basic or Veteran, where the book prints it (a Veteran Order needs a Veteran Comrade). */
     level: '' | 'basic' | 'veteran';
     /** Which chapter section lists it. */
-    group: '' | 'general' | 'enginseer' | 'priest' | 'ogryn' | 'ratling' | 'servitor';
+    group: '' | 'general' | 'enginseer' | 'priest' | 'ogryn' | 'ratling' | 'servitor' | 'speciality';
+    /** For a Speciality's Comrade Advance: the identifier of the Speciality that can buy it. */
+    speciality: string;
     prerequisites: { text: string; characteristics: Record<string, number>; skills: string[]; talents: string[] };
     aptitudes: string[];
     /** XP price by number of matching Aptitudes. */
@@ -108,8 +110,9 @@ export default class OrderData extends ItemDataModel.mixin(DescriptionTemplate) 
                     required: true,
                     blank: true,
                     initial: '',
-                    choices: ['', 'general', 'enginseer', 'priest', 'ogryn', 'ratling', 'servitor'],
+                    choices: ['', 'general', 'enginseer', 'priest', 'ogryn', 'ratling', 'servitor', 'speciality'],
                 }),
+                speciality: new fields.StringField({ required: true, blank: true, initial: '' }),
                 prerequisites: new fields.SchemaField({
                     text: new fields.StringField({ required: false, blank: true, initial: '' }),
                     characteristics: new fields.ObjectField({ required: false, initial: {} }),

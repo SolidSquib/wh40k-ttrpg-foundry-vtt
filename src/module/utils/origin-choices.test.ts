@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { choiceBaseLabel, iterateResolvedChoices, type ChoiceLike, type SelectedChoices } from './origin-choices.ts';
+import { choiceBaseLabel, iterateResolvedChoices, type ChoiceLike, type SelectedChoices, typedOptionGrants } from './origin-choices.ts';
 
 /**
  * Pins the choice-key disambiguation (#305) — the produced `choiceKey` is the
@@ -65,5 +65,18 @@ describe('iterateResolvedChoices', () => {
             expect(resolved.resolveOption('Survival')?.label).toBe('Survival'); // by label
             expect(resolved.resolveOption('missing')).toBeUndefined();
         }
+    });
+});
+
+describe('typedOptionGrants', () => {
+    it('spells out a bare talent, skill or trait option from the choice type', () => {
+        expect(typedOptionGrants('talent', { name: 'Iron Jaw', uuid: 'T1' })).toEqual({ talents: [{ name: 'Iron Jaw', uuid: 'T1' }] });
+        expect(typedOptionGrants('skill', { name: 'Trade (Cook)' })).toEqual({ skills: [{ name: 'Trade (Cook)' }] });
+        expect(typedOptionGrants('trait', { value: 'Sturdy' })).toEqual({ traits: [{ name: 'Sturdy', uuid: '' }] });
+    });
+
+    it('gives nothing for other choice types or an option with no name', () => {
+        expect(typedOptionGrants('aptitude', { name: 'Offence' })).toBeUndefined();
+        expect(typedOptionGrants('talent', {})).toBeUndefined();
     });
 });

@@ -148,6 +148,8 @@ describe('presetEntryFromDoc', () => {
         specialEquipmentDoctrines: [],
         drawbacks: [],
         kit: [],
+        kitPicks: [],
+        favouredWeapons: { basic: [], heavy: [] },
         choices: {},
         locked: true,
     };

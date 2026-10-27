@@ -7264,6 +7264,19 @@
                 "Choice": {
                     "Pick": "choose {count}"
                 },
+                "Favoured": {
+                    "Title": "Favoured Weapons",
+                    "Hint": "Very Rare or more available",
+                    "Basic": "Basic Weapon",
+                    "Heavy": "Heavy Weapon",
+                    "None": "— none chosen —",
+                    "NoneChosen": "No Favoured Weapons chosen yet."
+                },
+                "StandardKit": {
+                    "Title": "Regimental Standard Kit",
+                    "Purchased": "Additional kit",
+                    "Empty": "No kit yet."
+                },
                 "Preset": {
                     "StartFrom": "Start from",
                     "Save": "Save as Preset",
@@ -7279,12 +7292,22 @@
                     "EditButton": "Edit Regiment Preset",
                     "EditButtonHint": "Choose this regiment's options and kit without a character"
                 },
+                "Preview": {
+                    "Logistics": "Logistics Rating"
+                },
                 "Kit": {
                     "Total": "Standard Kit Points",
                     "Spent": "Spent",
                     "Remaining": "Remaining",
                     "OverBudget": "Over kit budget by {amount}",
-                    "PerSquad": "per squad"
+                    "PerSquad": "per squad",
+                    "OnceOnly": "Once only",
+                    "MaxTimes": "Max {count}",
+                    "NeedsWeapon": "No Main Weapon of this kind to replace",
+                    "PickLine": "Choose the item to improve…",
+                    "PickItem": "Choose an item…",
+                    "CraftGood": "Good Craftsmanship",
+                    "CraftBest": "Best Craftsmanship"
                 },
                 "Validation": {
                     "OverBudget": "Selection exceeds the {budget}-point budget by {amount}.",

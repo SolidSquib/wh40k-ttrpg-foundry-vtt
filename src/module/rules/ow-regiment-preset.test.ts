@@ -38,6 +38,8 @@ const preset: RegimentPresetData = {
     specialEquipmentDoctrines: [],
     drawbacks: [],
     kit: ['kit'],
+    kitPicks: [''],
+    favouredWeapons: { basic: ['w1'], heavy: [] },
     choices: { hw: { 'Characteristic Modifiers': ['A'] } },
     locked: true,
 };
@@ -45,6 +47,14 @@ const preset: RegimentPresetData = {
 describe('preset ↔ builder state', () => {
     it('round-trips', () => {
         expect(presetFromState(stateFromPreset(preset), true)).toEqual(preset);
+    });
+
+    it('keeps what was chosen for each kit purchase, lined up with the purchase', () => {
+        const withPick = { ...preset, kit: ['kit', 'kit'], kitPicks: ['', 'One knife'] };
+        expect(stateFromPreset(withPick).kitPicks).toEqual(['', 'One knife']);
+        expect(presetFromState(stateFromPreset(withPick), true).kitPicks).toEqual(['', 'One knife']);
+        // a preset saved before picks existed reads as all blank
+        expect(stateFromPreset({ ...withPick, kitPicks: [] }).kitPicks).toEqual(['', '']);
     });
 
     it('does not share arrays with the stored preset', () => {

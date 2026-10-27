@@ -109,6 +109,30 @@
         {{/each}}
     </div>
 
+    {{!-- Favoured Weapons: one Basic and one Heavy for free, one more of a class per purchased kit item --}}
+    <section class="tw-rounded-md tw-border tw-border-[rgba(180,120,40,0.25)] tw-bg-[rgba(0,0,0,0.2)] tw-overflow-hidden tw-mb-4" data-regiment-favoured>
+        <header class="tw-flex tw-items-center tw-justify-between tw-px-3 tw-py-1.5 tw-bg-[rgba(180,120,40,0.12)] tw-border-b tw-border-[rgba(180,120,40,0.25)]">
+            <span class="tw-text-xs tw-uppercase tw-tracking-[0.08em] tw-text-amber-200">{{localize "WH40K.OW.Regiment.Favoured.Title"}}</span>
+            <span class="tw-text-[0.7rem] tw-italic tw-text-amber-100/60">{{localize "WH40K.OW.Regiment.Favoured.Hint"}}</span>
+        </header>
+        <div class="tw-p-2 tw-flex tw-flex-col tw-gap-1.5">
+            {{#each favoured}}
+                {{#each this.slots}}
+                    <label class="tw-flex tw-items-center tw-justify-between tw-gap-2" data-favoured-slot="{{this.weaponClass}}-{{this.index}}">
+                        <span class="tw-text-xs tw-text-amber-100">{{localize ../labelKey}}{{#if this.index}} #{{add this.index 1}}{{/if}}</span>
+                        <select data-favoured-class="{{this.weaponClass}}" data-slot="{{this.index}}" {{#unless this.editable}}disabled{{/unless}}
+                                class="tw-min-w-0 tw-w-64 tw-px-2 tw-py-0.5 tw-rounded tw-border tw-border-[rgba(180,120,40,0.3)] tw-bg-[rgba(0,0,0,0.4)] tw-text-xs tw-text-amber-100 disabled:tw-opacity-50 disabled:tw-cursor-not-allowed">
+                            <option value="">{{localize "WH40K.OW.Regiment.Favoured.None"}}</option>
+                            {{#each this.options}}
+                                <option value="{{this.id}}" {{#if this.selected}}selected{{/if}}>{{this.name}}</option>
+                            {{/each}}
+                        </select>
+                    </label>
+                {{/each}}
+            {{/each}}
+        </div>
+    </section>
+
     {{!-- Standard Kit allowance --}}
     <section class="tw-rounded-md tw-border tw-border-[rgba(180,120,40,0.25)] tw-bg-[rgba(0,0,0,0.2)] tw-overflow-hidden" data-regiment-kit>
         <header class="tw-flex tw-items-center tw-justify-between tw-px-3 tw-py-1.5 tw-bg-[rgba(180,120,40,0.12)] tw-border-b tw-border-[rgba(180,120,40,0.25)]">
@@ -122,21 +146,77 @@
                     <span class="tw-text-xs tw-text-amber-100">
                         {{this.label}}
                         {{#if this.restriction}}<span class="tw-text-[0.65rem] tw-italic tw-text-amber-100/50"> — {{this.restriction}}</span>{{/if}}
+                        {{#if this.blocked}}<span class="tw-ml-1 tw-text-[0.65rem] tw-italic tw-text-amber-100/50" data-kit-blocked>{{localize "WH40K.OW.Regiment.Kit.NeedsWeapon"}}</span>{{/if}}
+                        {{#if this.limited}}
+                            <span class="tw-ml-1 tw-px-1 tw-rounded tw-text-[0.6rem] tw-uppercase tw-tracking-wide {{#if this.atLimit}}tw-bg-[rgba(180,120,40,0.35)] tw-text-amber-200{{else}}tw-bg-[rgba(180,120,40,0.15)] tw-text-amber-100/70{{/if}}" data-kit-limit>
+                                {{#if this.once}}{{localize "WH40K.OW.Regiment.Kit.OnceOnly"}}{{else}}{{localize "WH40K.OW.Regiment.Kit.MaxTimes" count=this.maxCount}}{{/if}}
+                            </span>
+                        {{/if}}
                     </span>
                     <span class="tw-flex tw-items-center tw-gap-1">
                         <span class="tw-text-xs tw-font-bold tw-tabular-nums tw-text-amber-200">{{this.cost}}</span>
                         <button type="button" data-action="removeKit" data-option-id="{{this.id}}" {{#if @root.locked}}disabled{{else}}{{#unless this.count}}disabled{{/unless}}{{/if}}
                                 class="tw-w-5 tw-h-5 tw-leading-none tw-rounded tw-border tw-border-[rgba(180,120,40,0.3)] tw-bg-transparent tw-text-amber-100 disabled:tw-opacity-30">−</button>
                         <span class="tw-w-4 tw-text-center tw-text-xs tw-tabular-nums tw-text-amber-100">{{this.count}}</span>
-                        <button type="button" data-action="addKit" data-option-id="{{this.id}}" {{#if @root.locked}}disabled{{/if}}
+                        <button type="button" data-action="addKit" data-option-id="{{this.id}}" {{#if @root.locked}}disabled{{else}}{{#if this.atLimit}}disabled{{else}}{{#if this.blocked}}disabled{{/if}}{{/if}}{{/if}}
                                 class="disabled:tw-opacity-30 tw-w-5 tw-h-5 tw-leading-none tw-rounded tw-border tw-border-[rgba(180,120,40,0.3)] tw-bg-transparent tw-text-amber-100">+</button>
                     </span>
                 </div>
+                {{#each this.picks}}
+                    <div class="tw-flex tw-items-center tw-gap-2 tw-pl-6 tw-pr-2 tw-pb-1" data-kit-pick-row>
+                        <select data-kit-pick data-position="{{this.position}}" {{#unless this.editable}}disabled{{/unless}}
+                                class="tw-flex-1 tw-min-w-0 tw-text-xs {{#if this.empty}}tw-border-amber-400{{/if}}">
+                            <option value="" {{#if this.empty}}selected{{/if}}>
+                                {{#if (eq this.kind "line")}}{{localize "WH40K.OW.Regiment.Kit.PickLine"}}{{else}}{{localize "WH40K.OW.Regiment.Kit.PickItem"}}{{/if}}
+                            </option>
+                            {{#each this.options}}
+                                <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+                            {{/each}}
+                        </select>
+                    </div>
+                {{/each}}
             {{else}}
                 <span class="tw-text-xs tw-italic tw-text-amber-100/40 tw-px-1 tw-py-1">{{localize "WH40K.OW.Regiment.NoOptions"}}</span>
             {{/each}}
         </div>
     </section>
+
+    {{!-- What the regiment is issued: the Standard Kit and the Favoured Weapons, each its own list --}}
+    <div class="tw-grid tw-grid-cols-2 tw-gap-2 tw-mt-4" data-regiment-summary>
+        <section class="tw-rounded-md tw-border tw-border-[rgba(180,120,40,0.25)] tw-bg-[rgba(0,0,0,0.2)] tw-overflow-hidden" data-regiment-standard-kit>
+            <header class="tw-px-3 tw-py-1.5 tw-bg-[rgba(180,120,40,0.12)] tw-border-b tw-border-[rgba(180,120,40,0.25)]">
+                <span class="tw-text-xs tw-uppercase tw-tracking-[0.08em] tw-text-amber-200">{{localize "WH40K.OW.Regiment.StandardKit.Title"}}</span>
+            </header>
+            <div class="tw-p-2 tw-flex tw-flex-col tw-gap-2">
+                {{#each kitGroups}}
+                    <div data-kit-group="{{this.id}}">
+                        <div class="tw-text-[0.65rem] tw-uppercase tw-tracking-[0.06em] tw-text-amber-300/80">
+                            {{#if this.source}}{{this.source}}{{else}}{{localize "WH40K.OW.Regiment.StandardKit.Purchased"}}{{/if}}
+                        </div>
+                        <ul class="tw-m-0 tw-pl-4 tw-list-disc tw-text-xs tw-text-amber-100/90">
+                            {{#each this.lines}}
+                                <li>{{this.label}}{{#if (eq this.scope "squad")}} <span class="tw-opacity-60">({{localize "WH40K.OW.Regiment.Kit.PerSquad"}})</span>{{/if}}{{#if this.count}} <span class="tw-opacity-60">×{{this.count}}</span>{{/if}}{{#if this.craftsmanship}} <span class="tw-text-amber-300" data-kit-craftsmanship>— {{#if (eq this.craftsmanship "good")}}{{localize "WH40K.OW.Regiment.Kit.CraftGood"}}{{else}}{{localize "WH40K.OW.Regiment.Kit.CraftBest"}}{{/if}}</span>{{/if}}</li>
+                            {{/each}}
+                        </ul>
+                    </div>
+                {{else}}
+                    <span class="tw-text-xs tw-italic tw-text-amber-100/40">{{localize "WH40K.OW.Regiment.StandardKit.Empty"}}</span>
+                {{/each}}
+            </div>
+        </section>
+        <section class="tw-rounded-md tw-border tw-border-[rgba(180,120,40,0.25)] tw-bg-[rgba(0,0,0,0.2)] tw-overflow-hidden" data-regiment-favoured-list>
+            <header class="tw-px-3 tw-py-1.5 tw-bg-[rgba(180,120,40,0.12)] tw-border-b tw-border-[rgba(180,120,40,0.25)]">
+                <span class="tw-text-xs tw-uppercase tw-tracking-[0.08em] tw-text-amber-200">{{localize "WH40K.OW.Regiment.Favoured.Title"}}</span>
+            </header>
+            <ul class="tw-m-0 tw-p-2 tw-list-none tw-flex tw-flex-col tw-gap-1 tw-text-xs tw-text-amber-100/90">
+                {{#each favouredList}}
+                    <li data-favoured-weapon="{{this.weaponClass}}"><span class="tw-opacity-60">{{localize this.labelKey}}:</span> {{this.name}}</li>
+                {{else}}
+                    <li class="tw-italic tw-text-amber-100/40">{{localize "WH40K.OW.Regiment.Favoured.NoneChosen"}}</li>
+                {{/each}}
+            </ul>
+        </section>
+    </div>
 
     {{!-- Action buttons --}}
     {{#if presetMode}}

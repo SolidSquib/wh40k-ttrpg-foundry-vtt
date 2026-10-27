@@ -37,6 +37,12 @@ export const STANDARD_KIT_BUDGET = 30;
 /** Standard Kit points each unspent Regiment Creation point converts to. */
 export const KIT_POINTS_PER_UNSPENT = 2;
 
+/** A weapon class a regiment may favour. */
+export type FavouredClass = 'basic' | 'heavy';
+
+/** Favoured Weapon slots every regiment has for free: one Basic and one Heavy. */
+export const FREE_FAVOURED_SLOTS = 1;
+
 /** Most Doctrines (Regiment Type included) a regiment may hold. */
 export const MAX_DOCTRINES = 3;
 
@@ -60,12 +66,13 @@ export const REGIMENT_OPTION_CATEGORIES = [
     'specialEquipmentDoctrine',
     'drawback',
     'kitItem',
+    'universalKit',
 ] as const;
 
 export type RegimentOptionCategory = (typeof REGIMENT_OPTION_CATEGORIES)[number];
 
-/** Categories shown as Regiment Creation budget rows (kit items have their own pool). */
-export type RegimentCategory = Exclude<RegimentOptionCategory, 'kitItem'>;
+/** Categories shown as Regiment Creation budget rows (kit items have their own pool; the universal kit is free and fixed). */
+export type RegimentCategory = Exclude<RegimentOptionCategory, 'kitItem' | 'universalKit'>;
 
 /** Stable iteration order for the category list (chat cards, summaries). */
 export const REGIMENT_CATEGORIES: ReadonlyArray<RegimentCategory> = Object.freeze([
@@ -112,6 +119,8 @@ export interface RegimentOption {
     readonly label?: string;
     /** Kit items: how many times the regiment may take the item. */
     readonly maxCount?: number;
+    /** Kit items that grant a further Favoured Weapon of this class when bought. */
+    readonly favouredSlot?: FavouredClass;
     readonly grants?: RegimentGrants;
 }
 
@@ -128,9 +137,10 @@ export interface RegimentSelection {
     readonly specialEquipmentDoctrines: ReadonlyArray<string>;
     /** Regimental Drawbacks taken (stored on the actor as `regimentDrawbacks`); the book allows one. */
     readonly drawbacks: ReadonlyArray<string>;
+    /** UUIDs of the Favoured Weapons chosen, one per slot (an empty string is a slot not yet filled). */
     readonly favouredWeapons: {
-        readonly basic?: string;
-        readonly heavy?: string;
+        readonly basic: ReadonlyArray<string>;
+        readonly heavy: ReadonlyArray<string>;
     };
 }
 
@@ -421,6 +431,20 @@ export function emptyRegimentSelection(): RegimentSelection {
         trainingDoctrines: [],
         specialEquipmentDoctrines: [],
         drawbacks: [],
-        favouredWeapons: {},
+        favouredWeapons: { basic: [], heavy: [] },
     };
+}
+
+/**
+ * How many Favoured Weapons of each class the regiment may name: one of each free, plus one more for every
+ * purchased kit item that grants one.
+ */
+export function favouredWeaponSlots(kit: ReadonlyArray<KitEntry>, optionCatalog: ReadonlyArray<RegimentOption>): Record<FavouredClass, number> {
+    const lookup = indexCatalog(optionCatalog);
+    const slots: Record<FavouredClass, number> = { basic: FREE_FAVOURED_SLOTS, heavy: FREE_FAVOURED_SLOTS };
+    for (const entry of kit) {
+        const grants = lookup.get(entry.id)?.favouredSlot;
+        if (grants !== undefined) slots[grants] += 1;
+    }
+    return slots;
 }

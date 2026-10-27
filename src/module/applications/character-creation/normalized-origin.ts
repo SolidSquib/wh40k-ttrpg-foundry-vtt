@@ -72,6 +72,12 @@ export interface NormalizedChoice {
     options: NormalizedChoiceOption[];
 }
 
+/** What choosing an option grants: lists of grants by kind, plus a record of characteristic bonuses. */
+export interface NormalizedOptionGrants {
+    characteristics?: Record<string, number>;
+    [kind: string]: Grant[] | Record<string, number> | undefined;
+}
+
 export interface NormalizedChoiceOption {
     /** Always set — prefers 'value', falls back to 'name' */
     value: string;
@@ -79,7 +85,7 @@ export interface NormalizedChoiceOption {
     label: string;
     description: string | null;
     uuid: string | null;
-    grants: Record<string, Grant[]> | null;
+    grants: NormalizedOptionGrants | null;
     /** Optional specialization sub-choices (e.g. weapon groups for Weapon Training) */
     specializations: string[] | null;
 }
@@ -167,9 +173,7 @@ function normalizeChoice(raw: Record<string, unknown>): NormalizedChoice {
             }
             const o = asRecord(opt);
             const rawGrants = isRecord(o['grants']) ? o['grants'] : null;
-            const grants: Record<string, Grant[]> | null = rawGrants
-                ? Object.fromEntries(Object.entries(rawGrants).map(([k, v]) => [k, asGrantArray(v)]))
-                : null;
+            const grants = rawGrants ? normalizeOptionGrants(rawGrants) : null;
             const specializations = Array.isArray(o['specializations']) ? o['specializations'].filter((s): s is string => typeof s === 'string') : null;
             return {
                 value: firstString(o['value'], o['name']),
@@ -181,6 +185,24 @@ function normalizeChoice(raw: Record<string, unknown>): NormalizedChoice {
             };
         }),
     };
+}
+
+/** An option's grants: each kind as a list of grants, except `characteristics`, which is a record of bonuses and kept whole. */
+// eslint-disable-next-line no-restricted-syntax -- boundary: raw compendium data; each value is narrowed by isRecord / asGrantArray
+function normalizeOptionGrants(raw: Record<string, unknown>): NormalizedOptionGrants {
+    const grants: NormalizedOptionGrants = {};
+    for (const [kind, value] of Object.entries(raw)) {
+        if (kind === 'characteristics') {
+            if (isRecord(value)) grants.characteristics = numbersOf(value);
+        } else grants[kind] = asGrantArray(value);
+    }
+    return grants;
+}
+
+/** The numeric entries of a record. */
+// eslint-disable-next-line no-restricted-syntax -- boundary: raw compendium data narrowed by typeof on each value
+function numbersOf(raw: Record<string, unknown>): Record<string, number> {
+    return Object.fromEntries(Object.entries(raw).filter((entry): entry is [string, number] => typeof entry[1] === 'number'));
 }
 
 /**
