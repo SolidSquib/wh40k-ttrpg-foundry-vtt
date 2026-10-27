@@ -750,7 +750,7 @@ export default class AdvancementDialog extends HandlebarsApplicationMixin(Applic
                 'dh2-without-items-talents',
             ],
             bc: ['bc-core-items-talents'],
-            ow: ['ow-core-items-talents'],
+            ow: ['ow-core-items-talents', 'ow-hammer-items-talents', 'ow-shield-items-talents'],
             dh1: [],
             rt: [],
             dw: [],
@@ -1801,7 +1801,7 @@ export default class AdvancementDialog extends HandlebarsApplicationMixin(Applic
                         // Spent XP is derived from each owned talent's stored `system.cost`, so a further rank adds its price to it.
                         // eslint-disable-next-line no-restricted-syntax -- boundary: a stored cost may be a number or a legacy string
                         const spentSoFar = parseInt(String((existing.system as { cost?: number | string }).cost ?? '0'), 10) || 0;
-                        await existing.update({ 'system.rank': currentRank + 1, 'system.cost': spentSoFar + entry.cost });
+                        await existing.update({ 'system.rank': currentRank + 1, 'system.cost': spentSoFar + (entry.cost ?? 0) });
                     } else {
                         // eslint-disable-next-line no-restricted-syntax -- boundary: Foundry Document#toObject() returns a plain data payload typed as object
                         const data = sourceDoc.toObject() as Record<string, unknown> & { system: Record<string, unknown> };
