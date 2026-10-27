@@ -24,7 +24,7 @@
  * adding another layer to the Mixin chain.
  */
 
-const { ArrayField, NumberField, SchemaField, StringField } = foundry.data.fields;
+const { ArrayField, NumberField, ObjectField, SchemaField, StringField } = foundry.data.fields;
 
 /* -------------------------------------------------------------------- */
 /*  Public declaration shape (mirror of the schema below)               */
@@ -36,6 +36,7 @@ const { ArrayField, NumberField, SchemaField, StringField } = foundry.data.field
  *
  *     declare regimentSelection: OwRegimentDeclarations['regimentSelection'];
  *     declare regimentKit: OwRegimentDeclarations['regimentKit'];
+ *     declare regimentChoices: OwRegimentDeclarations['regimentChoices'];
  *
  * so the engine's `RegimentSelection` and the actor's persisted slot
  * stay in lock-step at the type level.
@@ -48,14 +49,17 @@ export interface OwRegimentDeclarations {
         trainingDoctrines: string[];
         specialEquipmentDoctrines: string[];
         favouredWeapons: {
-            close: string;
-            ranged: string;
+            basic: string;
+            heavy: string;
         };
     };
+    /** Kit entries bought from the Standard Kit allowance; the same id may repeat. */
     regimentKit: ReadonlyArray<{
         id: string;
         cost: number;
     }>;
+    /** Player picks for each selected option's choices: option id → choice key → picked option ids. */
+    regimentChoices: Record<string, Record<string, string[]>>;
 }
 
 /* -------------------------------------------------------------------- */
@@ -80,10 +84,11 @@ export function owRegimentSchemaFields(): Record<string, foundry.data.fields.Dat
             trainingDoctrines: new ArrayField(new StringField({ required: true, blank: false }), { required: true, initial: [] }),
             specialEquipmentDoctrines: new ArrayField(new StringField({ required: true, blank: false }), { required: true, initial: [] }),
             favouredWeapons: new SchemaField({
-                close: new StringField({ required: true, initial: '', blank: true }),
-                ranged: new StringField({ required: true, initial: '', blank: true }),
+                basic: new StringField({ required: true, initial: '', blank: true }),
+                heavy: new StringField({ required: true, initial: '', blank: true }),
             }),
         }),
+        regimentChoices: new ObjectField({ required: true, initial: {} }),
         regimentKit: new ArrayField(
             new SchemaField({
                 id: new StringField({ required: true, blank: false }),

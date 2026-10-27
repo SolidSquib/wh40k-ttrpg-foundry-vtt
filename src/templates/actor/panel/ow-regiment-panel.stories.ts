@@ -29,7 +29,7 @@ interface RegimentPanelCtx {
                 regimentType: number;
                 trainingDoctrine: number;
                 specialEquipmentDoctrine: number;
-                favouredWeapons: number;
+                drawback: number;
             };
         };
         kit: {
@@ -70,7 +70,7 @@ export const Empty: Story = {
                     regimentType: 0,
                     trainingDoctrine: 0,
                     specialEquipmentDoctrine: 0,
-                    favouredWeapons: 0,
+                    drawback: 0,
                 },
             },
             kit: {
@@ -99,7 +99,7 @@ export const PartialSelection: Story = {
                     regimentType: 0,
                     trainingDoctrine: 1,
                     specialEquipmentDoctrine: 0,
-                    favouredWeapons: 1,
+                    drawback: 1,
                 },
             },
             kit: {
@@ -128,7 +128,7 @@ export const Valid12Pt: Story = {
                     regimentType: 2,
                     trainingDoctrine: 2,
                     specialEquipmentDoctrine: 2,
-                    favouredWeapons: 1,
+                    drawback: 1,
                 },
             },
             kit: {

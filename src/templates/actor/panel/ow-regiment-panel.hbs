@@ -12,11 +12,11 @@
             regiment: {
                 spent:       number   // total spent across six categories
                 remaining:   number   // 12 − spent (negative if over)
-                valid:       boolean  // spent === 12
-                budget:      number   // REGIMENT_BUDGET (12)
+                valid:       boolean  // complete and within budget
+                budget:      number   // REGIMENT_BUDGET (12) plus any drawback refund
                 perCategory: { homeWorld, commandingOfficer, regimentType,
                                trainingDoctrine, specialEquipmentDoctrine,
-                               favouredWeapons } — each a number
+                               drawback } — each a number (drawback = points refunded)
             }
             kit: {
                 spent:       number
@@ -89,9 +89,9 @@
             <span class="tw-text-[0.7rem] tw-uppercase tw-tracking-[0.04em] tw-text-[color:var(--wh40k-text-muted)]">{{localize "WH40K.OW.Regiment.Category.SpecialEquipmentDoctrine"}}</span>
             <span class="tw-text-[0.75rem] tw-font-bold tw-text-[color:var(--wh40k-text-bright)]">{{regimentPanel.regiment.perCategory.specialEquipmentDoctrine}}</span>
         </div>
-        <div data-wh40k-hook="ow-regiment-category" class="tw-flex tw-items-center tw-justify-between tw-px-2 tw-py-0.5 tw-rounded tw-bg-[rgba(0,0,0,0.12)]" data-category="favouredWeapons">
-            <span class="tw-text-[0.7rem] tw-uppercase tw-tracking-[0.04em] tw-text-[color:var(--wh40k-text-muted)]">{{localize "WH40K.OW.Regiment.Category.FavouredWeapons"}}</span>
-            <span class="tw-text-[0.75rem] tw-font-bold tw-text-[color:var(--wh40k-text-bright)]">{{regimentPanel.regiment.perCategory.favouredWeapons}}</span>
+        <div data-wh40k-hook="ow-regiment-category" class="tw-flex tw-items-center tw-justify-between tw-px-2 tw-py-0.5 tw-rounded tw-bg-[rgba(0,0,0,0.12)]" data-category="drawback">
+            <span class="tw-text-[0.7rem] tw-uppercase tw-tracking-[0.04em] tw-text-[color:var(--wh40k-text-muted)]">{{localize "WH40K.OW.Regiment.Category.Drawback"}}</span>
+            <span class="tw-text-[0.75rem] tw-font-bold tw-text-[color:var(--wh40k-text-bright)]">{{regimentPanel.regiment.perCategory.drawback}}</span>
         </div>
     </div>
 

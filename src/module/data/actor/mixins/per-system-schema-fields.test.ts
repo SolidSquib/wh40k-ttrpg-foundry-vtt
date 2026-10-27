@@ -35,6 +35,7 @@ const fields = {
     ArrayField: makeField('ArrayField'),
     BooleanField: makeField('BooleanField'),
     NumberField: makeField('NumberField'),
+    ObjectField: makeField('ObjectField'),
     SchemaField: makeField('SchemaField'),
     StringField: makeField('StringField'),
 };
@@ -107,7 +108,7 @@ const cases: Array<[name: string, fn: SchemaFieldsFn, keys: string[]]> = [
     ['owMissionGearSchemaFields', owMissionGearSchemaFields, ['lastGearOutcome']],
     ['owMountSchemaFields', owMountSchemaFields, ['mountedOn']],
     ['owOrdersSchemaFields', owOrdersSchemaFields, ['activeOrders']],
-    ['owRegimentSchemaFields', owRegimentSchemaFields, ['regimentSelection', 'regimentKit']],
+    ['owRegimentSchemaFields', owRegimentSchemaFields, ['regimentSelection', 'regimentKit', 'regimentChoices']],
     ['owVehicleMovementSchemaFields', owVehicleMovementSchemaFields, ['chaseState']],
 ];
 

@@ -87,6 +87,7 @@ import { combatMovementView } from '../../rules/movement-budget.ts';
 import { OW_DEFAULT_LOGISTICS_RATING } from '../../rules/ow-logistics.ts';
 import { MOUNTED_ACTIONS } from '../../rules/ow-mount.ts';
 import { canIssueOrder, GENERIC_ORDERS } from '../../rules/ow-orders.ts';
+import { drawbackDescriptorFor } from '../../rules/ow-regiment-catalog.ts';
 import { buildRegimentPanelSummary, REGIMENT_BUDGET, type RegimentPanelSummary } from '../../rules/ow-regiment-creation.ts';
 import { buildDrawbackPanel, type MultiComradeRoster } from '../../rules/ow-regiment-drawback.ts';
 import { buildBattlefieldPanel } from '../../rules/ow-regimental-award.ts';
@@ -673,10 +674,11 @@ const PANEL_BUILDERS: Partial<Record<GameSystemId, readonly PanelBuilder[]>> = {
                 const record = owSystemRecord(s);
                 const ids = Array.isArray(record['regimentDrawbacks']) ? (record['regimentDrawbacks'] as string[]) : [];
                 const roster = (record['multiComradeRoster'] ?? null) as MultiComradeRoster | null;
-                // Descriptors live on compendium documents (Direction #7). Until a
-                // drawback content pack exists nothing resolves, and each row falls
-                // back to its own id — which still removes correctly.
-                return buildDrawbackPanel(ids, roster, () => undefined, REGIMENT_BUDGET);
+                // Descriptors live on compendium documents (Direction #7): the regiment
+                // catalog carries each drawback's name and refund. Before it has loaded, or
+                // for an id it lacks, a row falls back to its own id — which still removes.
+                const catalog = resolveRegimentCatalog();
+                return buildDrawbackPanel(ids, roster, (id) => drawbackDescriptorFor(catalog, id), REGIMENT_BUDGET);
             },
         },
         {
@@ -1807,7 +1809,7 @@ export default class CharacterSheet extends BaseActorSheet {
      */
     _prepareOwRegimentPanel(): OwRegimentPanelContext {
         const sys = this.actor.system;
-        return buildRegimentPanelSummary(sys.regimentSelection, sys.regimentKit, resolveRegimentCatalog(this.actor));
+        return buildRegimentPanelSummary({ ...sys.regimentSelection, drawbacks: sys.regimentDrawbacks }, sys.regimentKit, resolveRegimentCatalog());
     }
 
     /* -------------------------------------------- */

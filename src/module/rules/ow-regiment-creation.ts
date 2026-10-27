@@ -1,55 +1,71 @@
 /**
  * Only War · Regiment Creation budget engine (#151 — OW core.md
- * §"CREATING A REGIMENT" line 1795).
+ * §"CREATING A REGIMENT").
  *
  * Pure rules / math layer. Per Direction #7 the content (specific
  * Home Worlds, Commanding Officers, Regiment Types, Training and
- * Special Equipment Doctrines, Favoured Weapons, Standard Kit entries)
- * lives in compendium documents — this module never references concrete
- * option names. The caller supplies the option catalog (resolved from
- * the compendium / origin path) and a `RegimentSelection` shape; the
- * engine returns budget totals, validation flags, and the aggregated
- * grants (characteristic mods, skills, talents, wounds, Logistics, kit
- * modifier) so the consumer can splice them onto the actor.
+ * Special Equipment Doctrines, Drawbacks, Standard Kit entries) lives in
+ * compendium documents — this module never references concrete option
+ * names. The caller supplies the option catalog (resolved from the
+ * compendium) and a `RegimentSelection`; the engine returns budget
+ * totals, validation issues and the aggregated kit / Logistics effects.
  *
- * Two budgets:
- *   - 12-point Regiment Creation budget across six categories
- *     (Home World, Commanding Officer, Regiment Type, Training
- *     Doctrines, Special Equipment Doctrines, Favoured Weapons).
- *   - 30-point Standard Kit allocation (separate pool, OW core.md
- *     line 2454).
+ * The rules, as printed:
+ *   - A regiment has 12 points to spend on a Home World, a Commanding
+ *     Officer and up to three Doctrines (exactly one of them a Regiment
+ *     Type; the rest Training or Special Equipment Doctrines).
+ *   - A Regimental Drawback refunds extra points to that budget.
+ *   - Points left unspent are not lost: each converts to 2 points of
+ *     Standard Kit allowance, on top of the base 30.
+ *   - Favoured Weapons are not part of the 12 points; they are Standard
+ *     Kit purchases like any other.
  *
  * The engine is RNG-free and actor-decoupled; no I/O, no Foundry
- * Document reads. The consuming DataModel / sheet / dialog calls
- * these functions during selection and on commit.
+ * Document reads.
  */
 
 /* -------------------------------------------------------------------- */
 /*  Budget constants                                                    */
 /* -------------------------------------------------------------------- */
 
-/** Total Regiment Creation points available across all six categories. */
+/** Regiment Creation points available before any Drawback refund. */
 export const REGIMENT_BUDGET = 12;
 
-/** Total Standard Kit allocation points (OW core.md line 2454). */
+/** Base Standard Kit allocation points. */
 export const STANDARD_KIT_BUDGET = 30;
+
+/** Standard Kit points each unspent Regiment Creation point converts to. */
+export const KIT_POINTS_PER_UNSPENT = 2;
+
+/** Most Doctrines (Regiment Type included) a regiment may hold. */
+export const MAX_DOCTRINES = 3;
+
+/** Most Regimental Drawbacks a regiment may take. */
+export const MAX_DRAWBACKS = 1;
 
 /* -------------------------------------------------------------------- */
 /*  Category + option shapes                                            */
 /* -------------------------------------------------------------------- */
 
 /**
- * Six categories of selectable Regiment Creation options. Each draws
- * from a separate slot in the `RegimentSelection`; the trainingDoctrines
- * and specialEquipmentDoctrines slots accept multiple choices, the
- * others are single-pick.
- *
- * Favoured Weapons is modelled as a single category here even though
- * a regiment picks both a close-combat and ranged favoured weapon —
- * the selection shape carries both sub-slots and each contributes its
- * own cost.
+ * Categories a compendium option can belong to. `drawback` refunds points to
+ * the budget; `kitItem` is bought from the Standard Kit allowance rather than
+ * the Regiment Creation budget.
  */
-export type RegimentCategory = 'homeWorld' | 'commandingOfficer' | 'regimentType' | 'trainingDoctrine' | 'specialEquipmentDoctrine' | 'favouredWeapons';
+export const REGIMENT_OPTION_CATEGORIES = [
+    'homeWorld',
+    'commandingOfficer',
+    'regimentType',
+    'trainingDoctrine',
+    'specialEquipmentDoctrine',
+    'drawback',
+    'kitItem',
+] as const;
+
+export type RegimentOptionCategory = (typeof REGIMENT_OPTION_CATEGORIES)[number];
+
+/** Categories shown as Regiment Creation budget rows (kit items have their own pool). */
+export type RegimentCategory = Exclude<RegimentOptionCategory, 'kitItem'>;
 
 /** Stable iteration order for the category list (chat cards, summaries). */
 export const REGIMENT_CATEGORIES: ReadonlyArray<RegimentCategory> = Object.freeze([
@@ -58,23 +74,20 @@ export const REGIMENT_CATEGORIES: ReadonlyArray<RegimentCategory> = Object.freez
     'regimentType',
     'trainingDoctrine',
     'specialEquipmentDoctrine',
-    'favouredWeapons',
+    'drawback',
 ]);
 
 /**
- * Mechanical grants attached to a single option. All fields are
- * optional; the engine merges them across the active selection.
+ * Mechanical effects of an option that the engine itself aggregates. The
+ * rest of what an option grants (characteristics, skills, talents, aptitudes,
+ * wounds) rides on the option's own `originPath` data and is applied by the
+ * actor's normal origin pipeline.
  *
- * - `characteristics`: per-key bonus (Weapon Skill, Toughness, …).
- *   Multiple options stack additively.
- * - `skills` / `talents`: opaque ID lists (compendium UUIDs in
- *   practice, but the engine treats them as strings so it stays
- *   content-agnostic). Lists concatenate; the consumer is responsible
- *   for deduplication if a single grant from two sources should not
- *   double-count.
- * - `wounds`: starting-wound modifier; sums.
- * - `logistics`: Logistics rating modifier (OW core.md "Logistics").
- * - `kitModifier`: bonus / penalty to the Standard Kit budget.
+ * - `skills` / `talents`: opaque ID lists; the engine treats them as strings.
+ * - `characteristics`: per-key bonus; options stack additively.
+ * - `wounds` / `logistics`: sum.
+ * - `kitModifier`: added to the Standard Kit allowance.
+ * - `kitBase`: replaces the base Standard Kit allowance (Penal Colony).
  */
 export interface RegimentGrants {
     readonly characteristics?: Readonly<Record<string, number>>;
@@ -83,24 +96,29 @@ export interface RegimentGrants {
     readonly wounds?: number;
     readonly logistics?: number;
     readonly kitModifier?: number;
+    readonly kitBase?: number;
 }
 
 /**
- * One selectable option from the compendium catalog. `cost` is the
- * point cost against the 12-point Regiment budget; `grants` is what
- * the option awards to the regiment when selected.
+ * One selectable option from the compendium catalog. `cost` is the point cost
+ * against the Regiment budget (or, for a drawback, the points it refunds; for
+ * a kit item, the Standard Kit points it costs).
  */
 export interface RegimentOption {
     readonly id: string;
-    readonly category: RegimentCategory;
+    readonly category: RegimentOptionCategory;
     readonly cost: number;
+    /** Display name; falls back to the id when the catalog carries none. */
+    readonly label?: string;
+    /** Kit items: how many times the regiment may take the item. */
+    readonly maxCount?: number;
     readonly grants?: RegimentGrants;
 }
 
 /**
- * The current Regiment Creation selection. Single-pick categories use
- * an optional string slot; the doctrine categories accept arrays.
- * Favoured weapons has a close and ranged sub-slot.
+ * The current Regiment Creation selection. Single-pick categories use an
+ * optional string slot; the doctrine categories accept arrays. Favoured
+ * Weapons record the chosen Basic and Heavy weapon; their cost is a kit item.
  */
 export interface RegimentSelection {
     readonly homeWorld?: string;
@@ -108,9 +126,11 @@ export interface RegimentSelection {
     readonly regimentType?: string;
     readonly trainingDoctrines: ReadonlyArray<string>;
     readonly specialEquipmentDoctrines: ReadonlyArray<string>;
+    /** Regimental Drawbacks taken (stored on the actor as `regimentDrawbacks`); the book allows one. */
+    readonly drawbacks: ReadonlyArray<string>;
     readonly favouredWeapons: {
-        readonly close?: string;
-        readonly ranged?: string;
+        readonly basic?: string;
+        readonly heavy?: string;
     };
 }
 
@@ -118,11 +138,6 @@ export interface RegimentSelection {
 /*  Catalog helpers                                                     */
 /* -------------------------------------------------------------------- */
 
-/**
- * Build an `id → RegimentOption` lookup. The engine accepts the catalog
- * as a ReadonlyArray so the caller can simply hand over `option items`
- * pulled from the compendium without restructuring.
- */
 function indexCatalog(catalog: ReadonlyArray<RegimentOption>): ReadonlyMap<string, RegimentOption> {
     const map = new Map<string, RegimentOption>();
     for (const opt of catalog) {
@@ -131,20 +146,15 @@ function indexCatalog(catalog: ReadonlyArray<RegimentOption>): ReadonlyMap<strin
     return map;
 }
 
-/**
- * Iterate the option ids referenced by a selection. Skips empty
- * single-pick slots; preserves order across array slots so per-category
- * sums are stable.
- */
+/** Skip empty single-pick slots; preserve order across array slots. */
 function* selectionIds(selection: RegimentSelection): Generator<{ id: string; category: RegimentCategory }> {
-    if (selection.homeWorld !== undefined && selection.homeWorld !== '') {
-        yield { id: selection.homeWorld, category: 'homeWorld' };
-    }
-    if (selection.commandingOfficer !== undefined && selection.commandingOfficer !== '') {
-        yield { id: selection.commandingOfficer, category: 'commandingOfficer' };
-    }
-    if (selection.regimentType !== undefined && selection.regimentType !== '') {
-        yield { id: selection.regimentType, category: 'regimentType' };
+    const single: ReadonlyArray<[RegimentCategory, string | undefined]> = [
+        ['homeWorld', selection.homeWorld],
+        ['commandingOfficer', selection.commandingOfficer],
+        ['regimentType', selection.regimentType],
+    ];
+    for (const [category, id] of single) {
+        if (id !== undefined && id !== '') yield { id, category };
     }
     for (const id of selection.trainingDoctrines) {
         if (id !== '') yield { id, category: 'trainingDoctrine' };
@@ -152,15 +162,11 @@ function* selectionIds(selection: RegimentSelection): Generator<{ id: string; ca
     for (const id of selection.specialEquipmentDoctrines) {
         if (id !== '') yield { id, category: 'specialEquipmentDoctrine' };
     }
-    if (selection.favouredWeapons.close !== undefined && selection.favouredWeapons.close !== '') {
-        yield { id: selection.favouredWeapons.close, category: 'favouredWeapons' };
-    }
-    if (selection.favouredWeapons.ranged !== undefined && selection.favouredWeapons.ranged !== '') {
-        yield { id: selection.favouredWeapons.ranged, category: 'favouredWeapons' };
+    for (const id of selection.drawbacks) {
+        if (id !== '') yield { id, category: 'drawback' };
     }
 }
 
-/** Zero-init per-category accumulator. */
 function emptyPerCategory(): Record<RegimentCategory, number> {
     return {
         homeWorld: 0,
@@ -168,7 +174,7 @@ function emptyPerCategory(): Record<RegimentCategory, number> {
         regimentType: 0,
         trainingDoctrine: 0,
         specialEquipmentDoctrine: 0,
-        favouredWeapons: 0,
+        drawback: 0,
     };
 }
 
@@ -176,87 +182,79 @@ function emptyPerCategory(): Record<RegimentCategory, number> {
 /*  Regiment budget                                                     */
 /* -------------------------------------------------------------------- */
 
-/**
- * Result of evaluating a Regiment Creation selection against the
- * 12-point budget.
- */
+/** Why a selection cannot be committed yet. */
+export type RegimentIssue = 'overBudget' | 'missingHomeWorld' | 'missingCommandingOfficer' | 'missingRegimentType' | 'tooManyDoctrines' | 'tooManyDrawbacks';
+
+/** Result of evaluating a Regiment Creation selection against the budget. */
 export interface RegimentBudgetResult {
-    /** Total points spent across all selected options. */
+    /** Points spent on options (a drawback's refund is not counted here). */
     readonly spent: number;
-    /** REGIMENT_BUDGET − spent. Negative when over budget. */
+    /** `REGIMENT_BUDGET` plus the drawback's refund. */
+    readonly budget: number;
+    /** Points a drawback returned to the budget. */
+    readonly refund: number;
+    /** `budget − spent`. Negative when over budget. */
     readonly remaining: number;
-    /** True when `spent` is exactly `REGIMENT_BUDGET`. */
+    /** Doctrines held: the Regiment Type plus every Training and Special Equipment Doctrine. */
+    readonly doctrineCount: number;
+    /** Everything still stopping the selection from being committed; empty when valid. */
+    readonly issues: ReadonlyArray<RegimentIssue>;
+    /** True when the selection is complete and within budget. */
     readonly valid: boolean;
-    /** Spend per category, for sheet breakdowns. */
+    /** Spend per category, for sheet breakdowns. (`drawback` holds the refund.) */
     readonly perCategory: Record<RegimentCategory, number>;
 }
 
 /**
  * Compute the spent / remaining / per-category breakdown of a selection.
- * The selection is "valid" only when the total exactly matches the
- * 12-point budget (RAW: regiments spend their *entire* budget — leftover
- * points are not banked).
  *
- * Options referenced in the selection but absent from the catalog are
- * silently skipped; the consumer surfaces unknown-id errors separately
- * if needed.
+ * Valid means the Home World, Commanding Officer and Regiment Type are chosen,
+ * no more than {@link MAX_DOCTRINES} doctrines are held, and the spend fits the
+ * budget. Unspent points are fine — they become Standard Kit points.
+ *
+ * Options referenced in the selection but absent from the catalog are skipped.
  */
 export function computeRegimentBudget(selection: RegimentSelection, optionCatalog: ReadonlyArray<RegimentOption>): RegimentBudgetResult {
     const lookup = indexCatalog(optionCatalog);
     const perCategory = emptyPerCategory();
     let spent = 0;
+    let refund = 0;
+    let doctrineCount = 0;
+    let drawbackCount = 0;
 
     for (const ref of selectionIds(selection)) {
         const opt = lookup.get(ref.id);
         if (opt === undefined) continue;
         const cost = Number.isFinite(opt.cost) ? opt.cost : 0;
-        spent += cost;
         perCategory[ref.category] += cost;
+        if (ref.category === 'drawback') {
+            refund += cost;
+            drawbackCount += 1;
+            continue;
+        }
+        spent += cost;
+        if (ref.category === 'regimentType' || ref.category === 'trainingDoctrine' || ref.category === 'specialEquipmentDoctrine') doctrineCount += 1;
     }
 
-    const remaining = REGIMENT_BUDGET - spent;
-    return { spent, remaining, valid: spent === REGIMENT_BUDGET, perCategory };
-}
-
-/* -------------------------------------------------------------------- */
-/*  Standard Kit budget                                                 */
-/* -------------------------------------------------------------------- */
-
-/**
- * Result of evaluating a Standard Kit allocation against the 30-point
- * (or modified) kit budget. The kit is "valid" when total spend is
- * ≤ budget — unlike the Regiment budget, leftover kit points are
- * permitted (regiments may leave some kit slots unfilled).
- */
-export interface KitBudgetResult {
-    readonly spent: number;
-    readonly remaining: number;
-    readonly valid: boolean;
-}
-
-/**
- * Sum the cost of every kit entry. `kitModifier` (a delta from
- * RegimentGrants — Mechanised regiments raise the cap, Penal regiments
- * lower it) is added to STANDARD_KIT_BUDGET before validation.
- */
-export function computeKitBudget(kit: ReadonlyArray<{ readonly id: string; readonly cost: number }>, kitModifier = 0): KitBudgetResult {
-    let spent = 0;
-    for (const entry of kit) {
-        if (Number.isFinite(entry.cost)) spent += entry.cost;
-    }
-    const budget = STANDARD_KIT_BUDGET + (Number.isFinite(kitModifier) ? kitModifier : 0);
+    const budget = REGIMENT_BUDGET + refund;
     const remaining = budget - spent;
-    return { spent, remaining, valid: spent <= budget };
+
+    const resolved = (id: string | undefined): boolean => id !== undefined && lookup.has(id);
+    const issues: RegimentIssue[] = [];
+    if (!resolved(selection.homeWorld)) issues.push('missingHomeWorld');
+    if (!resolved(selection.commandingOfficer)) issues.push('missingCommandingOfficer');
+    if (!resolved(selection.regimentType)) issues.push('missingRegimentType');
+    if (doctrineCount > MAX_DOCTRINES) issues.push('tooManyDoctrines');
+    if (drawbackCount > MAX_DRAWBACKS) issues.push('tooManyDrawbacks');
+    if (remaining < 0) issues.push('overBudget');
+
+    return { spent, budget, refund, remaining, doctrineCount, issues, valid: issues.length === 0, perCategory };
 }
 
 /* -------------------------------------------------------------------- */
 /*  Grant aggregation                                                   */
 /* -------------------------------------------------------------------- */
 
-/**
- * Concrete (non-readonly) view of `RegimentGrants` used while merging.
- * The returned aggregate is reshaped back to the readonly form.
- */
 interface MutableGrants {
     characteristics: Record<string, number>;
     skills: string[];
@@ -264,6 +262,7 @@ interface MutableGrants {
     wounds: number;
     logistics: number;
     kitModifier: number;
+    kitBase: number | undefined;
 }
 
 function mergeGrants(target: MutableGrants, source: RegimentGrants | undefined): void {
@@ -289,17 +288,17 @@ function mergeGrants(target: MutableGrants, source: RegimentGrants | undefined):
     if (source.kitModifier !== undefined && Number.isFinite(source.kitModifier)) {
         target.kitModifier += source.kitModifier;
     }
+    if (source.kitBase !== undefined && Number.isFinite(source.kitBase)) {
+        // Two options both replacing the base: the smaller (harsher) allowance wins.
+        target.kitBase = target.kitBase === undefined ? source.kitBase : Math.min(target.kitBase, source.kitBase);
+    }
 }
 
 /**
- * Merge the `RegimentGrants` of every option in the selection into a
- * single aggregate. Characteristics sum per key; skill / talent lists
- * concatenate in selection order (the consumer deduplicates if needed);
- * wounds, logistics, and kitModifier sum.
- *
- * Returns an aggregate with all sub-fields present (zero-valued if no
- * options contributed) — keeps downstream consumers from null-checking
- * every slot.
+ * Merge the `RegimentGrants` of every option in the selection into a single
+ * aggregate. Characteristics sum per key; skill / talent lists concatenate in
+ * selection order; wounds, logistics and kitModifier sum; the smallest
+ * `kitBase` wins. All numeric slots are present (zero when nothing contributed).
  */
 export function aggregateRegimentGrants(selection: RegimentSelection, optionCatalog: ReadonlyArray<RegimentOption>): RegimentGrants {
     const lookup = indexCatalog(optionCatalog);
@@ -310,6 +309,7 @@ export function aggregateRegimentGrants(selection: RegimentSelection, optionCata
         wounds: 0,
         logistics: 0,
         kitModifier: 0,
+        kitBase: undefined,
     };
 
     for (const ref of selectionIds(selection)) {
@@ -325,7 +325,65 @@ export function aggregateRegimentGrants(selection: RegimentSelection, optionCata
         wounds: acc.wounds,
         logistics: acc.logistics,
         kitModifier: acc.kitModifier,
+        ...(acc.kitBase === undefined ? {} : { kitBase: acc.kitBase }),
     };
+}
+
+/* -------------------------------------------------------------------- */
+/*  Standard Kit budget                                                 */
+/* -------------------------------------------------------------------- */
+
+/** A purchased Standard Kit entry. The same id may appear more than once. */
+export interface KitEntry {
+    readonly id: string;
+    readonly cost: number;
+}
+
+/**
+ * Result of evaluating a Standard Kit allocation. The kit is "valid" when total
+ * spend does not exceed the allowance — leftover kit points may go unused.
+ */
+export interface KitBudgetResult {
+    readonly spent: number;
+    readonly remaining: number;
+    readonly valid: boolean;
+}
+
+/**
+ * The Standard Kit allowance: the base ({@link STANDARD_KIT_BUDGET}, or a
+ * `kitBase` override), plus {@link KIT_POINTS_PER_UNSPENT} per unspent Regiment
+ * Creation point, plus any `kitModifier`.
+ */
+export function computeKitAllowance(regiment: Pick<RegimentBudgetResult, 'remaining'>, grants: Pick<RegimentGrants, 'kitBase' | 'kitModifier'>): number {
+    const base = grants.kitBase !== undefined && Number.isFinite(grants.kitBase) ? grants.kitBase : STANDARD_KIT_BUDGET;
+    const modifier = grants.kitModifier !== undefined && Number.isFinite(grants.kitModifier) ? grants.kitModifier : 0;
+    return base + KIT_POINTS_PER_UNSPENT * Math.max(0, regiment.remaining) + modifier;
+}
+
+/** Sum the cost of every kit entry against an allowance. */
+export function computeKitBudget(kit: ReadonlyArray<KitEntry>, allowance: number = STANDARD_KIT_BUDGET): KitBudgetResult {
+    let spent = 0;
+    for (const entry of kit) {
+        if (Number.isFinite(entry.cost)) spent += entry.cost;
+    }
+    const remaining = allowance - spent;
+    return { spent, remaining, valid: remaining >= 0 };
+}
+
+/**
+ * How many times each kit item has been taken beyond its `maxCount`, for the
+ * ids that exceed it. Empty when every item is within its limit.
+ */
+export function kitOverLimit(kit: ReadonlyArray<KitEntry>, optionCatalog: ReadonlyArray<RegimentOption>): ReadonlyArray<string> {
+    const lookup = indexCatalog(optionCatalog);
+    const counts = new Map<string, number>();
+    for (const entry of kit) counts.set(entry.id, (counts.get(entry.id) ?? 0) + 1);
+    const over: string[] = [];
+    for (const [id, count] of counts) {
+        const max = lookup.get(id)?.maxCount;
+        if (max !== undefined && count > max) over.push(id);
+    }
+    return over;
 }
 
 /* -------------------------------------------------------------------- */
@@ -334,39 +392,35 @@ export function aggregateRegimentGrants(selection: RegimentSelection, optionCata
 
 /** Regiment + Standard Kit budget readouts for the OW Regiment panel, each with its cap. */
 export interface RegimentPanelSummary {
-    readonly regiment: RegimentBudgetResult & { readonly budget: number };
+    readonly regiment: RegimentBudgetResult;
     readonly kit: KitBudgetResult & { readonly budget: number };
 }
 
 /**
  * Evaluate a persisted selection + kit for the sheet's Regiment panel. The kit
- * cap includes the selection's aggregated `kitModifier` (Mechanised raises it,
- * Penal lowers it), so the panel and the builder dialog agree.
+ * allowance counts unspent regiment points and the selection's kit effects, so
+ * the panel and the builder dialog agree.
  */
 export function buildRegimentPanelSummary(
     selection: RegimentSelection,
-    kit: ReadonlyArray<{ readonly id: string; readonly cost: number }>,
+    kit: ReadonlyArray<KitEntry>,
     optionCatalog: ReadonlyArray<RegimentOption>,
 ): RegimentPanelSummary {
-    const kitModifier = aggregateRegimentGrants(selection, optionCatalog).kitModifier ?? 0;
-    return {
-        regiment: { ...computeRegimentBudget(selection, optionCatalog), budget: REGIMENT_BUDGET },
-        kit: { ...computeKitBudget(kit, kitModifier), budget: STANDARD_KIT_BUDGET + kitModifier },
-    };
+    const regiment = computeRegimentBudget(selection, optionCatalog);
+    const allowance = computeKitAllowance(regiment, aggregateRegimentGrants(selection, optionCatalog));
+    return { regiment, kit: { ...computeKitBudget(kit, allowance), budget: allowance } };
 }
 
 /* -------------------------------------------------------------------- */
 /*  Empty-selection helper                                              */
 /* -------------------------------------------------------------------- */
 
-/**
- * A blank `RegimentSelection` with the array slots initialised. Useful
- * as the default-state seed for sheet form binding.
- */
+/** A blank `RegimentSelection` with the array slots initialised. */
 export function emptyRegimentSelection(): RegimentSelection {
     return {
         trainingDoctrines: [],
         specialEquipmentDoctrines: [],
+        drawbacks: [],
         favouredWeapons: {},
     };
 }

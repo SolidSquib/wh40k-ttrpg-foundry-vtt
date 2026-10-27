@@ -1,15 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import {
-    REGIMENT_BUDGET,
-    REGIMENT_CATEGORIES,
-    STANDARD_KIT_BUDGET,
     aggregateRegimentGrants,
     buildRegimentPanelSummary,
+    computeKitAllowance,
     computeKitBudget,
     computeRegimentBudget,
     emptyRegimentSelection,
+    kitOverLimit,
+    KIT_POINTS_PER_UNSPENT,
+    MAX_DOCTRINES,
+    REGIMENT_BUDGET,
+    REGIMENT_CATEGORIES,
     type RegimentOption,
     type RegimentSelection,
+    STANDARD_KIT_BUDGET,
 } from './ow-regiment-creation';
 
 /* -------------------------------------------------------------- */
@@ -17,71 +21,57 @@ import {
 /* -------------------------------------------------------------- */
 
 /**
- * Synthetic catalog. Ids are intentionally opaque ("hw-a", "ct-3")
- * so the test surface stays content-agnostic — the engine must not
- * care which compendium document the option originated from.
+ * Synthetic catalog. Ids are intentionally opaque ("hw-a", "ct-3") so the test
+ * surface stays content-agnostic — the engine must not care which compendium
+ * document the option originated from.
  */
 const CATALOG: ReadonlyArray<RegimentOption> = [
-    // Home World options.
     { id: 'hw-a', category: 'homeWorld', cost: 3, grants: { characteristics: { weaponSkill: 3 }, skills: ['skill-survival'], wounds: 1 } },
     { id: 'hw-b', category: 'homeWorld', cost: 2, grants: { characteristics: { toughness: 3 }, talents: ['talent-hardy'] } },
-    // Commanding Officer options.
+    { id: 'hw-penal', category: 'homeWorld', cost: 2, grants: { kitBase: 15 } },
+    { id: 'hw-rich', category: 'homeWorld', cost: 3, grants: { logistics: 10 } },
     { id: 'co-a', category: 'commandingOfficer', cost: 2, grants: { logistics: 5 } },
-    { id: 'co-b', category: 'commandingOfficer', cost: 4, grants: { characteristics: { fellowship: 3 }, logistics: -5 } },
-    // Regiment Type options.
-    { id: 'rt-a', category: 'regimentType', cost: 2, grants: { skills: ['skill-stealth'], kitModifier: 0 } },
-    { id: 'rt-b', category: 'regimentType', cost: 5, grants: { kitModifier: 10, wounds: 2 } },
-    // Training Doctrines (multi-select).
+    { id: 'co-b', category: 'commandingOfficer', cost: 1 },
+    { id: 'rt-a', category: 'regimentType', cost: 2, grants: { skills: ['skill-stealth'] } },
+    { id: 'rt-b', category: 'regimentType', cost: 5, grants: { wounds: 2 } },
     { id: 'td-a', category: 'trainingDoctrine', cost: 1, grants: { talents: ['talent-sprint'] } },
-    { id: 'td-b', category: 'trainingDoctrine', cost: 2, grants: { characteristics: { agility: 3 } } },
-    // Special Equipment Doctrines (multi-select).
+    { id: 'td-b', category: 'trainingDoctrine', cost: 2 },
     { id: 'sed-a', category: 'specialEquipmentDoctrine', cost: 1, grants: { kitModifier: 5 } },
-    { id: 'sed-b', category: 'specialEquipmentDoctrine', cost: 3, grants: { kitModifier: 10 } },
-    // Favoured Weapons.
-    { id: 'fw-close', category: 'favouredWeapons', cost: 1, grants: { talents: ['talent-wsmastery'] } },
-    { id: 'fw-ranged', category: 'favouredWeapons', cost: 1, grants: { talents: ['talent-bsmastery'] } },
+    { id: 'sed-b', category: 'specialEquipmentDoctrine', cost: 3 },
+    { id: 'db-a', category: 'drawback', cost: 3, grants: { kitModifier: -5 } },
+    { id: 'db-b', category: 'drawback', cost: 6 },
+    { id: 'kit-a', category: 'kitItem', cost: 5, maxCount: 2 },
+    { id: 'kit-b', category: 'kitItem', cost: 10 },
 ];
 
 const BLANK = emptyRegimentSelection();
+
+/** A complete, in-budget selection: hw-a (3) + co-a (2) + rt-a (2) = 7 of 12. */
+const COMPLETE: RegimentSelection = { ...BLANK, homeWorld: 'hw-a', commandingOfficer: 'co-a', regimentType: 'rt-a' };
 
 /* -------------------------------------------------------------- */
 /*  Constants                                                     */
 /* -------------------------------------------------------------- */
 
 describe('OW Regiment Creation constants', () => {
-    it('exposes the 12-point regiment budget', () => {
+    it('exposes the printed budgets and limits', () => {
         expect(REGIMENT_BUDGET).toBe(12);
-    });
-
-    it('exposes the 30-point standard kit budget', () => {
         expect(STANDARD_KIT_BUDGET).toBe(30);
+        expect(KIT_POINTS_PER_UNSPENT).toBe(2);
+        expect(MAX_DOCTRINES).toBe(3);
     });
 
-    it('lists all six categories in stable order', () => {
-        expect(REGIMENT_CATEGORIES).toEqual([
-            'homeWorld',
-            'commandingOfficer',
-            'regimentType',
-            'trainingDoctrine',
-            'specialEquipmentDoctrine',
-            'favouredWeapons',
-        ]);
+    it('lists the budget categories in stable order (favoured weapons are a kit purchase, not a category)', () => {
+        expect(REGIMENT_CATEGORIES).toEqual(['homeWorld', 'commandingOfficer', 'regimentType', 'trainingDoctrine', 'specialEquipmentDoctrine', 'drawback']);
     });
 });
 
-/* -------------------------------------------------------------- */
-/*  Empty selection                                               */
-/* -------------------------------------------------------------- */
-
 describe('emptyRegimentSelection', () => {
-    it('initialises arrays + empty favoured-weapons sub-slot', () => {
-        const s = emptyRegimentSelection();
-        expect(s.trainingDoctrines).toEqual([]);
-        expect(s.specialEquipmentDoctrines).toEqual([]);
-        expect(s.favouredWeapons).toEqual({});
-        expect(s.homeWorld).toBeUndefined();
-        expect(s.commandingOfficer).toBeUndefined();
-        expect(s.regimentType).toBeUndefined();
+    it('initialises the array slots and the favoured-weapons sub-slots', () => {
+        expect(BLANK.trainingDoctrines).toEqual([]);
+        expect(BLANK.specialEquipmentDoctrines).toEqual([]);
+        expect(BLANK.drawbacks).toEqual([]);
+        expect(BLANK.favouredWeapons).toEqual({});
     });
 });
 
@@ -90,182 +80,146 @@ describe('emptyRegimentSelection', () => {
 /* -------------------------------------------------------------- */
 
 describe('computeRegimentBudget', () => {
-    it('empty selection → 0 spent, invalid (under budget)', () => {
-        const result = computeRegimentBudget(BLANK, CATALOG);
-        expect(result.spent).toBe(0);
-        expect(result.remaining).toBe(12);
-        expect(result.valid).toBe(false);
+    it('empty selection → nothing spent, the three required picks are missing', () => {
+        const r = computeRegimentBudget(BLANK, CATALOG);
+        expect(r.spent).toBe(0);
+        expect(r.remaining).toBe(12);
+        expect(r.valid).toBe(false);
+        expect(r.issues).toEqual(['missingHomeWorld', 'missingCommandingOfficer', 'missingRegimentType']);
     });
 
-    it('exactly 12 spent → valid', () => {
-        // 3 (hw-a) + 2 (co-a) + 2 (rt-a) + 1 (td-a) + 2 (td-b) + 1 (sed-a) + 1 (fw-close) = 12
-        const selection: RegimentSelection = {
-            homeWorld: 'hw-a',
-            commandingOfficer: 'co-a',
-            regimentType: 'rt-a',
-            trainingDoctrines: ['td-a', 'td-b'],
-            specialEquipmentDoctrines: ['sed-a'],
-            favouredWeapons: { close: 'fw-close' },
-        };
-        const result = computeRegimentBudget(selection, CATALOG);
-        expect(result.spent).toBe(12);
-        expect(result.remaining).toBe(0);
-        expect(result.valid).toBe(true);
+    it('a complete selection under budget is valid — unspent points are not an error', () => {
+        const r = computeRegimentBudget(COMPLETE, CATALOG);
+        expect(r.spent).toBe(7);
+        expect(r.remaining).toBe(5);
+        expect(r.valid).toBe(true);
+        expect(r.issues).toEqual([]);
     });
 
-    it('over-budget → invalid with negative remaining', () => {
-        // 3 + 4 + 5 + 2 = 14
-        const selection: RegimentSelection = {
-            homeWorld: 'hw-a',
-            commandingOfficer: 'co-b',
-            regimentType: 'rt-b',
-            trainingDoctrines: ['td-b'],
-            specialEquipmentDoctrines: [],
-            favouredWeapons: {},
-        };
-        const result = computeRegimentBudget(selection, CATALOG);
-        expect(result.spent).toBe(14);
-        expect(result.remaining).toBe(-2);
-        expect(result.valid).toBe(false);
+    it('a complete selection that spends exactly 12 is valid', () => {
+        const r = computeRegimentBudget({ ...COMPLETE, trainingDoctrines: ['td-b'], specialEquipmentDoctrines: ['sed-b'] }, CATALOG);
+        expect(r.spent).toBe(12);
+        expect(r.remaining).toBe(0);
+        expect(r.valid).toBe(true);
     });
 
-    it('under-budget by leftover points → invalid', () => {
-        const selection: RegimentSelection = {
-            homeWorld: 'hw-b', // 2
-            commandingOfficer: 'co-a', // 2
-            regimentType: 'rt-a', // 2
-            trainingDoctrines: ['td-a'], // 1
-            specialEquipmentDoctrines: [],
-            favouredWeapons: {},
-        };
-        const result = computeRegimentBudget(selection, CATALOG);
-        expect(result.spent).toBe(7);
-        expect(result.remaining).toBe(5);
-        expect(result.valid).toBe(false);
+    it('over budget is reported with a negative remainder', () => {
+        const r = computeRegimentBudget({ ...COMPLETE, regimentType: 'rt-b', trainingDoctrines: ['td-b'], specialEquipmentDoctrines: ['sed-b'] }, CATALOG);
+        expect(r.spent).toBe(3 + 2 + 5 + 2 + 3);
+        expect(r.remaining).toBe(-3);
+        expect(r.valid).toBe(false);
+        expect(r.issues).toContain('overBudget');
     });
 
-    it('reports per-category breakdown', () => {
-        const selection: RegimentSelection = {
-            homeWorld: 'hw-a',
-            commandingOfficer: 'co-a',
-            regimentType: 'rt-a',
-            trainingDoctrines: ['td-a', 'td-b'],
-            specialEquipmentDoctrines: ['sed-a'],
-            favouredWeapons: { close: 'fw-close', ranged: 'fw-ranged' },
-        };
-        const result = computeRegimentBudget(selection, CATALOG);
-        expect(result.perCategory.homeWorld).toBe(3);
-        expect(result.perCategory.commandingOfficer).toBe(2);
-        expect(result.perCategory.regimentType).toBe(2);
-        expect(result.perCategory.trainingDoctrine).toBe(3); // td-a (1) + td-b (2)
-        expect(result.perCategory.specialEquipmentDoctrine).toBe(1);
-        expect(result.perCategory.favouredWeapons).toBe(2); // close (1) + ranged (1)
+    it('counts the Regiment Type among the three doctrines', () => {
+        const ok = computeRegimentBudget({ ...COMPLETE, trainingDoctrines: ['td-a'], specialEquipmentDoctrines: ['sed-a'] }, CATALOG);
+        expect(ok.doctrineCount).toBe(3);
+        expect(ok.issues).toEqual([]);
+
+        const tooMany = computeRegimentBudget({ ...COMPLETE, trainingDoctrines: ['td-a', 'td-b'], specialEquipmentDoctrines: ['sed-a'] }, CATALOG);
+        expect(tooMany.doctrineCount).toBe(4);
+        expect(tooMany.issues).toContain('tooManyDoctrines');
+        expect(tooMany.valid).toBe(false);
     });
 
-    it('different mixes of categories can hit the same total', () => {
-        // Mix A: heavy in regiment type, no doctrines beyond one each.
-        const a: RegimentSelection = {
-            homeWorld: 'hw-b', // 2
-            commandingOfficer: 'co-a', // 2
-            regimentType: 'rt-b', // 5
-            trainingDoctrines: ['td-a'], // 1
-            specialEquipmentDoctrines: ['sed-a'], // 1
-            favouredWeapons: { close: 'fw-close' }, // 1
-        };
-        // Mix B: heavy doctrines, cheap regiment type.
-        const b: RegimentSelection = {
-            homeWorld: 'hw-a', // 3
-            commandingOfficer: 'co-a', // 2
-            regimentType: 'rt-a', // 2
-            trainingDoctrines: ['td-b'], // 2
-            specialEquipmentDoctrines: ['sed-a'], // 1
-            favouredWeapons: { close: 'fw-close', ranged: 'fw-ranged' }, // 2
-        };
-        const ra = computeRegimentBudget(a, CATALOG);
-        const rb = computeRegimentBudget(b, CATALOG);
-        expect(ra.spent).toBe(12);
-        expect(rb.spent).toBe(12);
-        expect(ra.valid).toBe(true);
-        expect(rb.valid).toBe(true);
-        // Yet per-category distribution differs.
-        expect(ra.perCategory.regimentType).not.toBe(rb.perCategory.regimentType);
-        expect(ra.perCategory.trainingDoctrine).not.toBe(rb.perCategory.trainingDoctrine);
+    it('a drawback refunds points to the budget instead of costing any', () => {
+        const over = { ...COMPLETE, regimentType: 'rt-b', trainingDoctrines: ['td-b'], specialEquipmentDoctrines: ['sed-b'] };
+        expect(computeRegimentBudget(over, CATALOG).valid).toBe(false);
+
+        const refunded = computeRegimentBudget({ ...over, drawbacks: ['db-b'] }, CATALOG);
+        expect(refunded.refund).toBe(6);
+        expect(refunded.budget).toBe(18);
+        expect(refunded.spent).toBe(15);
+        expect(refunded.remaining).toBe(3);
+        expect(refunded.valid).toBe(true);
+        expect(refunded.perCategory.drawback).toBe(6);
     });
 
-    it('silently skips unknown ids', () => {
-        const selection: RegimentSelection = {
-            ...BLANK,
-            homeWorld: 'does-not-exist',
-            commandingOfficer: 'co-a',
-        };
-        const result = computeRegimentBudget(selection, CATALOG);
-        expect(result.spent).toBe(2);
-        expect(result.perCategory.homeWorld).toBe(0);
+    it('allows only one drawback', () => {
+        const r = computeRegimentBudget({ ...COMPLETE, drawbacks: ['db-a', 'db-b'] }, CATALOG);
+        expect(r.issues).toContain('tooManyDrawbacks');
+        expect(r.valid).toBe(false);
+    });
+
+    it('reports a per-category breakdown', () => {
+        const r = computeRegimentBudget({ ...COMPLETE, trainingDoctrines: ['td-a', 'td-b'] }, CATALOG);
+        expect(r.perCategory).toEqual({
+            homeWorld: 3,
+            commandingOfficer: 2,
+            regimentType: 2,
+            trainingDoctrine: 3,
+            specialEquipmentDoctrine: 0,
+            drawback: 0,
+        });
+    });
+
+    it('silently skips unknown ids — and does not count them as the required picks', () => {
+        const r = computeRegimentBudget({ ...BLANK, homeWorld: 'ghost', commandingOfficer: 'co-a', regimentType: 'rt-a' }, CATALOG);
+        expect(r.spent).toBe(4);
+        expect(r.issues).toEqual(['missingHomeWorld']);
     });
 });
 
 /* -------------------------------------------------------------- */
-/*  Kit budget                                                    */
+/*  Standard Kit                                                  */
 /* -------------------------------------------------------------- */
+
+describe('computeKitAllowance', () => {
+    it('is the 30-point base plus 2 per unspent regiment point', () => {
+        const regiment = computeRegimentBudget(COMPLETE, CATALOG); // 5 unspent
+        expect(computeKitAllowance(regiment, {})).toBe(30 + 2 * 5);
+    });
+
+    it('does not go below the base when over budget', () => {
+        expect(computeKitAllowance({ remaining: -3 }, {})).toBe(30);
+    });
+
+    it('a kitBase override replaces the 30 (Penal Colony: 15), keeping the unspent bonus', () => {
+        expect(computeKitAllowance({ remaining: 5 }, { kitBase: 15 })).toBe(15 + 10);
+    });
+
+    it('adds the kitModifier', () => {
+        expect(computeKitAllowance({ remaining: 0 }, { kitModifier: 5 })).toBe(35);
+        expect(computeKitAllowance({ remaining: 0 }, { kitModifier: -5 })).toBe(25);
+    });
+});
 
 describe('computeKitBudget', () => {
     it('empty kit → 0 spent, full remaining, valid', () => {
-        const result = computeKitBudget([]);
-        expect(result.spent).toBe(0);
-        expect(result.remaining).toBe(30);
-        expect(result.valid).toBe(true);
+        expect(computeKitBudget([])).toEqual({ spent: 0, remaining: 30, valid: true });
     });
 
-    it('under budget → valid with positive remaining', () => {
-        const result = computeKitBudget([
-            { id: 'lasgun', cost: 10 },
-            { id: 'rations', cost: 5 },
-            { id: 'flak', cost: 10 },
-        ]);
-        expect(result.spent).toBe(25);
-        expect(result.remaining).toBe(5);
-        expect(result.valid).toBe(true);
+    it('spends against the allowance and is valid up to and including it', () => {
+        expect(computeKitBudget([{ id: 'kit-a', cost: 20 }], 30)).toEqual({ spent: 20, remaining: 10, valid: true });
+        expect(computeKitBudget([{ id: 'kit-a', cost: 30 }], 30).valid).toBe(true);
     });
 
-    it('exactly 30 → valid', () => {
-        const result = computeKitBudget([
-            { id: 'a', cost: 15 },
-            { id: 'b', cost: 15 },
-        ]);
-        expect(result.spent).toBe(30);
-        expect(result.remaining).toBe(0);
-        expect(result.valid).toBe(true);
+    it('over the allowance is invalid', () => {
+        expect(computeKitBudget([{ id: 'kit-b', cost: 31 }], 30)).toEqual({ spent: 31, remaining: -1, valid: false });
+    });
+});
+
+describe('kitOverLimit', () => {
+    it('flags an item taken more times than its maxCount', () => {
+        const kit = [
+            { id: 'kit-a', cost: 5 },
+            { id: 'kit-a', cost: 5 },
+            { id: 'kit-a', cost: 5 },
+        ];
+        expect(kitOverLimit(kit, CATALOG)).toEqual(['kit-a']);
     });
 
-    it('over budget → invalid', () => {
-        const result = computeKitBudget([
-            { id: 'a', cost: 20 },
-            { id: 'b', cost: 20 },
-        ]);
-        expect(result.spent).toBe(40);
-        expect(result.remaining).toBe(-10);
-        expect(result.valid).toBe(false);
-    });
-
-    it('kitModifier adjusts the cap (Mechanised +10)', () => {
-        const result = computeKitBudget(
-            [
-                { id: 'a', cost: 25 },
-                { id: 'b', cost: 15 },
-            ],
-            10,
-        );
-        expect(result.spent).toBe(40);
-        expect(result.remaining).toBe(0);
-        expect(result.valid).toBe(true);
-    });
-
-    it('kitModifier can lower the cap (Penal -10)', () => {
-        const result = computeKitBudget([{ id: 'a', cost: 25 }], -10);
-        // Cap = 30 + (-10) = 20.
-        expect(result.spent).toBe(25);
-        expect(result.remaining).toBe(-5);
-        expect(result.valid).toBe(false);
+    it('allows up to maxCount copies, and one copy where no maxCount is set', () => {
+        expect(
+            kitOverLimit(
+                [
+                    { id: 'kit-a', cost: 5 },
+                    { id: 'kit-a', cost: 5 },
+                    { id: 'kit-b', cost: 10 },
+                ],
+                CATALOG,
+            ),
+        ).toEqual([]);
     });
 });
 
@@ -277,99 +231,58 @@ describe('aggregateRegimentGrants', () => {
     it('empty selection → zero-valued grants', () => {
         const g = aggregateRegimentGrants(BLANK, CATALOG);
         expect(g.characteristics).toEqual({});
-        expect(g.skills).toEqual([]);
-        expect(g.talents).toEqual([]);
         expect(g.wounds).toBe(0);
         expect(g.logistics).toBe(0);
         expect(g.kitModifier).toBe(0);
+        expect(g.kitBase).toBeUndefined();
     });
 
-    it('sums characteristics across multiple options', () => {
-        const selection: RegimentSelection = {
-            homeWorld: 'hw-a', // weaponSkill +3
-            commandingOfficer: 'co-b', // fellowship +3
-            regimentType: 'rt-a',
-            trainingDoctrines: ['td-b'], // agility +3
-            specialEquipmentDoctrines: [],
-            favouredWeapons: {},
-        };
-        const g = aggregateRegimentGrants(selection, CATALOG);
-        expect(g.characteristics).toEqual({ weaponSkill: 3, fellowship: 3, agility: 3 });
-    });
-
-    it('concatenates skills and talents (order preserved, no dedup)', () => {
-        const selection: RegimentSelection = {
-            homeWorld: 'hw-a', // skills: survival
-            commandingOfficer: 'co-a',
-            regimentType: 'rt-a', // skills: stealth
-            trainingDoctrines: ['td-a'], // talents: sprint
-            specialEquipmentDoctrines: [],
-            favouredWeapons: { close: 'fw-close', ranged: 'fw-ranged' }, // talents: wsmastery, bsmastery
-        };
-        const g = aggregateRegimentGrants(selection, CATALOG);
-        expect(g.skills).toEqual(['skill-survival', 'skill-stealth']);
-        expect(g.talents).toEqual(['talent-sprint', 'talent-wsmastery', 'talent-bsmastery']);
-    });
-
-    it('sums wounds, logistics, and kitModifier', () => {
-        const selection: RegimentSelection = {
-            homeWorld: 'hw-a', // wounds +1
-            commandingOfficer: 'co-a', // logistics +5
-            regimentType: 'rt-b', // kitModifier +10, wounds +2
-            trainingDoctrines: [],
-            specialEquipmentDoctrines: ['sed-a', 'sed-b'], // kitModifier +5, +10
-            favouredWeapons: {},
-        };
-        const g = aggregateRegimentGrants(selection, CATALOG);
+    it('sums characteristics, wounds, logistics and kitModifier across options', () => {
+        const g = aggregateRegimentGrants(
+            { ...BLANK, homeWorld: 'hw-a', commandingOfficer: 'co-a', regimentType: 'rt-b', specialEquipmentDoctrines: ['sed-a'], drawbacks: ['db-a'] },
+            CATALOG,
+        );
+        expect(g.characteristics).toEqual({ weaponSkill: 3 });
         expect(g.wounds).toBe(3);
         expect(g.logistics).toBe(5);
-        expect(g.kitModifier).toBe(25);
+        expect(g.kitModifier).toBe(5 - 5);
     });
 
-    it('opposite-sign logistics deltas sum (CO penalty cancels bonus)', () => {
-        const selection: RegimentSelection = {
-            ...BLANK,
-            commandingOfficer: 'co-b', // logistics -5
-        };
-        const g = aggregateRegimentGrants(selection, CATALOG);
-        expect(g.logistics).toBe(-5);
+    it('concatenates skills and talents in selection order', () => {
+        const g = aggregateRegimentGrants({ ...BLANK, homeWorld: 'hw-b', regimentType: 'rt-a', trainingDoctrines: ['td-a'] }, CATALOG);
+        expect(g.skills).toEqual(['skill-stealth']);
+        expect(g.talents).toEqual(['talent-hardy', 'talent-sprint']);
     });
 
-    it('characteristics stack additively when same key appears twice', () => {
-        const catalog: ReadonlyArray<RegimentOption> = [
-            { id: 'one', category: 'trainingDoctrine', cost: 1, grants: { characteristics: { toughness: 3 } } },
-            { id: 'two', category: 'specialEquipmentDoctrine', cost: 1, grants: { characteristics: { toughness: 2 } } },
-        ];
-        const selection: RegimentSelection = {
-            ...BLANK,
-            trainingDoctrines: ['one'],
-            specialEquipmentDoctrines: ['two'],
-        };
-        const g = aggregateRegimentGrants(selection, catalog);
-        expect(g.characteristics?.['toughness']).toBe(5);
+    it('carries the kitBase override through', () => {
+        expect(aggregateRegimentGrants({ ...BLANK, homeWorld: 'hw-penal' }, CATALOG).kitBase).toBe(15);
     });
 });
 
+/* -------------------------------------------------------------- */
+/*  Panel summary                                                 */
+/* -------------------------------------------------------------- */
+
 describe('buildRegimentPanelSummary', () => {
-    it('reports zero spend against both caps for a fresh actor (never blank, as the panel once rendered " / ")', () => {
-        const summary = buildRegimentPanelSummary(BLANK, [], CATALOG);
-        expect(summary.regiment).toMatchObject({ spent: 0, remaining: REGIMENT_BUDGET, valid: false, budget: REGIMENT_BUDGET });
-        expect(summary.kit).toMatchObject({ spent: 0, remaining: STANDARD_KIT_BUDGET, valid: true, budget: STANDARD_KIT_BUDGET });
-        expect(summary.regiment.perCategory.homeWorld).toBe(0);
+    it('reports both budgets for a fresh actor (never blank)', () => {
+        const s = buildRegimentPanelSummary(BLANK, [], CATALOG);
+        expect(s.regiment.spent).toBe(0);
+        expect(s.regiment.budget).toBe(12);
+        expect(s.kit.budget).toBe(30 + 2 * 12);
     });
 
-    it('raises the kit cap by the selection kitModifier so panel and builder agree', () => {
-        const selection: RegimentSelection = { ...BLANK, regimentType: 'rt-b', specialEquipmentDoctrines: ['sed-a'] };
-        const summary = buildRegimentPanelSummary(selection, [{ id: 'kit-1', cost: 40 }], CATALOG);
-        expect(summary.regiment.spent).toBe(6);
-        expect(summary.kit.budget).toBe(STANDARD_KIT_BUDGET + 15);
-        expect(summary.kit).toMatchObject({ spent: 40, remaining: STANDARD_KIT_BUDGET + 15 - 40, valid: true });
+    it('the kit allowance counts unspent points, the Penal base and kit modifiers', () => {
+        const penal = { ...BLANK, homeWorld: 'hw-penal', commandingOfficer: 'co-b', regimentType: 'rt-a' }; // 2 + 1 + 2 = 5, 7 unspent
+        const s = buildRegimentPanelSummary(penal, [{ id: 'kit-a', cost: 5 }], CATALOG);
+        expect(s.regiment.remaining).toBe(7);
+        expect(s.kit.budget).toBe(15 + 14);
+        expect(s.kit.spent).toBe(5);
+        expect(s.kit.valid).toBe(true);
     });
 
     it('works with an empty catalog (no compendium content staged)', () => {
-        const selection: RegimentSelection = { ...BLANK, homeWorld: 'hw-a' };
-        const summary = buildRegimentPanelSummary(selection, [], []);
-        expect(summary.regiment).toMatchObject({ spent: 0, budget: REGIMENT_BUDGET });
-        expect(summary.kit.budget).toBe(STANDARD_KIT_BUDGET);
+        const s = buildRegimentPanelSummary(BLANK, [], []);
+        expect(s.regiment.valid).toBe(false);
+        expect(s.kit.spent).toBe(0);
     });
 });

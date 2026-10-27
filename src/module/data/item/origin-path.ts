@@ -1,3 +1,4 @@
+import { REGIMENT_OPTION_CATEGORIES, type RegimentOptionCategory } from '../../rules/ow-regiment-creation.ts';
 import { formatSigned } from '../../utils/format.ts';
 import { iterateResolvedChoices } from '../../utils/origin-choices.ts';
 import ItemDataModel from '../abstract/item-data-model.ts';
@@ -74,6 +75,16 @@ export default class OriginPathData extends ItemDataModel.mixin(DescriptionTempl
     declare isAdvancedOrigin: boolean;
     declare replacesOrigins: string[];
     declare requirements: { text: string; previousSteps: string[]; excludedSteps: string[] };
+    declare regiment: {
+        category: RegimentOptionCategory | '';
+        cost: number;
+        kitBase: number | null;
+        kitModifier: number;
+        logistics: number;
+        maxCount: number;
+        restriction: string;
+        kit: Array<{ label: string; scope: 'character' | 'squad' }>;
+    };
     declare grants: {
         woundsFormula: string;
         wounds: number;
@@ -165,6 +176,15 @@ export default class OriginPathData extends ItemDataModel.mixin(DescriptionTempl
                     'regiment',
                     'speciality',
                     'chapter',
+                    // Only War regiment-creation options. These are picked in the Regiment Builder
+                    // (12-point budget), not in the origin-path chart, so they are deliberately
+                    // absent from the actor's `originPath` step map.
+                    'regimentType',
+                    'commandingOfficer',
+                    'trainingDoctrine',
+                    'equipmentDoctrine',
+                    'regimentalDrawback',
+                    'kitItem',
                 ],
             }),
 
@@ -217,6 +237,39 @@ export default class OriginPathData extends ItemDataModel.mixin(DescriptionTempl
                 previousSteps: new fields.ArrayField(new fields.StringField({ required: true }), { required: true, initial: [] }),
                 excludedSteps: new fields.ArrayField(new fields.StringField({ required: true }), { required: true, initial: [] }),
             }),
+
+            // Only War regiment-creation metadata (budget cost, kit effects). Empty on every other origin.
+            regiment: new fields.SchemaField(
+                {
+                    category: new fields.StringField({
+                        required: true,
+                        blank: true,
+                        initial: '',
+                        choices: ['', ...REGIMENT_OPTION_CATEGORIES],
+                    }),
+                    // Regiment Creation points the option costs (a drawback's value is the points it refunds).
+                    cost: new fields.NumberField({ required: true, initial: 0, min: 0, integer: true }),
+                    // Replaces the 30-point Standard Kit base (Penal Colony: 15). Null leaves it unchanged.
+                    kitBase: new fields.NumberField({ required: false, nullable: true, initial: null, min: 0, integer: true }),
+                    // Added to the Standard Kit allowance.
+                    kitModifier: new fields.NumberField({ required: true, initial: 0, integer: true }),
+                    // Added to the squad Logistics Rating.
+                    logistics: new fields.NumberField({ required: true, initial: 0, integer: true }),
+                    // Kit items: how many times the regiment may take the item.
+                    maxCount: new fields.NumberField({ required: true, initial: 1, min: 1, integer: true }),
+                    // Rule text limiting who may take the option (kit table "Limitations" column).
+                    restriction: new fields.StringField({ required: false, blank: true, initial: '' }),
+                    // Standard Regimental Kit a regiment type or doctrine issues.
+                    kit: new fields.ArrayField(
+                        new fields.SchemaField({
+                            label: new fields.StringField({ required: true, blank: false }),
+                            scope: new fields.StringField({ required: true, initial: 'character', choices: ['character', 'squad'] }),
+                        }),
+                        { required: true, initial: [] },
+                    ),
+                },
+                { required: false },
+            ),
 
             // What this origin grants
             grants: new fields.SchemaField({

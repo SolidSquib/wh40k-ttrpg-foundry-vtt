@@ -294,6 +294,29 @@
             "Unequip": "Unequip",
             "Use": "Use"
         },
+        "OrderCategory": {
+            "Combat": "Combat",
+            "Maneuver": "Manoeuvre",
+            "Command": "Command",
+            "Support": "Support",
+            "Special": "Special",
+            "Ground": "Comrade Order"
+        },
+        "OrderGround": {
+            "Type": {
+                "Order": "Order",
+                "Sweeping": "Sweeping Order",
+                "Attack": "Attack Order",
+                "Passive": "Passive"
+            },
+            "Action": {
+                "Half": "Half Action",
+                "Full": "Full Action",
+                "Free": "Free Action",
+                "Special": "Special",
+                "HalfOrFull": "Half or Full Action"
+            }
+        },
         "ActionType": {
             "Action": "Action",
             "ExtendedAction": "Extended Action",
@@ -7209,7 +7232,9 @@
                     "Total": "Regiment Points",
                     "Spent": "Spent",
                     "Remaining": "Remaining",
-                    "OverBudget": "Over budget by {amount}"
+                    "OverBudget": "Over budget by {amount}",
+                    "Refund": "from Drawback",
+                    "UnspentToKit": "Each unspent point adds 2 to the Standard Kit allowance."
                 },
                 "Category": {
                     "HomeWorld": "Home World / Origin",
@@ -7217,13 +7242,28 @@
                     "RegimentType": "Regiment Type",
                     "TrainingDoctrine": "Training Doctrines",
                     "SpecialEquipmentDoctrine": "Special Equipment Doctrines",
-                    "FavouredWeapons": "Favoured Weapons"
+                    "Drawback": "Regimental Drawback"
+                },
+                "Doctrines": {
+                    "Count": "Doctrines: {count} of {max} (the Regiment Type counts as one)"
+                },
+                "Issue": {
+                    "OverBudget": "The selection costs more than the regiment's points.",
+                    "MissingHomeWorld": "Choose a Home World or Origin.",
+                    "MissingCommandingOfficer": "Choose a Commanding Officer.",
+                    "MissingRegimentType": "Choose a Regiment Type.",
+                    "TooManyDoctrines": "A regiment may hold at most three Doctrines, Regiment Type included.",
+                    "TooManyDrawbacks": "A regiment may take only one Regimental Drawback."
+                },
+                "Choice": {
+                    "Pick": "choose {count}"
                 },
                 "Kit": {
                     "Total": "Standard Kit Points",
                     "Spent": "Spent",
                     "Remaining": "Remaining",
-                    "OverBudget": "Over kit budget by {amount}"
+                    "OverBudget": "Over kit budget by {amount}",
+                    "PerSquad": "per squad"
                 },
                 "Validation": {
                     "OverBudget": "Selection exceeds the {budget}-point budget by {amount}.",

@@ -32,14 +32,17 @@ export class OWSystemConfig extends AptitudeBasedSystemConfig {
                 'ow-core-origins-commanding-officers',
                 'ow-core-origins-training-doctrines',
                 'ow-core-origins-special-equipment-doctrines',
+                'ow-core-origins-regimental-kit',
                 'ow-hammer-origins-homeworlds',
                 'ow-hammer-origins-regiment-types',
                 'ow-hammer-origins-training-doctrines',
                 'ow-hammer-origins-special-equipment-doctrines',
+                'ow-hammer-origins-regimental-drawbacks',
                 'ow-shield-origins-homeworlds',
                 'ow-shield-origins-regiment-types',
                 'ow-shield-origins-training-doctrines',
                 'ow-shield-origins-special-equipment-doctrines',
+                'ow-shield-origins-regimental-drawbacks',
             ],
         };
     }

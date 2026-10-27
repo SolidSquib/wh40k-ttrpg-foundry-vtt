@@ -4,11 +4,10 @@
  * Used by the unified roll dialog weapon panel to render selectable cards.
  */
 
-import type { WH40KItemDocument } from '../types/global.d.ts';
-
-type AttackOptionWeapon = WH40KItemDocument & {
+/** The slice of a weapon the attack-mode cards read: which family it is and its burst ratings. */
+type AttackOptionWeapon = {
     isRanged: boolean;
-    system: WH40KItemDocument['system'] & {
+    system: {
         attack?: {
             rateOfFire?: {
                 semi?: number;

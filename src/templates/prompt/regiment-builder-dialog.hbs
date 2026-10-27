@@ -1,24 +1,35 @@
 {{!-- Only War — Regiment Builder Dialog (#151). --}}
-{{!-- Walks through the six 12-point categories with a live point counter. --}}
-{{!-- Option catalog is supplied by the caller (compendium-resolved). --}}
+{{!-- Walks the 12-point Regiment Creation budget, then the Standard Kit allowance. --}}
+{{!-- The option catalog is read from the Only War compendium packs. --}}
 <div class="tw-p-5 tw-bg-transparent tw-font-ui tw-text-[#e8e4d9]" data-wh40k-system="ow">
 
     <div class="tw-mb-3 tw-text-center tw-text-[0.85rem] tw-text-amber-300 tw-italic">
         {{localize "WH40K.OW.Regiment.DialogTitle"}}
     </div>
 
-    {{!-- Live 12-point budget readout --}}
-    <div class="tw-flex tw-items-center tw-justify-between tw-gap-2 tw-px-3 tw-py-2 tw-mb-3 tw-rounded-md tw-border tw-border-[rgba(180,120,40,0.3)] tw-bg-[rgba(0,0,0,0.25)]"
+    {{!-- Live Regiment Creation budget readout --}}
+    <div class="tw-flex tw-items-center tw-justify-between tw-gap-2 tw-px-3 tw-py-2 tw-mb-1 tw-rounded-md tw-border tw-border-[rgba(180,120,40,0.3)] tw-bg-[rgba(0,0,0,0.25)]"
          data-regiment-budget>
         <span class="tw-text-sm tw-uppercase tw-tracking-[0.06em] tw-text-amber-100">
             {{localize "WH40K.OW.Regiment.Budget.Total"}}
+            {{#if budget.refund}}<span class="tw-text-xs tw-normal-case tw-text-emerald-300">(+{{budget.refund}} {{localize "WH40K.OW.Regiment.Budget.Refund"}})</span>{{/if}}
         </span>
-        <span class="tw-text-base tw-font-bold tw-tabular-nums {{#if budget.valid}}tw-text-emerald-300{{else}}{{#if budget.over}}tw-text-red-300{{else}}tw-text-amber-100{{/if}}{{/if}}"
+        <span class="tw-text-base tw-font-bold tw-tabular-nums {{#if budget.over}}tw-text-red-300{{else}}tw-text-amber-100{{/if}}"
               data-regiment-spent="{{budget.spent}}"
               data-regiment-total="{{budget.total}}">
             {{budget.spent}} / {{budget.total}}
         </span>
     </div>
+    <div class="tw-flex tw-items-center tw-justify-between tw-px-3 tw-mb-3 tw-text-xs tw-text-amber-100/70">
+        <span>{{localize "WH40K.OW.Regiment.Doctrines.Count" count=doctrines.count max=doctrines.max}}</span>
+        <span>{{localize "WH40K.OW.Regiment.Budget.UnspentToKit"}}</span>
+    </div>
+
+    {{#if issues.length}}
+        <ul class="tw-mb-3 tw-pl-5 tw-text-xs tw-text-amber-200/90 tw-list-disc" data-regiment-issues>
+            {{#each issues}}<li>{{this}}</li>{{/each}}
+        </ul>
+    {{/if}}
 
     {{!-- Per-category sections --}}
     <div class="tw-flex tw-flex-col tw-gap-2 tw-mb-4">
@@ -42,6 +53,31 @@
                                 <span class="tw-text-xs">{{this.label}}</span>
                                 <span class="tw-text-xs tw-font-bold tw-tabular-nums tw-text-amber-200">{{this.cost}}</span>
                             </button>
+                            {{#if this.selected}}
+                                {{#each this.kit}}
+                                    <div class="tw-pl-4 tw-text-[0.7rem] tw-text-amber-100/70">• {{this.label}}{{#if (eq this.scope "squad")}} ({{localize "WH40K.OW.Regiment.Kit.PerSquad"}}){{/if}}</div>
+                                {{/each}}
+                                {{#each this.choices}}
+                                    <div class="tw-pl-4 tw-pb-1" data-regiment-choice="{{this.key}}">
+                                        <div class="tw-text-[0.7rem] tw-uppercase tw-tracking-[0.05em] tw-text-amber-200/80">
+                                            {{this.label}} — {{localize "WH40K.OW.Regiment.Choice.Pick" count=this.count}}
+                                        </div>
+                                        <div class="tw-flex tw-flex-wrap tw-gap-1 tw-mt-0.5">
+                                            {{#each this.options}}
+                                                <button type="button"
+                                                        data-action="pickChoice"
+                                                        data-option-id="{{../optionId}}"
+                                                        data-choice-key="{{../key}}"
+                                                        data-value="{{this.value}}"
+                                                        data-picked="{{#if this.picked}}1{{else}}0{{/if}}"
+                                                        class="tw-px-2 tw-py-0.5 tw-rounded tw-border tw-text-[0.72rem] tw-cursor-pointer {{#if this.picked}}tw-border-amber-400 tw-bg-[rgba(180,120,40,0.25)] tw-text-amber-50{{else}}tw-border-[rgba(180,120,40,0.2)] tw-bg-transparent tw-text-amber-100/80 hover:tw-bg-[rgba(180,120,40,0.1)]{{/if}}">
+                                                    {{this.label}}
+                                                </button>
+                                            {{/each}}
+                                        </div>
+                                    </div>
+                                {{/each}}
+                            {{/if}}
                         {{/each}}
                     {{else}}
                         <span class="tw-text-xs tw-italic tw-text-amber-100/40 tw-px-1 tw-py-1">
@@ -53,11 +89,40 @@
         {{/each}}
     </div>
 
+    {{!-- Standard Kit allowance --}}
+    <section class="tw-rounded-md tw-border tw-border-[rgba(180,120,40,0.25)] tw-bg-[rgba(0,0,0,0.2)] tw-overflow-hidden" data-regiment-kit>
+        <header class="tw-flex tw-items-center tw-justify-between tw-px-3 tw-py-1.5 tw-bg-[rgba(180,120,40,0.12)] tw-border-b tw-border-[rgba(180,120,40,0.25)]">
+            <span class="tw-text-xs tw-uppercase tw-tracking-[0.08em] tw-text-amber-200">{{localize "WH40K.OW.Regiment.Kit.Total"}}</span>
+            <span class="tw-text-xs tw-font-bold tw-tabular-nums {{#if kit.over}}tw-text-red-300{{else}}tw-text-amber-100{{/if}}"
+                  data-kit-spent="{{kit.spent}}" data-kit-total="{{kit.allowance}}">{{kit.spent}} / {{kit.allowance}}</span>
+        </header>
+        <div class="tw-p-2 tw-flex tw-flex-col tw-gap-1">
+            {{#each kit.rows}}
+                <div class="tw-flex tw-items-center tw-justify-between tw-gap-2 tw-px-2 tw-py-0.5 tw-rounded {{#if this.count}}tw-bg-[rgba(180,120,40,0.15)]{{/if}}" data-kit-option="{{this.id}}">
+                    <span class="tw-text-xs tw-text-amber-100">
+                        {{this.label}}
+                        {{#if this.restriction}}<span class="tw-text-[0.65rem] tw-italic tw-text-amber-100/50"> — {{this.restriction}}</span>{{/if}}
+                    </span>
+                    <span class="tw-flex tw-items-center tw-gap-1">
+                        <span class="tw-text-xs tw-font-bold tw-tabular-nums tw-text-amber-200">{{this.cost}}</span>
+                        <button type="button" data-action="removeKit" data-option-id="{{this.id}}" {{#unless this.count}}disabled{{/unless}}
+                                class="tw-w-5 tw-h-5 tw-leading-none tw-rounded tw-border tw-border-[rgba(180,120,40,0.3)] tw-bg-transparent tw-text-amber-100 disabled:tw-opacity-30">−</button>
+                        <span class="tw-w-4 tw-text-center tw-text-xs tw-tabular-nums tw-text-amber-100">{{this.count}}</span>
+                        <button type="button" data-action="addKit" data-option-id="{{this.id}}"
+                                class="tw-w-5 tw-h-5 tw-leading-none tw-rounded tw-border tw-border-[rgba(180,120,40,0.3)] tw-bg-transparent tw-text-amber-100">+</button>
+                    </span>
+                </div>
+            {{else}}
+                <span class="tw-text-xs tw-italic tw-text-amber-100/40 tw-px-1 tw-py-1">{{localize "WH40K.OW.Regiment.NoOptions"}}</span>
+            {{/each}}
+        </div>
+    </section>
+
     {{!-- Action buttons --}}
     <div class="tw-flex tw-gap-2.5 tw-mt-4 tw-pt-4 tw-border-t tw-border-[rgba(180,120,40,0.25)]">
         <button type="button"
                 data-action="commitRegiment"
-                {{#unless budget.valid}}disabled{{/unless}}
+                {{#unless canCommit}}disabled{{/unless}}
                 class="tw-flex-1 tw-flex tw-items-center tw-justify-center tw-gap-2 tw-px-5 tw-py-3 tw-border-none tw-rounded-md tw-font-ui tw-text-[0.9rem] tw-font-semibold tw-uppercase tw-tracking-[0.08em] tw-cursor-pointer tw-bg-gradient-to-br tw-from-amber-600 tw-to-amber-900 tw-text-amber-50 tw-shadow-[0_4px_12px_rgba(180,120,40,0.35)] disabled:tw-opacity-50 disabled:tw-cursor-not-allowed">
             <i class="fas fa-check"></i> {{localize "WH40K.OW.Regiment.CommitButton"}}
         </button>
