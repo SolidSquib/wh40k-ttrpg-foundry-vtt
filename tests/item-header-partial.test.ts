@@ -97,12 +97,17 @@ describe('item-header partial — name input', () => {
 });
 
 describe('item-header partial — image overlay', () => {
-    it('renders editImage action with data-edit="img"', () => {
+    it('renders the editImage action on the wrapper and data-edit="img" on the <img>', () => {
         const html = directTemplate(baseContext());
         const wrap = dom(html).querySelector('.wh40k-item-header__image');
         expect(wrap?.getAttribute('data-action')).toBe('editImage');
-        expect(wrap?.getAttribute('data-edit')).toBe('img');
         expect(wrap?.querySelector('img')?.getAttribute('src')).toBe('icons/test.svg');
+        expect(wrap?.querySelector('img')?.getAttribute('data-edit')).toBe('img');
+    });
+
+    it('keeps data-edit off the wrapper: Foundry reads a non-<img> [data-edit] element by innerHTML, which submitted the portrait markup as the item image', () => {
+        const wrap = dom(directTemplate(baseContext())).querySelector('.wh40k-item-header__image');
+        expect(wrap?.hasAttribute('data-edit')).toBe(false);
     });
 });
 
