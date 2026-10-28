@@ -319,67 +319,50 @@ describe('migrateSkills (#256)', () => {
     });
 });
 
-describe.skipIf(!HAS_PRIVATE_CONTENT)('real bestiary pack data migrates to a usable shape', () => {
-    const PACK_DIR = resolve(__dirname, '../../../packs-private/dark-heresy-2/dh2-core-actors-bestiary/_source');
+describe.skipIf(!HAS_PRIVATE_CONTENT)('real Only War adversary pack data is already in the structured shape', () => {
+    const PACK_DIR = resolve(__dirname, '../../../packs-private/only-war/ow-core-actors-adversaries/_source');
     const files = existsSync(PACK_DIR) ? readdirSync(PACK_DIR).filter((f) => f.endsWith('.json')) : [];
-    // Whole-file reference stubs carry no system; relinked actors are canonically
-    // weapons.mode 'embedded' (UUID-linked items; simple[] keeps any original
-    // no-catalog-match rows verbatim) and pass through migration untouched. Only a
-    // legacy weapons[] ARRAY migrates to the simple-mode object — partition the
-    // cohorts up front so each test body is conditional-free.
+    // The pack generator authors every adversary in the structured NPC shape (characteristics as
+    // `{ base, … }` objects, weapons as a `{ mode, simple[] }` object); `total` and the bonuses are
+    // derived when the actor prepares its data, so they are not stored. The migrators exist for
+    // legacy imports and must leave this data untouched.
     const sourced = files.filter((f) => {
         const parsed = JSON.parse(readFileSync(resolve(PACK_DIR, f), 'utf8')) as Json;
         return isJsonObject(parsed) && parsed['system'] !== undefined;
     });
-    const legacy = sourced.filter((f) => {
-        const parsed = JSON.parse(readFileSync(resolve(PACK_DIR, f), 'utf8')) as Json;
-        return isJsonObject(parsed) && isJsonObject(parsed['system']) && isJsonArray(parsed['system']['weapons']);
-    });
 
-    it('finds the shipped bestiary pack', () => {
-        // src/packs is a submodule; if it is unpopulated this guard is meaningless.
+    it('finds the shipped adversary pack', () => {
+        // src/packs-private is a submodule; if it is unpopulated this guard is meaningless.
         expect(files.length).toBeGreaterThan(0);
+        expect(sourced).toHaveLength(files.length);
     });
 
-    it.each(sourced)('migrates %s to numeric characteristics + a weapons object', (file) => {
+    it.each(sourced)('%s has structured characteristics and weapons, and the migrators leave it untouched', (file) => {
         const parsed = asObject(JSON.parse(readFileSync(resolve(PACK_DIR, file), 'utf8')), file);
         const system = asObject(parsed['system'], `${file}.system`);
+        const before = structuredClone(system);
 
         migrateCharacteristics(system);
         migrateWeapons(system);
 
+        expect(system, `${file} unchanged by migration`).toEqual(before);
+
         const chars = asObject(system['characteristics'], `${file}.characteristics`);
+        expect(Object.keys(chars).length, `${file} has characteristics`).toBeGreaterThan(0);
         for (const [key, val] of Object.entries(chars)) {
             const c = asObject(val, `${file}.${key}`);
-            expect(typeof c['total'], `${file}.${key}.total is numeric`).toBe('number');
-            expect(typeof c['base'], `${file}.${key}.base is numeric`).toBe('number');
-            expect(Number.isNaN(Number(c['total'])), `${file}.${key}.total not NaN`).toBe(false);
+            expect(Number.isFinite(c['base']), `${file}.${key}.base is a finite number`).toBe(true);
         }
 
         const weapons = asObject(system['weapons'], `${file}.weapons`);
         expect(['simple', 'embedded'], `${file} weapons.mode`).toContain(weapons['mode']);
+        for (const w of asArray(weapons['simple'] ?? [], `${file}.weapons.simple`)) {
+            const row = asObject(w, `${file} weapon`);
+            expect(typeof row['pen'], `${file} weapon.pen`).toBe('number');
+            expect(typeof row['clip'], `${file} weapon.clip`).toBe('number');
+            expect(typeof row['damage'], `${file} weapon.damage`).toBe('string');
+        }
     });
-
-    // an empty .each table throws at collection — register the legacy suite only
-    // when the pack still ships legacy-array actors (conditional registration at
-    // describe scope, not inside a test body).
-    if (legacy.length > 0) {
-        it.each(legacy)('migrates the legacy weapons[] of %s to numeric simple rows', (file) => {
-            const parsed = asObject(JSON.parse(readFileSync(resolve(PACK_DIR, file), 'utf8')), file);
-            const system = asObject(parsed['system'], `${file}.system`);
-
-            migrateWeapons(system);
-
-            const weapons = asObject(system['weapons'], `${file}.weapons`);
-            expect(weapons['mode'], `${file} weapons.mode`).toBe('simple');
-            for (const w of asArray(weapons['simple'], `${file}.weapons.simple`)) {
-                const wr = asObject(w, `${file} weapon`);
-                expect(typeof wr['pen'], `${file} weapon.pen`).toBe('number');
-                expect(typeof wr['clip'], `${file} weapon.clip`).toBe('number');
-                expect(typeof wr['damage'], `${file} weapon.damage`).toBe('string');
-            }
-        });
-    }
 });
 
 describe('migrateArmour (IM flat scalar)', () => {

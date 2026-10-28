@@ -1,16 +1,27 @@
 /**
  * Test helper: read origin-path compendium content straight from `_source` JSON.
  *
- * The origin-path builder groups options by matching each compendium item's
- * `system.step` to a config `coreStep.step` (OriginChartLayout.computeFullChart),
- * so the wiring tests need to read the raw `step` values per pack to assert a
- * configured step actually resolves to content.
+ * The origin-path builder groups options by each compendium item's `type`,
+ * `system.step` and (for regiment-creation options) `system.regiment.category`,
+ * so the wiring tests need the raw values per pack to assert that every stage of
+ * Only War character creation resolves to content.
  */
 
 import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const PACKS_ROOT = resolve(__dirname, '../../src/packs-private');
+
+/** The slice of an origin-path compendium document the wiring tests read. */
+export interface OriginPackDoc {
+    name: string;
+    type: string;
+    system: {
+        step: string;
+        regiment?: { category?: string };
+        regimentPreset?: object;
+    };
+}
 
 /** Locate a pack's `_source` directory under any game-line group dir. */
 function packSourceDir(packName: string): string | null {
@@ -27,17 +38,11 @@ function packSourceDir(packName: string): string | null {
     return null;
 }
 
-/** Read every item's `system.step` from a pack's `_source` JSON. */
-export function stepsInPack(packName: string): string[] {
+/** Every origin-path document of a pack's `_source` JSON; empty when the pack is not on disk. */
+export function originDocsInPack(packName: string): OriginPackDoc[] {
     const dir = packSourceDir(packName);
     if (dir === null) return [];
-    const steps: string[] = [];
-    for (const file of readdirSync(dir)) {
-        if (!file.endsWith('.json')) continue;
-        // eslint-disable-next-line no-restricted-syntax -- boundary: JSON.parse returns unknown (ts-reset); cast to the minimal item shape, step narrowed below
-        const doc = JSON.parse(readFileSync(resolve(dir, file), 'utf8')) as { system?: { step?: unknown } };
-        const step = doc.system?.step;
-        if (typeof step === 'string') steps.push(step);
-    }
-    return steps;
+    return readdirSync(dir)
+        .filter((file) => file.endsWith('.json'))
+        .map((file) => JSON.parse(readFileSync(resolve(dir, file), 'utf8')) as OriginPackDoc);
 }

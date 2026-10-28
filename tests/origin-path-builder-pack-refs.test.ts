@@ -1,31 +1,32 @@
 /**
- * Regression guard: every compendium pack a game-system config lists for the
- * origin-path builder MUST be a pack name registered in system.json.
+ * Wiring guard for the Only War origin-path builder: the builder's configuration, the packs
+ * registered in system.json and the content in those packs must agree, at every stage of
+ * Only War character creation.
  *
- * History: the builder shows nothing for any origin step because
- * `OriginPathBuilder._loadOrigins()` resolves packs by
- * `game.packs.get('wh40k-rpg.<name>')` (with a `metadata.name` fallback), and
- * a missing pack is skipped with a console.warn — a SILENT failure. The DH2
- * config referenced `dh2-core-stats-homeworlds` while the registered packs are
- * `dh2-core-origins-homeworlds` (and BC/DW/RT/OW dropped the `-origins-` infix
- * entirely), so every pack resolved to nothing and all step lists rendered
- * empty. No test linked the config pack references to the registered packs, so
- * the drift was invisible.
+ * History: the builder shows nothing for a stage when it cannot find content for it, and it fails
+ * silently — `OriginPathBuilder._loadOrigins()` resolves packs by `game.packs.get('wh40k-rpg.<name>')`
+ * and skips a missing pack with a console.warn, and a stage whose items carry the wrong
+ * `type` / `regiment.category` simply renders empty. Pack-name drift and item-metadata drift both hid
+ * that way across the former per-line configs, with nothing linking config to packs to content.
  *
- * This test reads the pack names straight from system.json (the manifest
- * Foundry loads from) and asserts every `packs` / `equipmentPacks` entry across
- * all seven configs resolves. It does NOT require a live Foundry — configs are
- * plain objects reached via SystemConfigRegistry (see
- * system-config-header-fields.test.ts for the same `game.i18n` stub pattern).
+ * Only War character creation (core rulebook Chapters II–III) is, in order:
+ *  1. Regiment — either a pre-built regiment (`regiment` items) or one built from options in the
+ *     Regiment Creation categories: Home World, Commanding Officer, Regiment Type, Training Doctrine,
+ *     Special Equipment Doctrine, Regimental Kit (and, in the supplements, Regimental Drawbacks);
+ *  2. Speciality — one of the twelve core Specialities.
+ *
+ * The test reads pack names from system.json (the manifest Foundry loads) and content from `_source`
+ * JSON. It does NOT require a live Foundry — the config is a plain object reached via
+ * SystemConfigRegistry (see system-config-header-fields.test.ts for the same `game.i18n` stub pattern).
  */
 
 import { resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { readDeclaredPacks } from '../scripts/lib/pack-manifest.mjs';
 import { SystemConfigRegistry } from '../src/module/config/game-systems/index.ts';
-import { ALL_SYSTEM_IDS, type GameSystemId } from '../src/module/config/game-systems/types.ts';
+import { REGIMENT_CATEGORIES, REGIMENT_OPTION_CATEGORIES } from '../src/module/rules/ow-regiment-creation.ts';
 import { HAS_PRIVATE_CONTENT } from '../src/module/testing/private-content.ts';
-import { stepsInPack } from './helpers/origin-pack-content.ts';
+import { type OriginPackDoc, originDocsInPack } from './helpers/origin-pack-content.ts';
 
 interface I18nStub {
     localize: (key: string) => string;
@@ -64,64 +65,80 @@ function registeredPackNames(): Set<string> {
 }
 
 const PACK_NAMES = registeredPackNames();
-const SYSTEM_IDS: readonly GameSystemId[] = ALL_SYSTEM_IDS;
+const STEP_CONFIG = SystemConfigRegistry.get('ow').getOriginStepConfig();
+const CONFIGURED_PACKS = [...STEP_CONFIG.packs, ...(STEP_CONFIG.equipmentPacks ?? [])];
+
+/** Every document in the configured packs, with the pack it came from. */
+const CONFIGURED_DOCS: Array<OriginPackDoc & { pack: string }> = STEP_CONFIG.packs.flatMap((pack) => originDocsInPack(pack).map((doc) => ({ ...doc, pack })));
+const docsWhere = (predicate: (doc: OriginPackDoc) => boolean): OriginPackDoc[] => CONFIGURED_DOCS.filter(predicate);
 
 describe.skipIf(!HAS_PRIVATE_CONTENT)('origin-path builder pack references resolve to registered compendiums', () => {
     it('system.json registers packs (guards against an empty/garbled manifest read)', () => {
         expect(PACK_NAMES.size).toBeGreaterThan(0);
     });
 
-    for (const id of SYSTEM_IDS) {
-        const config = SystemConfigRegistry.get(id).getOriginStepConfig();
-        const refs = [...config.packs, ...(config.equipmentPacks ?? [])];
+    it('every configured origin/equipment pack exists in system.json', () => {
+        const missing = CONFIGURED_PACKS.filter((name) => !PACK_NAMES.has(name));
+        expect(missing, `ow references unregistered packs: ${missing.join(', ')}`).toEqual([]);
+    });
 
-        it(`${id}: every configured origin/equipment pack exists in system.json`, () => {
-            const missing = refs.filter((name) => !PACK_NAMES.has(name));
-            expect(missing, `${id} references unregistered packs: ${missing.join(', ')}`).toEqual([]);
-        });
-    }
+    // Reverse direction: a registered Only War origin pack the config omits is silently unselectable
+    // ("no selections available"). Advanced Specialities are bought as Advances, not chosen at creation.
+    it('offers every registered Only War origin pack except the Advanced Specialities', () => {
+        const registered = [...PACK_NAMES].filter((name) => /^ow-.*-origins-/.test(name) && !name.endsWith('-advanced-specialities'));
+        const configured = new Set(STEP_CONFIG.packs);
+        const missing = registered.filter((name) => !configured.has(name));
+        expect(missing, `origin packs not offered by the builder: ${missing.join(', ')}`).toEqual([]);
+    });
 });
 
-describe.skipIf(!HAS_PRIVATE_CONTENT)('every registered home-step origin pack is offered by the builder (#222)', () => {
-    // Reverse of the check above: a supplement's home-step pack (Only War home worlds) silently missing from the config leaves those origins
-    // unselectable — "no selections available". These groups are unambiguous: the
-    // step matches packs the config already lists for the other supplements.
-    const homeStepGroups: { id: GameSystemId; pattern: RegExp }[] = [{ id: 'ow', pattern: /^ow-.*-origins-homeworlds$/ }];
+describe.skipIf(!HAS_PRIVATE_CONTENT)('Only War character creation stages resolve to compendium content', () => {
+    it('Regiment step: the core steps are Regiment then Speciality', () => {
+        expect(STEP_CONFIG.coreSteps.map((core) => core.step)).toEqual(['regiment', 'speciality']);
+    });
 
-    for (const { id, pattern } of homeStepGroups) {
-        it(`${id}: configures every registered ${pattern.source} pack`, () => {
-            const registered = [...PACK_NAMES].filter((name) => pattern.test(name));
-            expect(registered.length, `expected registered ${pattern.source} packs`).toBeGreaterThan(0);
-            const configured = new Set(SystemConfigRegistry.get(id).getOriginStepConfig().packs);
-            const missing = registered.filter((name) => !configured.has(name));
-            expect(missing, `${id} home-step packs not offered by the builder: ${missing.join(', ')}`).toEqual([]);
+    it('Regiment step: pre-built regiments exist and each carries its preset', () => {
+        const regiments = docsWhere((doc) => doc.type === 'regiment');
+        expect(regiments.length).toBeGreaterThan(0);
+        expect(regiments.filter((doc) => doc.system.step !== 'regiment' || doc.system.regimentPreset === undefined).map((doc) => doc.name)).toEqual([]);
+    });
+
+    // The budget categories the Regiment Creation builder renders as rows; every one must offer options,
+    // otherwise that row is empty and a regiment cannot be built from scratch.
+    it.each(REGIMENT_CATEGORIES)('Regiment step: the %s category has options to choose from', (category) => {
+        const options = docsWhere((doc) => doc.type === 'regimentOption' && doc.system.regiment?.category === category);
+        expect(options.length).toBeGreaterThan(0);
+    });
+
+    it('Regiment step: regimental kit items are offered from the Standard Kit allowance', () => {
+        expect(docsWhere((doc) => doc.type === 'regimentOption' && doc.system.regiment?.category === 'kitItem').length).toBeGreaterThan(0);
+    });
+
+    it('core rulebook options cover every non-drawback category (Regimental Drawbacks come from the supplements)', () => {
+        const core = (category: string): number =>
+            CONFIGURED_DOCS.filter((doc) => doc.pack.startsWith('ow-core-') && doc.system.regiment?.category === category).length;
+        const empty = REGIMENT_CATEGORIES.filter((c) => c !== 'drawback' && core(c) === 0);
+        expect(empty).toEqual([]);
+        expect(core('drawback')).toBe(0);
+    });
+
+    it('Speciality step: the twelve core Specialities are offered', () => {
+        const specialities = CONFIGURED_DOCS.filter((doc) => doc.pack === 'ow-core-origins-specialities');
+        expect(specialities).toHaveLength(12);
+        expect(specialities.filter((doc) => doc.type !== 'speciality' || doc.system.step !== 'speciality').map((doc) => doc.name)).toEqual([]);
+    });
+
+    it('Sanctioned Psyker (the psyker unlock) is among the Specialities', () => {
+        expect(docsWhere((doc) => doc.type === 'speciality').map((doc) => doc.name)).toContain('Sanctioned Psyker');
+    });
+
+    it('every option is typed so the builder files it under the right stage', () => {
+        const misfiled = CONFIGURED_DOCS.filter((doc) => {
+            if (doc.type === 'regiment') return doc.system.step !== 'regiment';
+            if (doc.type === 'speciality') return doc.system.step !== 'speciality' && doc.system.step !== 'advancedSpeciality';
+            if (doc.type !== 'regimentOption') return true;
+            return !(REGIMENT_OPTION_CATEGORIES as ReadonlyArray<string>).includes(doc.system.regiment?.category ?? '');
         });
-    }
-});
-
-describe.skipIf(!HAS_PRIVATE_CONTENT)('origin-path builder steps resolve to compendium content', () => {
-    // A configured step renders empty unless some item in the step's packs carries
-    // a matching `system.step`. This is the failure mode that hid the DH2 pack-name
-    // drift, the DH1 careerPath/career mismatch, and the IM missing-step-metadata —
-    // each left a wired step with zero options. Guard it for every system that
-    // declares both steps and packs (systems still unwired skip cleanly).
-    //
-    // Known pre-existing gap (NOT introduced here, tracked separately): OW's config
-    // declares a `regiment` step, but its content items use `regimentType` and OW
-    // chargen (a composite of home world / CO / regiment type / doctrines) is only
-    // partially wired. Documented here so the guard stays green for the wired
-    // systems while still catching any NEW empty step — including a future OW fix
-    // narrowing this set. Tighten as OW gets wired.
-    const KNOWN_EMPTY_STEPS: Partial<Record<GameSystemId, string[]>> = { ow: ['regiment'] };
-
-    for (const id of SYSTEM_IDS) {
-        const config = SystemConfigRegistry.get(id).getOriginStepConfig();
-        if (config.coreSteps.length === 0 || config.packs.length === 0) continue;
-
-        it(`${id}: every core step has a matching origin item (modulo known gaps)`, () => {
-            const availableSteps = new Set(config.packs.flatMap((pack) => stepsInPack(pack)));
-            const emptySteps = config.coreSteps.map((s) => s.step).filter((step) => !availableSteps.has(step));
-            expect(emptySteps, `${id} steps with no matching compendium items: ${emptySteps.join(', ')}`).toEqual(KNOWN_EMPTY_STEPS[id] ?? []);
-        });
-    }
+        expect(misfiled.map((doc) => `${doc.pack}/${doc.name} (${doc.type}/${doc.system.step})`)).toEqual([]);
+    });
 });
