@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { SidebarHeaderField } from '../src/module/config/game-systems/types';
 import npcTabSrc from '../src/templates/actor/npc/tab-npc.hbs?raw';
 import headerSrc from '../src/templates/actor/player/header-dh.hbs?raw';
-import headerRtSrc from '../src/templates/actor/player/header-rt.hbs?raw';
 import biographyTabSrc from '../src/templates/actor/player/tab-biography.hbs?raw';
 import skillsTabSrc from '../src/templates/actor/player/tab-skills.hbs?raw';
 import tabsSrc from '../src/templates/actor/player/tabs.hbs?raw';
@@ -13,22 +11,8 @@ import { renderSheet, renderSheetParts } from '../stories/test-helpers';
 // instead of hand-rolled Hbs.compile + innerHTML mounts. Single-template tests use
 // renderSheet; multi-template composites use renderSheetParts (one slot per partial).
 
-/**
- * Legacy DH2 header shape kept here so the input[name="system.rank"] assertion
- * below still has something to find — the current `DH2eSystemConfig.getHeaderFields`
- * returns Divination instead of Rank, so this test injects the prior shape via
- * `contextOverrides`.
- */
-const LEGACY_DH2_HEADER_FIELDS: SidebarHeaderField[] = [
-    { label: 'Player', name: 'system.bio.playerName', type: 'text', value: 'Player One', placeholder: 'Player Name' },
-    { label: 'Home World', name: 'system.originPath.homeWorld', type: 'text', value: 'Hive World', placeholder: 'Home World' },
-    { label: 'Career', name: 'system.originPath.career', type: 'text', value: 'Adept', placeholder: 'Career' },
-    { label: 'Rank', name: 'system.rank', type: 'number', value: 3, placeholder: 'Rank', inputClass: 'wh40k-rank-input' },
-];
-
-function playerContext(systemId: 'dh2' | 'im' | 'rt'): ReturnType<typeof mockPlayerSheetContext> {
+function playerContext(): ReturnType<typeof mockPlayerSheetContext> {
     return mockPlayerSheetContext({
-        systemId,
         actorOverrides: {
             system: {
                 bio: {
@@ -45,44 +29,31 @@ function playerContext(systemId: 'dh2' | 'im' | 'rt'): ReturnType<typeof mockPla
             },
             items: [],
         },
-        contextOverrides: systemId === 'dh2' ? { headerFields: LEGACY_DH2_HEADER_FIELDS } : {},
     });
 }
 
 function npcContext(): ReturnType<typeof mockNpcSheetContext> {
-    return mockNpcSheetContext({ systemId: 'im' });
+    return mockNpcSheetContext();
 }
 
 describe('character sheet template composition', () => {
-    it('renders the DH2 sidebar header and biography tab together', () => {
-        const context = playerContext('dh2');
+    it('renders the sidebar header and biography tab together', () => {
+        const context = playerContext();
         const element = renderSheetParts([{ template: headerSrc }, { template: tabsSrc }, { template: biographyTabSrc }], context);
 
-        expect(element.querySelector('input[name="system.rank"]')).not.toBeNull();
-        // After commit 6b6f164 origin-path bubbles render in the shared DH header too;
-        // assert the biography tab content rather than the absence of stage items.
         expect(element.textContent).toContain('Character Journal');
         expect(element.textContent).toContain('Interrogation Log');
     });
 
-    it('renders Rogue Trader origin-path stages only in the RT header variant', () => {
-        const context = playerContext('rt');
-        const element = renderSheet(headerRtSrc, context);
-
-        expect(element.querySelector('[data-item-id^="origin"]')).not.toBeNull();
-    });
-
-    it('renders the IM sidebar header fields in the shared layout', () => {
-        const context = playerContext('im');
+    it('renders the Only War sidebar header fields in the shared layout', () => {
+        const context = playerContext();
         const element = renderSheet(headerSrc, context);
 
-        expect(element.querySelector('input[name="system.originPath.homeWorld"]')?.getAttribute('value')).toBe('House Varonius');
-        expect(element.querySelector('input[name="system.originPath.motivation"]')?.getAttribute('value')).toBe('Recover a lost ledger');
-        expect(element.textContent).toContain('Patron');
-        expect(element.textContent).toContain('Endeavour');
+        expect(element.querySelector('input[name="system.originPath.homeWorld"]')?.getAttribute('value')).toBe('Hive World');
+        expect(element.querySelector('input[name="system.originPath.motivation"]')).not.toBeNull();
     });
 
-    it('renders the NPC tab with IM-compatible sheet chrome and controls', () => {
+    it('renders the NPC tab with sheet chrome and controls', () => {
         const context = npcContext();
         const element = renderSheetParts([{ template: headerSrc }, { template: tabsSrc }, { template: npcTabSrc }], context);
 
@@ -94,7 +65,7 @@ describe('character sheet template composition', () => {
 
     it('renders a direct characteristic roll overlay on the statistics page', () => {
         const context = {
-            ...playerContext('dh2'),
+            ...playerContext(),
             tab: { id: 'skills', group: 'primary', cssClass: 'tab-skills', active: true },
         };
         const element = renderSheet(skillsTabSrc, context);

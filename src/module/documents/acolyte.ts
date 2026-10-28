@@ -156,12 +156,7 @@ export class WH40KAcolyte extends WH40KBaseActor {
     get originPathItems(): WH40KItem[] {
         return this.items.filter((item: WH40KItem) => item.isOriginPath);
     }
-    get navigatorPowers(): WH40KItem[] {
-        return this.items.filter((item: WH40KItem) => item.isNavigatorPower);
-    }
-    get shipRoles(): WH40KItem[] {
-        return this.items.filter((item: WH40KItem) => item.isShipRole);
-    }
+
     get conditions(): WH40KItem[] {
         return this.items.filter((item: WH40KItem) => item.isCondition);
     }

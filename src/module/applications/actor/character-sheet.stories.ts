@@ -22,7 +22,7 @@ const rng = seedRandom(0xc4a4c7e2);
 
 /** Actor types are `<systemId>-<role>`; the prefix is the active game-system id. */
 function systemIdOf(ctx: SheetContextLike): string {
-    const [systemId = 'dh2'] = ctx.actor.type.split('-');
+    const [systemId = 'ow'] = ctx.actor.type.split('-');
     return systemId;
 }
 
@@ -46,11 +46,11 @@ const meta: Meta<SheetContextLike> = {
 export default meta;
 type Story = StoryObj<SheetContextLike>;
 
-// ── DH2e default ─────────────────────────────────────────────────────────────
+// ── Only War default ─────────────────────────────────────────────────────────────
 
-export const DarkHeresy2Default: Story = {
-    name: 'Dark Heresy 2e — Default',
-    args: mockPlayerSheetContext({ systemId: 'dh2', activeTab: 'biography' }),
+export const OnlyWarDefault: Story = {
+    name: 'Only War — Default',
+    args: mockPlayerSheetContext({ systemId: 'ow', activeTab: 'biography' }),
     render: (args) => renderCharacterSheet(args),
     play: async ({ canvasElement }) => {
         const storyCanvas = within(canvasElement);
@@ -61,25 +61,12 @@ export const DarkHeresy2Default: Story = {
 
 // ── Imperium Maledictum variant ───────────────────────────────────────────────
 
-export const ImperiumMaledictum: Story = {
-    name: 'Imperium Maledictum variant',
-    args: mockPlayerSheetContext({ systemId: 'im', activeTab: 'biography' }),
-    render: (args) => renderCharacterSheet(args),
-    play: async ({ canvasElement }) => {
-        const storyCanvas = within(canvasElement);
-        // IM uses 'Interrogator Hale' as the default actor name
-        await expect(storyCanvas.getByDisplayValue('Interrogator Hale')).toBeVisible();
-        // IM origin path step should be House Varonius
-        await expect(storyCanvas.getByText('House Varonius')).toBeVisible();
-    },
-};
-
 // ── Edit mode: bio fields ─────────────────────────────────────────────────────
 
 export const EditModeBio: Story = {
     name: 'Edit Mode — bio fields',
     args: mockPlayerSheetContext({
-        systemId: 'dh2',
+        systemId: 'ow',
         activeTab: 'biography',
         actorOverrides: {
             system: {
@@ -107,7 +94,7 @@ export const EditModeBio: Story = {
 
 export const EnemyCreateClick: Story = {
     name: 'Interaction — itemCreate (enemy row)',
-    args: mockPlayerSheetContext({ systemId: 'dh2', activeTab: 'biography' }),
+    args: mockPlayerSheetContext({ systemId: 'ow', activeTab: 'biography' }),
     render: (args) => renderCharacterSheet(args),
     play: ({ canvasElement }) => {
         // The biography tab renders two itemCreate buttons (peer + enemy).
@@ -121,53 +108,9 @@ export const EnemyCreateClick: Story = {
 // config so per-system header fields, tab labels, and origin-path shapes
 // surface in visual review without hand-authoring separate mock objects.
 
-export const BlackCrusadeVariant: Story = {
-    name: 'Per-system — Black Crusade',
-    args: mockPlayerSheetContext({ systemId: 'bc', activeTab: 'biography' }),
-    render: (args) => renderCharacterSheet(args),
-    play: async ({ canvasElement }) => {
-        const storyCanvas = within(canvasElement);
-        await expect(storyCanvas.getByDisplayValue('Acolyte Vex')).toBeVisible();
-        await expect(storyCanvas.getByText('Biography')).toBeVisible();
-    },
-};
-
-export const DarkHeresy1eVariant: Story = {
-    name: 'Per-system — Dark Heresy 1e',
-    args: mockPlayerSheetContext({ systemId: 'dh1', activeTab: 'biography' }),
-    render: (args) => renderCharacterSheet(args),
-    play: async ({ canvasElement }) => {
-        const storyCanvas = within(canvasElement);
-        await expect(storyCanvas.getByDisplayValue('Acolyte Vex')).toBeVisible();
-        await expect(storyCanvas.getByText('Biography')).toBeVisible();
-    },
-};
-
-export const DeathwatchVariant: Story = {
-    name: 'Per-system — Deathwatch',
-    args: mockPlayerSheetContext({ systemId: 'dw', activeTab: 'biography' }),
-    render: (args) => renderCharacterSheet(args),
-    play: async ({ canvasElement }) => {
-        const storyCanvas = within(canvasElement);
-        await expect(storyCanvas.getByDisplayValue('Acolyte Vex')).toBeVisible();
-        await expect(storyCanvas.getByText('Biography')).toBeVisible();
-    },
-};
-
 export const OnlyWarVariant: Story = {
     name: 'Per-system — Only War',
     args: mockPlayerSheetContext({ systemId: 'ow', activeTab: 'biography' }),
-    render: (args) => renderCharacterSheet(args),
-    play: async ({ canvasElement }) => {
-        const storyCanvas = within(canvasElement);
-        await expect(storyCanvas.getByDisplayValue('Acolyte Vex')).toBeVisible();
-        await expect(storyCanvas.getByText('Biography')).toBeVisible();
-    },
-};
-
-export const RogueTraderVariant: Story = {
-    name: 'Per-system — Rogue Trader',
-    args: mockPlayerSheetContext({ systemId: 'rt', activeTab: 'biography' }),
     render: (args) => renderCharacterSheet(args),
     play: async ({ canvasElement }) => {
         const storyCanvas = within(canvasElement);
@@ -266,7 +209,7 @@ function renderCombatPanel(): HTMLElement {
 
 export const Issue19NonReactionLocalDescription: Story = {
     name: 'Issue #19 — non-Reaction action shows description locally',
-    args: mockPlayerSheetContext({ systemId: 'dh2', activeTab: 'combat' }),
+    args: mockPlayerSheetContext({ systemId: 'ow', activeTab: 'combat' }),
     render: () => renderCombatPanel(),
     play: async ({ canvasElement }) => {
         const root = canvasElement;

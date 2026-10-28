@@ -3,7 +3,6 @@ import type { HordeTrait } from '../data/actor/mixins/horde-template.ts';
 import { applyCriticalDamageConditions, type CriticalSideEffectReport } from '../rules/active-effects.ts';
 import { type CriticalDamageRecord, getCriticalDamageRecord } from '../rules/critical-damage.ts';
 import { damageTypeDropdown, normalizeBodyPart } from '../rules/damage-type.ts';
-import { type BreakCheck, magnitudeLossForHit, resolveBreakCheck } from '../rules/dw-horde-magnitude.ts';
 import {
     ARMED_TEST_HOOKS_FLAG,
     armOnDamagedHooks,
@@ -14,6 +13,7 @@ import {
     type DynamicModifierItemLike,
     type DynamicModifierSituation,
 } from '../rules/dynamic-modifiers.ts';
+import { type BreakCheck, magnitudeLossForHit, resolveBreakCheck } from '../rules/horde-magnitude.ts';
 import { type ActorStateSource, collectActorStates } from '../rules/situation-tags.ts';
 import type { WH40KBaseActorDocument } from '../types/global.d.ts';
 import { postFlattenedInstanceToChat } from './roll-helpers.ts';
@@ -250,7 +250,7 @@ export class AssignDamageData {
                 this.hasHordeDamage = true;
                 this.magnitudeBefore = horde.magnitude.current;
                 // TODO (#166 Part C — defender-side trait damage modifiers):
-                //   `applyHordeTraits()` in rules/dw-horde-magnitude.ts is the
+                //   `applyHordeTraits()` in rules/horde-magnitude.ts is the
                 //   *attacker* horde's outgoing-damage hook (Overwhelming /
                 //   Brutal Charge). RAW defender traits that affect received
                 //   damage (e.g., Heavily Armoured-style cover bumps) aren't
@@ -460,7 +460,7 @@ export class AssignDamageData {
 
     /**
      * Translate a {@link BreakCheck} outcome to its localised label. The
-     * keys live under `WH40K.DW.Horde.Break.*` to stay co-located with
+     * keys live under `WH40K.Horde.Break.*` to stay co-located with
      * the rest of the horde lang surface.
      */
     private _localiseBreakOutcome(breakCheck: BreakCheck): string {
@@ -474,12 +474,12 @@ export class AssignDamageData {
             return i18n?.localize?.(key) ?? key;
         };
         const outcomeKeys: Record<string, string> = {
-            'auto-break': 'WH40K.DW.Horde.Break.AutoBreak',
-            'test-penalised': 'WH40K.DW.Horde.Break.TestPenalised',
-            'test-normal': 'WH40K.DW.Horde.Break.TestNormal',
-            'no-test': 'WH40K.DW.Horde.Break.NoTest',
+            'auto-break': 'WH40K.Horde.Break.AutoBreak',
+            'test-penalised': 'WH40K.Horde.Break.TestPenalised',
+            'test-normal': 'WH40K.Horde.Break.TestNormal',
+            'no-test': 'WH40K.Horde.Break.NoTest',
         };
-        return localize(outcomeKeys[breakCheck.outcome] ?? 'WH40K.DW.Horde.Break.NoTest');
+        return localize(outcomeKeys[breakCheck.outcome] ?? 'WH40K.Horde.Break.NoTest');
     }
 
     /**

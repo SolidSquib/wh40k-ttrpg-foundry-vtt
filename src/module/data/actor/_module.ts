@@ -16,8 +16,6 @@
  *     │   ├── ConventionalCraftData (directional armour / speed / crew / integrity)
  *     │   │   └── TerracraftData / AircraftData / WatercraftData
  *     │   │       └── DH2TerracraftData / … per line
- *     │   └── VoidcraftData (ship-build schema)
- *     │       └── RTVoidcraftData
  */
 
 // Kind base classes (the effective "PlayerMixin / NPCMixin")
@@ -31,7 +29,6 @@ export { default as VehicleData, ConventionalCraftData } from './vehicle.ts';
 export { default as TerracraftData } from './terracraft.ts';
 export { default as AircraftData } from './aircraft.ts';
 export { default as WatercraftData } from './watercraft.ts';
-export { default as VoidcraftData } from './voidcraft.ts';
 
 // Content-agnostic loot pile (homologated across all seven lines)
 export { default as LootData } from './loot.ts';

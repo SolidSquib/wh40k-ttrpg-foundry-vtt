@@ -39,8 +39,6 @@ import DescriptionTemplate from '../shared/description-template.ts';
 import EquippableTemplate, { type EquippableState } from '../shared/equippable-template.ts';
 import { renameKeys } from '../shared/migrate-rename.ts';
 import PhysicalItemTemplate from '../shared/physical-item-template.ts';
-import SubtletyAdjusterTemplate from '../shared/subtlety-adjuster-template.ts';
-import type { SubtletyAdjusterKind } from '../shared/subtlety-adjuster.ts';
 import { WEAPON_FACING_CHOICES, WEAPON_MOUNTING_CHOICES, type WeaponFacing, type WeaponMounting } from '../shared/vehicle-mounting.ts';
 import { isWeaponClass, WEAPON_CLASS_CHOICES } from '../shared/weapon-class.ts';
 
@@ -215,22 +213,12 @@ interface AmmoActorLike {
  * @mixes EquippableTemplate
  * @mixes AttackTemplate
  * @mixes DamageTemplate
- * @mixes SubtletyAdjusterTemplate
  */
-export default class WeaponData extends ItemDataModel.mixin(
-    DescriptionTemplate,
-    PhysicalItemTemplate,
-    EquippableTemplate,
-    AttackTemplate,
-    DamageTemplate,
-    SubtletyAdjusterTemplate,
-) {
+export default class WeaponData extends ItemDataModel.mixin(DescriptionTemplate, PhysicalItemTemplate, EquippableTemplate, AttackTemplate, DamageTemplate) {
     // Narrow the foundry-typed `parent` to our concrete document for downstream access.
     declare parent: WH40KItem;
     // Typed property declarations matching defineSchema()
     declare identifier: string;
-    // From SubtletyAdjusterTemplate (mixin static type does not surface it).
-    declare subtletyAdjuster?: { kind: SubtletyAdjusterKind; delta: number; minAbsoluteDelta: number; requiresEquipped: boolean };
     declare class: string;
     declare secondaryClass: string | null;
     declare type: string;

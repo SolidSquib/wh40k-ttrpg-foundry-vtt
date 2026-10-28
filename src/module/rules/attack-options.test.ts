@@ -18,27 +18,21 @@ describe('attack mode cards show the modifier the roll applies on the actor’s 
     const card = (modes: ReturnType<typeof getAvailableAttackModes>, key: string): ReturnType<typeof getAvailableAttackModes>[number] | undefined =>
         modes.find((m) => m.key === key);
 
-    it('Only War: single shot and melee strike are +10; the burst cards are unchanged', () => {
-        const modes = getAvailableAttackModes(ranged, 'ow');
+    it('single shot and melee strike are +10; the burst cards are unchanged', () => {
+        const modes = getAvailableAttackModes(ranged);
         expect(card(modes, 'standard')?.modifier).toBe(10);
         expect(card(modes, 'standard')?.tooltip).toContain('+10');
         expect(card(modes, 'semiAuto')?.modifier).toBe(0);
         expect(card(modes, 'fullAuto')?.modifier).toBe(-10);
-        expect(card(getAvailableAttackModes(melee, 'ow'), 'standard')?.modifier).toBe(10);
+        expect(card(getAvailableAttackModes(melee), 'standard')?.modifier).toBe(10);
     });
 
-    it('other lines (and no line) keep the shared figure', () => {
-        expect(card(getAvailableAttackModes(ranged, 'dh2'), 'standard')?.modifier).toBe(0);
-        expect(card(getAvailableAttackModes(ranged), 'standard')?.modifier).toBe(0);
-        expect(card(getAvailableAttackModes(ranged), 'standard')?.tooltip).toContain('+0');
-    });
-
-    it('every per-line card figure agrees with the combat action it maps to', () => {
+    it('every card figure agrees with the combat action it maps to', () => {
         const actions = allCombatActions();
         for (const mode of [...RANGED_ATTACK_MODES, ...MELEE_ATTACK_MODES]) {
-            if (mode.modifierByLine === undefined) continue;
+            if (mode.key !== 'standard') continue;
             const action = actions.find((a) => a.name === mode.actionName);
-            expect(action?.attack?.byLine, `${mode.actionName} must declare the same per-line modifier`).toEqual(mode.modifierByLine);
+            expect(action?.attack?.modifier, `${mode.actionName} must carry the same modifier as its card`).toBe(mode.modifier);
         }
     });
 });
@@ -125,10 +119,9 @@ describe('attack-options situational modifiers', () => {
 describe('ranged Rate-of-Fire to-hit modifiers (#231)', () => {
     const findRanged = (key: string): (typeof RANGED_ATTACK_MODES)[number] | undefined => RANGED_ATTACK_MODES.find((m) => m.key === key);
 
-    it('uses RAW values: single shot +0, semi-auto +0, full-auto -10', () => {
-        // Standard Attack has no inherent to-hit bonus in DH2e RAW (#383 — the
-        // #231 +10 single-shot bonus was incorrect); semi +0, full -10 stand.
-        expect(findRanged('standard')?.modifier).toBe(0);
+    it('uses RAW values: single shot +10, semi-auto +0, full-auto -10', () => {
+        // Only War prints the Standard Attack as an Ordinary (+10) test; semi +0, full -10 stand.
+        expect(findRanged('standard')?.modifier).toBe(10);
         expect(findRanged('semiAuto')?.modifier).toBe(0);
         expect(findRanged('fullAuto')?.modifier).toBe(-10);
     });
@@ -139,7 +132,7 @@ describe('ranged Rate-of-Fire to-hit modifiers (#231)', () => {
     });
 
     it('tooltips agree with the numeric modifier (no stale +10/+20 text)', () => {
-        expect(findRanged('standard')?.tooltip).toContain('+0 to BS');
+        expect(findRanged('standard')?.tooltip).toContain('+10 to BS');
         expect(findRanged('semiAuto')?.tooltip).toContain('+0 BS');
         expect(findRanged('fullAuto')?.tooltip).toContain('-10 BS');
     });

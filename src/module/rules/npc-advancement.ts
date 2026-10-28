@@ -13,7 +13,7 @@
  *
  * Everything here is pure and Foundry-free so it is directly unit-testable; the
  * DataModel calls in and supplies the live cost tables from the line's
- * `AptitudeBasedSystemConfig`. The whole layer is gated behind the
+ * `OWSystemConfig`. The whole layer is gated behind the
  * `npcAdvancement` world setting — with it off nothing here runs and NPCs stay
  * flat stat blocks.
  *
@@ -127,7 +127,7 @@ export function countMatches(held: readonly string[], required: readonly string[
     return required.filter((a) => heldSet.has(a.toLowerCase())).length;
 }
 
-/** The cost tables a line's `AptitudeBasedSystemConfig` supplies, narrowed to what pricing needs. */
+/** The cost tables a line's `OWSystemConfig` supplies, narrowed to what pricing needs. */
 export interface AdvancementCostTables {
     /** `[matchingAptitudes] → per-rank costs`. */
     skill: Record<number, number[]>;

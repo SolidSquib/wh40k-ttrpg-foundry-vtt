@@ -1095,7 +1095,7 @@ export default class UnifiedRollDialog extends ApplicationV2Mixin(ApplicationV2)
         const isRanged = rd.weapon?.isRanged === true;
         /* eslint-disable no-restricted-syntax -- boundary: rd.weapon cast is boundary; weapon roll data typing does not match AttackOptionWeaponLike exactly */
         const attackModes = rd.weapon
-            ? getAvailableAttackModes(rd.weapon as unknown as AttackOptionWeaponLike, rd.gameSystemId).map((m) => ({
+            ? getAvailableAttackModes(rd.weapon as unknown as AttackOptionWeaponLike).map((m) => ({
                   ...m,
                   isSelected: this._attackModeKey === m.key,
                   modifierLabel: m.modifier >= 0 ? `+${m.modifier}` : `${m.modifier}`,

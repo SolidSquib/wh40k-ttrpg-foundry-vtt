@@ -575,13 +575,13 @@ export class WH40KSettings {
         }
     }
 
-    /** The world's primary 40K RPG line; default dh2. Safe to call before settings init. */
+    /** The world's primary 40K RPG line; default ow. Safe to call before settings init. */
     static getPrimaryGameSystem(): GameSystemId {
         try {
             const value = String(game.settings.get(SYSTEM_ID, WH40KSettings.SETTINGS.primaryGameSystem));
-            return ALL_SYSTEM_IDS.find((id) => id === value) ?? 'dh2';
+            return ALL_SYSTEM_IDS.find((id) => id === value) ?? 'ow';
         } catch {
-            return 'dh2';
+            return 'ow';
         }
     }
 

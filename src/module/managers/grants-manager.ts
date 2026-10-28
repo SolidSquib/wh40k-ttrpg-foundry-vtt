@@ -824,7 +824,8 @@ export class GrantsManager {
             out.push({
                 type: 'skill',
                 skills: filteredSkills.map((s) => ({
-                    key: s.name.toLowerCase().replace(/\s+/g, ''),
+                    // the display name: the skill grant resolves it to the schema key (a squashed name like "commonlore" matches no skill)
+                    key: s.name,
                     level: s.level ?? 'trained',
                     specialization: s.specialization,
                 })),

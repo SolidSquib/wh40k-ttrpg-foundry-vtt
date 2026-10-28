@@ -1,55 +1,13 @@
 {
     "TYPES": {
         "Actor": {
-            "character": "Player Character",
-            "npc": "NPC",
-            "vehicle": "Vehicle",
-            "starship": "Starship",
             "loot": "Loot Pile",
-            "dh2-character": "Dark Heresy 2e Character",
-            "dh2-npc": "Dark Heresy 2e NPC",
-            "dh2-vehicle": "Dark Heresy 2e Vehicle",
-            "dh1-character": "Dark Heresy 1e Character",
-            "dh1-npc": "Dark Heresy 1e NPC",
-            "dh1-vehicle": "Dark Heresy 1e Vehicle",
-            "rt-character": "Rogue Trader Character",
-            "rt-npc": "Rogue Trader NPC",
-            "rt-vehicle": "Rogue Trader Vehicle",
-            "rt-starship": "Rogue Trader Starship",
-            "bc-character": "Black Crusade Character",
-            "bc-npc": "Black Crusade NPC",
-            "bc-vehicle": "Black Crusade Vehicle",
             "ow-character": "Only War Character",
             "ow-npc": "Only War NPC",
             "ow-vehicle": "Only War Vehicle",
-            "dw-character": "Deathwatch Character",
-            "dw-npc": "Deathwatch NPC",
-            "dw-vehicle": "Deathwatch Vehicle",
-            "im-character": "Imperium Maledictum Character",
-            "im-npc": "Imperium Maledictum NPC",
-            "im-vehicle": "Imperium Maledictum Vehicle",
-            "dh2-terracraft": "Dark Heresy 2e Ground Vehicle",
-            "dh2-aircraft": "Dark Heresy 2e Aircraft",
-            "dh2-watercraft": "Dark Heresy 2e Watercraft",
-            "dh1-terracraft": "Dark Heresy 1e Ground Vehicle",
-            "dh1-aircraft": "Dark Heresy 1e Aircraft",
-            "dh1-watercraft": "Dark Heresy 1e Watercraft",
-            "rt-terracraft": "Rogue Trader Ground Vehicle",
-            "rt-aircraft": "Rogue Trader Aircraft",
-            "rt-watercraft": "Rogue Trader Watercraft",
-            "bc-terracraft": "Black Crusade Ground Vehicle",
-            "bc-aircraft": "Black Crusade Aircraft",
-            "bc-watercraft": "Black Crusade Watercraft",
             "ow-terracraft": "Only War Ground Vehicle",
             "ow-aircraft": "Only War Aircraft",
-            "ow-watercraft": "Only War Watercraft",
-            "dw-terracraft": "Deathwatch Ground Vehicle",
-            "dw-aircraft": "Deathwatch Aircraft",
-            "dw-watercraft": "Deathwatch Watercraft",
-            "im-terracraft": "Imperium Maledictum Ground Vehicle",
-            "im-aircraft": "Imperium Maledictum Aircraft",
-            "im-watercraft": "Imperium Maledictum Watercraft",
-            "rt-voidcraft": "Rogue Trader Voidcraft"
+            "watercraft": "Watercraft"
         },
         "Item": {
             "ammunition": "Ammunition",
@@ -63,28 +21,17 @@
             "criticalInjury": "Critical Injury",
             "cybernetic": "Cybernetic",
             "drug": "Drug",
-            "endeavour": "Endeavour",
-            "enemy": "Enemy",
             "forceField": "Force Field",
             "gear": "Gear",
             "journalEntry": "Journal Entry",
-            "lead": "Lead",
             "malignancy": "Malignancy",
             "mentalDisorder": "Mental Disorder",
             "miscellaneous": "Miscellaneous",
             "mutation": "Mutation",
-            "navigatorPower": "Navigator Power",
             "npcTemplate": "NPC Template",
-            "oath": "Oath",
             "order": "Order",
             "originPath": "Origin Path",
-            "peer": "Peer",
             "psychicPower": "Psychic Power",
-            "ritual": "Ritual",
-            "shipComponent": "Ship Component",
-            "shipRole": "Ship Role",
-            "shipUpgrade": "Ship Upgrade",
-            "shipWeapon": "Ship Weapon",
             "skill": "Skill",
             "specialAbility": "Special Ability",
             "storageLocation": "Storage Location",
@@ -95,7 +42,8 @@
             "vehicleUpgrade": "Vehicle Upgrade",
             "weapon": "Weapon",
             "weaponModification": "Weapon Modification",
-            "weaponQuality": "Weapon Quality"
+            "weaponQuality": "Weapon Quality",
+            "location": "Location"
         }
     },
     "WH40K": {
@@ -879,40 +827,6 @@
             "Easy": "Easy / assisted (+10)",
             "SheerTooltip": "Sheer cliffs, icy crevasses, smooth building walls, hive buttresses. Errata p. 113."
         },
-        "Possession": {
-            "Title": "Possession",
-            "StateNone": "Uncompromised",
-            "StateLatent": "Latent",
-            "StatePossessed": "Possessed",
-            "UnleashTitle": "Unleash Daemon",
-            "UnleashCount": "Unleash Uses",
-            "UnleashUnavailable": "No Unleash Daemon uses remaining this session.",
-            "UnleashSpent": "Daemon unleashed.",
-            "ResetSession": "Reset",
-            "ResetSessionTitle": "Reset per-session Unleash Daemon counter (GM only)",
-            "ResetGmOnly": "Only the GM can reset the possession session counter.",
-            "ResetDone": "Possession session counter reset.",
-            "FrenzyLoopHint": "Possession sustained — roll the Frenzy test each round.",
-            "FrenzyTest": "Frenzy Test",
-            "FrenzyTestTitle": "Roll the per-round Challenging (+0) Willpower test; failure inflicts Frenzy this round (the power must still be sustained).",
-            "Mismanifest": "Mismanifest",
-            "MismanifestTitle": "Resolve a Psychic Phenomena result: opposed Willpower test vs the Daemon; a loss escalates to full possession.",
-            "FrenzyChatTitle": "Possession — Frenzy Test",
-            "MismanifestChatTitle": "Possession — Mismanifest",
-            "RollLabel": "Roll / WP",
-            "DaemonRollLabel": "Daemon Roll / WP",
-            "DegreesLabel": "Degrees (Psyker / Daemon)",
-            "StateLabel": "State",
-            "FrenzyResisted": "The psyker holds — no Frenzy this round.",
-            "FrenzyEntered": "The psyker's will buckles — Frenzied this round (the power must still be sustained).",
-            "MismanifestHeld": "The psyker restrains the intruding Daemon and retains control.",
-            "MismanifestLost": "The Daemon overwhelms the psyker — full possession.",
-            "FrenzyLoopUnavailable": "The Possession power is not currently sustained.",
-            "FrenzyEnteredNotify": "Frenzy test failed — the psyker is Frenzied this round.",
-            "FrenzyResistedNotify": "Frenzy test passed — control held this round.",
-            "MismanifestEscalated": "Mismanifest lost — escalated to full possession.",
-            "MismanifestHeldNotify": "Mismanifest contest won — control retained."
-        },
         "Shock": {
             "Header": "Shock",
             "Value": "Current",
@@ -921,19 +835,6 @@
             "ChatTitle": "Snap Out of It",
             "SuccessText": "Resolve holds — shock recedes (−1).",
             "FailureText": "The mind reels. Shock holds."
-        },
-        "Fanatic": {
-            "ButtonLabel": "Death to All Who Oppose Me",
-            "ButtonTooltip": "Spend 1 Fate point: gain Hatred toward your targeted foe until the encounter ends. Breaking off from that foe before then costs 1 Insanity point.",
-            "ChatTitle": "Death to All Who Oppose Me",
-            "ChatBody": "{name} screams defiance and hurls themselves at the foe — death to all who oppose them.",
-            "FoeLabel": "Hated foe",
-            "DurationLabel": "Duration",
-            "DurationEncounter": "This encounter",
-            "InsanityReminder": "Leaving combat against this foe during the encounter costs 1 Insanity point.",
-            "NoFatePoints": "No Fate points remaining to spend.",
-            "NoTarget": "Target the foe you hate first.",
-            "NoHatred": "No Hatred talent for this game line was found in the compendiums."
         },
         "CharacteristicSetup": {
             "OnlyForCharacters": "Characteristic setup is only available for characters.",
@@ -2778,16 +2679,6 @@
                 "Other": "Other"
             }
         },
-        "Crusader": {
-            "ButtonLabel": "Smite the Unholy",
-            "ButtonTooltip": "Spend 1 Fate point: the Fear test passes outright, with DoS equal to your Willpower Bonus.",
-            "ChatTitle": "Smite the Unholy",
-            "ChatBody": "{name} steels their soul and calls upon the Emperor's grace — the Fear test passes by sheer faith.",
-            "DegreesOfSuccessLabel": "Degrees of Success",
-            "AutoPassLabel": "Result",
-            "FearTestAutoPass": "Fear test auto-passed",
-            "NoFatePoints": "No Fate points remaining to spend."
-        },
         "WithoutHomeworld": {
             "DialogTitle": "Without — New Home Worlds (GM Reference)",
             "DialogDescription": "Reference for the three new home worlds introduced in Enemies Without: Death World, Garden World, and Research Station.",
@@ -2957,657 +2848,6 @@
             "Skill": {
                 "operate": "Operate",
                 "survival": "Survival"
-            }
-        },
-        "BC": {
-            "Advancement": {
-                "PanelHeader": "Chaos Alignment",
-                "CurrentAlignment": "Current Alignment",
-                "TallyHeader": "Advances Tally",
-                "Checkpoint": "Last Alignment Check",
-                "CheckpointValue": "{checkpoint} / {corruption} CP",
-                "BuyInfamyButton": "+{step} / {cost} xp",
-                "RecheckTitle": "Re-evaluate Alignment at this Corruption-Point threshold",
-                "RecheckButton": "Recheck",
-                "PendingFlip": "A re-check would flip this Heretic's Alignment to {target}.",
-                "PsykerLocked": "Aligned to Khorne — psychic powers and Psyker Trait are suppressed.",
-                "Infamy": "Infamy",
-                "InfamyCapped": "Cap reached — Infamy advances must be earned through play.",
-                "BuyInfamyTitle": "Purchase +{step} Infamy for {xp} xp",
-                "BuyInfamyConfirmTitle": "Purchase Infamy Advance",
-                "BuyInfamyConfirmBody": "Spend {xp} xp to raise Infamy by {step} (to {next})?",
-                "BuyInfamyInsufficientXP": "Not enough XP to purchase Infamy advance (cost: {cost}, available: {available}).",
-                "BuyInfamyCapped": "Infamy is already at the {cap} cap and cannot be advanced with xp.",
-                "RecheckChatTitle": "Alignment Re-check",
-                "RecheckFlippedTo": "Alignment shifted from {previous} to {next}.",
-                "RecheckUnchanged": "Alignment re-evaluated — no shift required.",
-                "Alignment": {
-                    "Unaligned": "Unaligned",
-                    "Khorne": "Khorne",
-                    "Nurgle": "Nurgle",
-                    "Slaanesh": "Slaanesh",
-                    "Tzeentch": "Tzeentch"
-                },
-                "Tier": {
-                    "Simple": "Simple",
-                    "Intermediate": "Intermediate",
-                    "Trained": "Trained",
-                    "Expert": "Expert"
-                }
-            },
-            "Psychic": {
-                "Label": "Psychic Strength",
-                "PanelHeader": "Psychic Strength",
-                "ClassLabel": "Psyker Class",
-                "ModeLabel": "Manifestation Mode",
-                "BasePR": "Base Psy Rating",
-                "TestButton": "Psychic Test",
-                "DialogTitle": "Resolve Psychic Test",
-                "DialogSubmit": "Resolve",
-                "DialogCancel": "Cancel",
-                "ChatTitle": "Psychic Test",
-                "ResultMode": "Mode",
-                "ResultClass": "Class",
-                "ResultEffectivePR": "Effective PR",
-                "ResultBasePR": "Base PR",
-                "ResultPushLevel": "Push Level",
-                "ResultSustainPenalty": "Sustain Penalty",
-                "ResultPhenomenaRolls": "Phenomena Rolls",
-                "NoPhenomena": "No Psychic Phenomena triggered",
-                "Class": {
-                    "Bound": "Bound Psyker",
-                    "Unbound": "Unbound Psyker",
-                    "Daemonic": "Daemonic Psyker"
-                },
-                "Mode": {
-                    "Fettered": "Fettered",
-                    "Unfettered": "Unfettered",
-                    "Push": "Push"
-                },
-                "Push": {
-                    "Level": "Push Level",
-                    "MaxLevel": "Maximum Push Level"
-                },
-                "EffectivePR": "Effective Psy Rating",
-                "Sustain": {
-                    "Count": "Sustained Powers",
-                    "Penalty": "Sustain Penalty"
-                },
-                "Phenomena": {
-                    "RollCount": "Phenomena Rolls",
-                    "Triggered": "Psychic Phenomena triggered"
-                }
-            },
-            "Ritual": {
-                "Label": "Chaos Ritual",
-                "PanelHeader": "Chaos Ritual",
-                "MasteryLabel": "Daemonic Mastery",
-                "PerformButton": "Perform Ritual",
-                "DialogTitle": "Perform Chaos Ritual",
-                "DialogSubmit": "Roll Contempt of the Warp",
-                "DialogCancel": "Cancel",
-                "DialogTemplateId": "Ritual Template ID",
-                "DialogBaseTarget": "Base Target (d100)",
-                "DialogAddModifier": "Add Modifier",
-                "DialogModifiersHeader": "Modifiers (Table 6-7)",
-                "DialogModifierKind": "Kind",
-                "DialogModifierValue": "Value",
-                "DialogModifierDescription": "Description (optional)",
-                "ChatTitle": "Chaos Ritual",
-                "ChatTemplateId": "Ritual",
-                "ChatBaseTarget": "Base Target",
-                "ChatModifierSum": "Modifier Sum",
-                "ChatFinalTarget": "Final Target",
-                "ChatRoll": "d100 Roll",
-                "ChatDegreesOfSuccess": "Degrees of Success",
-                "ChatDegreesOfFailure": "Degrees of Failure",
-                "ChatNoModifiers": "No Table 6-7 modifiers applied.",
-                "Template": {
-                    "Description": "Description",
-                    "Requirements": "Requirements",
-                    "Effects": "Effects",
-                    "Duration": "Duration",
-                    "Cost": "Cost",
-                    "PriceOfFailure": "Price of Failure"
-                },
-                "Modifier": {
-                    "CultAffiliation": "Cult Affiliation",
-                    "Sacrifice": "Sacrifice",
-                    "SanctifiedGround": "Sanctified Ground",
-                    "ComponentReagent": "Component Reagent",
-                    "DaemonicMastery": "Daemonic Mastery",
-                    "GmOther": "Other Adjustment"
-                },
-                "Contempt": {
-                    "Success": "The Warp yields — the ritual takes hold.",
-                    "Failure": "The Warp roils against the ritualist — the working fails."
-                },
-                "BreakingMastery": {
-                    "Broken": "The binding shatters.",
-                    "Held": "The binding holds against the assault."
-                }
-            },
-            "Gifts": {
-                "Label": "Gifts of the Gods",
-                "Table": {
-                    "Title": "Gifts of the Gods"
-                },
-                "SubTable": {
-                    "Limb": "Additional Limb",
-                    "Animal": "Animal"
-                },
-                "Rider": {
-                    "Khorne": "Khorne Rider",
-                    "Slaanesh": "Slaanesh Rider",
-                    "Nurgle": "Nurgle Rider",
-                    "Tzeentch": "Tzeentch Rider",
-                    "None": "No Alignment Rider"
-                },
-                "Resolved": {
-                    "BaseDescription": "Base Effect",
-                    "AppliedAlignment": "Applied Alignment"
-                },
-                "None": "No gifts received yet"
-            },
-            "DaemonPrince": {
-                "Label": "Daemon Prince",
-                "PanelHeader": "Apotheosis",
-                "Status": {
-                    "Resolved": "Left Play",
-                    "Pending": "Mortal Champion",
-                    "ResolvedAt": "Claimed at: {when}",
-                    "AlignmentAt": "Patron: {alignment}",
-                    "Requirements": "At {corruption} Corruption the champion is claimed: Infamy {infamy} or more brings apotheosis, anything less brings spawndom."
-                },
-                "Outcome": {
-                    "Projected": "If claimed now",
-                    "DaemonPrince": "Apotheosis: the champion becomes a Daemon Prince and leaves play.",
-                    "ChaosSpawn": "Spawndom: the champion becomes a Chaos Spawn and leaves play."
-                },
-                "AscendButton": {
-                    "Label": "Resolve Apotheosis",
-                    "Disabled": "Corruption Below {corruption}"
-                },
-                "Confirm": {
-                    "Title": "Confirm Apotheosis",
-                    "Body": "Resolve the champion's fate? Either way the character leaves play. This change is permanent.",
-                    "Ok": "Resolve",
-                    "Cancel": "Not Yet"
-                },
-                "Chat": {
-                    "Title": "Apotheosis"
-                },
-                "Blocked": "Apotheosis comes only at {corruption} Corruption."
-            },
-            "Supplements": {
-                "Label": "Supplement Mechanics",
-                "PanelHeader": "Daemon Engine",
-                "Irradiated": {
-                    "Label": "Irradiated ({rating})",
-                    "TicksRemaining": "Ticks Remaining: {count}",
-                    "DamagePerTick": "Damage per Tick: {damage}"
-                },
-                "Overcharge": {
-                    "Label": "Overcharge",
-                    "Jammed": "Overcharge jammed — weapon discharge suppressed.",
-                    "Doubled": "Overcharge surge — damage doubled."
-                },
-                "DaemonEngine": {
-                    "Rating": "Daemon Engine ({rating})",
-                    "RageBonus": "Rage Bonus: +{bonus}",
-                    "RatingLabel": "Daemon Engine Rating",
-                    "RageBonusLabel": "Rage Bonus"
-                }
-            }
-        },
-        "DW": {
-            "Horde": {
-                "MagnitudeLost": "Magnitude Lost",
-                "Magnitude": "Magnitude",
-                "RawTag": "RAW Horde",
-                "ToHitBonus": "To-Hit Bonus",
-                "BonusDamageDice": "Bonus Damage Dice",
-                "SizeKeyword": {
-                    "Massive": "Massive",
-                    "Immense": "Immense",
-                    "Monumental": "Monumental",
-                    "Titanic": "Titanic"
-                },
-                "Tier": {
-                    "Mob": "A mob",
-                    "Throng": "A thronged phalanx",
-                    "MassedAssault": "A massed assault",
-                    "SerriedTide": "A serried tide of foes"
-                },
-                "Break": {
-                    "NoTest": "No break test required",
-                    "TestNormal": "Willpower test to hold",
-                    "TestPenalised": "Willpower test at -10",
-                    "AutoBreak": "Auto-break: routs at Sprint",
-                    "Fearless": "Fearless — never breaks",
-                    "RollTestButton": "Roll Willpower Test"
-                },
-                "Trait": {
-                    "BloodSoakedTide": "Blood Soaked Tide",
-                    "BrutalCharge": "Brutal Charge",
-                    "Disciplined": "Disciplined",
-                    "Fearless": "Fearless",
-                    "FightingWithdrawal": "Fighting Withdrawal",
-                    "FireDrill": "Fire Drill",
-                    "Frenzy": "Frenzy",
-                    "Overwhelming": "Overwhelming"
-                }
-            },
-            "Renown": {
-                "Label": "Renown",
-                "Current": "Current Renown",
-                "Required": "Required Renown",
-                "Rank": {
-                    "Initiated": "Initiated",
-                    "Respected": "Respected",
-                    "Distinguished": "Distinguished",
-                    "Famed": "Famed",
-                    "Hero": "Hero"
-                },
-                "Award": "Renown Awarded",
-                "Loss": "Renown Lost",
-                "GateFailure": "Renown rank insufficient to requisition this item."
-            },
-            "Distinction": {
-                "Label": "Distinction",
-                "Earn": {
-                    "RankTooLow": "Renown rank too low to earn this Distinction."
-                },
-                "Award": {
-                    "Granted": "Distinction granted."
-                },
-                "Mark": {
-                    "Label": "Mark of Distinction",
-                    "Plural": "Marks of Distinction",
-                    "Empty": "No Marks of Distinction borne."
-                },
-                "List": {
-                    "Plural": "Distinctions",
-                    "Empty": "No Distinctions earned yet."
-                },
-                "Toggle": {
-                    "Distinction": "Toggle Distinction",
-                    "Mark": "Toggle Mark of Distinction"
-                },
-                "Delta": {
-                    "Characteristics": "Characteristic Bonuses",
-                    "Traits": "Granted Traits",
-                    "None": "None"
-                },
-                "Advanced": {
-                    "Label": "Advanced Special Ability",
-                    "RankTooLow": "Renown rank too low to use this Advanced Special Ability.",
-                    "InsufficientCohesion": "Insufficient Cohesion to activate this Advanced Special Ability."
-                },
-                "RenownReward": "Renown Reward",
-                "Merged": {
-                    "Title": "Combined Mark Effects"
-                }
-            },
-            "Cohesion": {
-                "Label": "Cohesion",
-                "Max": "Maximum Cohesion",
-                "Current": "Current Cohesion",
-                "Pool": "Cohesion Pool",
-                "Damaged": "Cohesion Damaged",
-                "Recovered": "Cohesion Recovered",
-                "Lost": "Cohesion Lost",
-                "Rally": {
-                    "Title": "Rally — Free Action",
-                    "Description": "Challenging (+0) Command (or Fellowship) test to negate this turn's Cohesion loss.",
-                    "Success": "Rally succeeds — the kill-team holds.",
-                    "Failure": "Rally fails — the kill-team falters."
-                },
-                "Challenge": {
-                    "Title": "Cohesion Challenge",
-                    "Success": "Cohesion holds.",
-                    "Failure": "Cohesion breaks — the kill-team fragments."
-                },
-                "Source": {
-                    "Objective": "Objective Completed",
-                    "Fate": "Fate Point Spent",
-                    "GM": "GM Ruling"
-                }
-            },
-            "Requisition": {
-                "Label": "Requisition",
-                "RequestItemButton": "Request Item",
-                "ChatTitle": "Deathwatch Requisition",
-                "AcquiredLabel": "Acquired",
-                "RP": {
-                    "Label": "RP",
-                    "Pool": "Requisition Pool",
-                    "Spent": "RP Spent",
-                    "Remaining": "RP Remaining",
-                    "Available": "RP Available",
-                    "Required": "RP Required"
-                },
-                "Craftsmanship": {
-                    "Poor": "Poor",
-                    "Common": "Common",
-                    "Good": "Good",
-                    "Best": "Best"
-                },
-                "Mission": {
-                    "Rating": "Mission Rating",
-                    "Standard": "Standard",
-                    "Extended": "Extended",
-                    "Priority": "Priority",
-                    "Critical": "Critical"
-                },
-                "Validation": {
-                    "RankTooLow": "Renown rank too low to requisition this item.",
-                    "InsufficientRp": "Insufficient Requisition Points.",
-                    "OverAllocated": "A contributing brother allocated more RP than available.",
-                    "InsufficientPool": "Pooled contributions do not cover the item cost.",
-                    "InvalidInput": "Invalid requisition input — item name and a non-negative base cost are required."
-                },
-                "Pool": {
-                    "Title": "Pool Requisition",
-                    "Contributor": "Contributor",
-                    "Holder": "Requisitioning Brother"
-                },
-                "Form": {
-                    "ItemName": "Item Name",
-                    "BaseCost": "Base RP Cost",
-                    "Craftsmanship": "Craftsmanship",
-                    "RequiredRank": "Required Renown Rank",
-                    "HolderRp": "Your RP Contribution",
-                    "PoolRp": "Pooled RP from Other Brothers"
-                }
-            },
-            "Mode": {
-                "Label": "Combat Mode",
-                "Solo": "Solo Mode",
-                "Squad": "Squad Mode",
-                "Enter": {
-                    "FullAction": "Enter Squad Mode (Full Action)",
-                    "CohesionChallenge": "Enter Squad Mode (Cohesion Challenge)"
-                },
-                "Leave": "Return to Solo Mode",
-                "SupportRange": {
-                    "Visual": "Visual Support Range",
-                    "Vocal": "Vocal Support Range"
-                },
-                "Ability": {
-                    "Sustained": "Sustained",
-                    "Activate": "Activate Squad Ability",
-                    "InsufficientCohesion": "Insufficient Cohesion to activate this ability.",
-                    "NotInSquadMode": "This ability requires Squad Mode."
-                }
-            },
-            "Astartes": {
-                "Label": "Adeptus Astartes",
-                "StrengthBonusDoubled": "SB ×2 = {value}",
-                "ToughnessBonusDoubled": "TB ×2 = {value}",
-                "Unnatural": {
-                    "Strength": "Unnatural Strength (×2)",
-                    "Toughness": "Unnatural Toughness (×2)"
-                },
-                "BlackCarapace": {
-                    "Label": "Black Carapace",
-                    "PowerArmorInterface": "Power-armour interface — encumbrance penalties ignored"
-                },
-                "Category": {
-                    "Baseline": "Baseline gene-seed",
-                    "AutoHeal": "Auto-heal",
-                    "ImmunePoison": "Poison immunity",
-                    "ImmuneSuspendedAnimation": "Suspended animation",
-                    "EnhancedVision": "Enhanced vision",
-                    "EnhancedHearing": "Enhanced hearing",
-                    "EnhancedSmell": "Enhanced smell",
-                    "EnhancedTaste": "Enhanced taste",
-                    "Environmental": "Environmental adaptation",
-                    "SpitAcid": "Acid spit",
-                    "GeneSeedOrgan": "Gene-seed organ",
-                    "PowerArmorInterface": "Power-armour interface"
-                },
-                "Panel": {
-                    "ToggleImplantTitle": "Toggle implant"
-                },
-                "Implant": {
-                    "SecondaryHeart": {
-                        "Name": "Secondary Heart"
-                    },
-                    "Ossmodula": {
-                        "Name": "Ossmodula"
-                    },
-                    "Biscopea": {
-                        "Name": "Biscopea"
-                    },
-                    "Haemastamen": {
-                        "Name": "Haemastamen"
-                    },
-                    "LarramansOrgan": {
-                        "Name": "Larraman's Organ"
-                    },
-                    "CatalepseanNode": {
-                        "Name": "Catalepsean Node"
-                    },
-                    "Preomnor": {
-                        "Name": "Preomnor"
-                    },
-                    "Omophagea": {
-                        "Name": "Omophagea"
-                    },
-                    "MultiLung": {
-                        "Name": "Multi-lung"
-                    },
-                    "Occulobe": {
-                        "Name": "Occulobe"
-                    },
-                    "LymansEar": {
-                        "Name": "Lyman's Ear"
-                    },
-                    "SusAnMembrane": {
-                        "Name": "Sus-an Membrane"
-                    },
-                    "MelanchromicOrgan": {
-                        "Name": "Melanchromic Organ"
-                    },
-                    "OoliticKidney": {
-                        "Name": "Oolitic Kidney"
-                    },
-                    "Neuroglottis": {
-                        "Name": "Neuroglottis"
-                    },
-                    "Mucranoid": {
-                        "Name": "Mucranoid"
-                    },
-                    "BetchersGland": {
-                        "Name": "Betcher's Gland"
-                    },
-                    "Progenoids": {
-                        "Name": "Progenoids"
-                    },
-                    "BlackCarapace": {
-                        "Name": "Black Carapace"
-                    }
-                }
-            },
-            "Oath": {
-                "Label": "Mission Oath",
-                "Sworn": "Oath sworn — bound for the mission.",
-                "Released": "Oath released.",
-                "Buff": {
-                    "Title": "Mission Buff",
-                    "Modifier": "Modifier",
-                    "Description": "Description"
-                },
-                "Validation": {
-                    "NotLeader": "Only the kill-team leader may swear a Mission Oath.",
-                    "AlreadySworn": "An Oath is already sworn for this mission."
-                },
-                "GrantedAbilities": {
-                    "Title": "Granted Squad-Mode Abilities",
-                    "None": "No additional Squad-Mode abilities granted."
-                }
-            },
-            "Mission": {
-                "Label": "Mission",
-                "None": "No active mission.",
-                "Objectives": "Objectives",
-                "NoObjectives": "No objectives recorded.",
-                "Complications": "Complications",
-                "NoComplications": "No complications recorded.",
-                "Rating": {
-                    "Standard": "Standard",
-                    "Extended": "Extended",
-                    "Priority": "Priority",
-                    "Critical": "Critical"
-                },
-                "Objective": {
-                    "Toggle": "Cycle objective status",
-                    "Status": {
-                        "Pending": "Pending",
-                        "Complete": "Complete",
-                        "Failed": "Failed"
-                    }
-                },
-                "Reward": {
-                    "Renown": "Renown Awarded",
-                    "Xp": "Experience Awarded",
-                    "CohesionRecovered": "Cohesion Recovered"
-                },
-                "Complication": {
-                    "Toggle": "Toggle complication triggered",
-                    "Penalty": "Renown Penalty",
-                    "Triggered": "Complication Triggered"
-                },
-                "Complete": {
-                    "Title": "Complete Mission"
-                }
-            },
-            "SpecialAmmo": {
-                "Label": "Special-Issue Ammunition",
-                "Loaded": "Loaded",
-                "Select": "Select Ammunition",
-                "Effects": "Effects",
-                "NoSelection": "No special ammunition loaded.",
-                "Ammo": {
-                    "Standard": "Standard",
-                    "Hellfire": "Hellfire",
-                    "Kraken": "Kraken",
-                    "MetalStorm": "Metal Storm",
-                    "Tempest": "Tempest",
-                    "Stalker": "Stalker",
-                    "Vengeance": "Vengeance",
-                    "Dragonfire": "Dragonfire"
-                },
-                "Effect": {
-                    "BonusDamage": "Bonus Damage",
-                    "BonusPenetration": "Bonus Penetration",
-                    "BonusHits": "Bonus Hits per DoS",
-                    "IgnoresCover": "Ignores Cover",
-                    "IgnoresEnergyFields": "Ignores Energy Fields",
-                    "ReliabilityShift": "Reliability Shift",
-                    "StealthBonus": "Stealth Bonus",
-                    "FireDamage": "Fire Damage",
-                    "UnarmoredOnly": "Applies only against unarmoured targets"
-                }
-            },
-            "Vehicle": {
-                "Label": "Vehicle",
-                "Integrity": "Structural Integrity",
-                "OverIntegrity": "Over-Integrity Damage",
-                "RollCrit": "Roll Critical Hit",
-                "RollCritTooltip": "Roll 1d10 + over-Integrity on the Vehicle Critical Hit Chart (Table 4-2).",
-                "RepairTest": "Repair Test",
-                "RepairTestTooltip": "Tech-Use Test; difficulty scales with the last suffered critical result.",
-                "RolledLabel": "Rolled {rolled} + {over} = {final}",
-                "RepairLabel": "Repair difficulty",
-                "Crit": {
-                    "Roll": "Critical Hit Roll",
-                    "Header": "Vehicle Critical Hit",
-                    "Result": {
-                        "Minor": "Jarring Blow",
-                        "Mobility": "Staggered",
-                        "Weapons": "Weapon Destroyed",
-                        "Crew": "Crew Casualty",
-                        "Engine": "Drive Damaged",
-                        "Fire": "Fire",
-                        "CatastrophicFire": "Catastrophic Fire",
-                        "Hull": "Penetrating Hit",
-                        "Cargo": "Cargo Destroyed",
-                        "Wrecked": "Explodes"
-                    }
-                },
-                "Repair": {
-                    "Header": "Vehicle Repair",
-                    "Difficulty": {
-                        "Routine": "Routine (+20)",
-                        "Challenging": "Challenging (+0)",
-                        "Hard": "Hard (-20)"
-                    }
-                },
-                "Acquisition": {
-                    "Title": "Kill-Team Vehicle Requisition",
-                    "InsufficientRp": "Kill-team Requisition Points insufficient to acquire this vehicle.",
-                    "RankTooLow": "Renown rank too low to requisition this vehicle."
-                }
-            }
-        },
-        "RT": {
-            "Colony": {
-                "DialogTitle": "Colony Growth (90-day cycle)",
-                "ChatTitle": "Colony Growth",
-                "CharacteristicsLabel": "Characteristics",
-                "GrowthModifierLabel": "Growth Modifier",
-                "AgriculturalSoftenerLabel": "Agricultural Softener (re-roll on decrease)",
-                "EcclesiasticalOrderSwapLabel": "Ecclesiastical: take Order loss as Piety",
-                "AgriculturalSoftenerRollLabel": "Agricultural Softener Roll",
-                "RollLabel": "Roll",
-                "TierLabel": "Tier",
-                "DecreaseFootnote": "Decreased",
-                "ActiveEffectsLabel": "Active Effects",
-                "RollGrowthButton": "Roll Growth",
-                "CancelButton": "Cancel",
-                "Characteristic": {
-                    "Size": "Size",
-                    "Complacency": "Complacency",
-                    "Order": "Order",
-                    "Productivity": "Productivity",
-                    "Piety": "Piety"
-                },
-                "Tier": {
-                    "Abandoned": "Abandoned",
-                    "Outpost": "Outpost",
-                    "Settlement": "Settlement",
-                    "Foothold": "Foothold",
-                    "Colony": "Colony",
-                    "Holding": "Holding",
-                    "Dominion": "Dominion",
-                    "Territory": "Territory",
-                    "City": "City",
-                    "Metropolis": "Metropolis",
-                    "Hive": "Hive"
-                },
-                "Outcome": {
-                    "Decrease": "Colony Shrank",
-                    "NoChange": "No Change",
-                    "Increase": "Colony Grew"
-                },
-                "Effect": {
-                    "Placated": "Placated",
-                    "Orderly": "Orderly",
-                    "Productive": "Productive",
-                    "Pious": "Pious",
-                    "Unhappy": "Unhappy",
-                    "Anarchy": "Anarchy",
-                    "Idle": "Idle",
-                    "Apostate": "Apostate"
-                },
-                "Type": {
-                    "ResearchMission": "Research Mission",
-                    "MiningIndustry": "Mining and Industry",
-                    "Ecclesiastical": "Ecclesiastical",
-                    "Agricultural": "Agricultural"
-                }
             }
         },
         "IncorruptibleDevotion": {
@@ -4037,10 +3277,6 @@
             "Acquired": "Acquired",
             "Notes": "Notes"
         },
-        "Subtlety": {
-            "ManualAdjustment": "GM adjustment",
-            "Inquest": "Inquest pursued openly"
-        },
         "PartyOverview": {
             "Header": "Party Overview"
         },
@@ -4065,45 +3301,6 @@
             "Discovered": "Discovered",
             "PaymentCurrent": "Payment Current",
             "EmptyState": "No active Dark Pacts."
-        },
-        "RadicalServices": {
-            "DialogTitle": "Radical Services — Requisition",
-            "ChatTitle": "Radical Services Requisition",
-            "ServiceLabel": "Service",
-            "AvailabilityLabel": "Availability",
-            "ThreatLabel": "Threat",
-            "SubtletyLabel": "Subtlety",
-            "TargetLabel": "Target",
-            "RollLabel": "Roll",
-            "InfluenceLabel": "Influence",
-            "AttemptButton": "Attempt Requisition",
-            "Cancel": "Cancel",
-            "Success": "Service Acquired",
-            "Failure": "Requisition Failed",
-            "Names": {
-                "bountyHunter": "Bounty Hunter",
-                "darkOracle": "Dark Oracle",
-                "deathCult": "Death Cult",
-                "heretek": "Heretek",
-                "hiveGang": "Hive Gang",
-                "maleficScholar": "Malefic Scholar",
-                "mutantMercenary": "Mutant Mercenary",
-                "roguePsyker": "Rogue Psyker",
-                "recidivist": "Recidivist"
-            },
-            "Availability": {
-                "ubiquitous": "Ubiquitous",
-                "abundant": "Abundant",
-                "plentiful": "Plentiful",
-                "common": "Common",
-                "average": "Average",
-                "scarce": "Scarce",
-                "rare": "Rare",
-                "veryRare": "Very Rare",
-                "extremelyRare": "Extremely Rare",
-                "nearUnique": "Near Unique",
-                "unique": "Unique"
-            }
         },
         "Orders": {
             "ShipOrders": "Ship Orders",
@@ -4137,42 +3334,6 @@
             "SpendFate": "Spend Fate",
             "BurnFate": "Burn Fate",
             "RecoverFate": "Recover Fate"
-        },
-        "Dynasty": {
-            "WealthTier": {
-                "Legendary": "Legendary Wealth",
-                "Mighty": "Mighty Empire",
-                "Notable": "Notable Dynasty",
-                "Modest": "Modest Wealth",
-                "Poor": "Poor Resources"
-            },
-            "PfTier": {
-                "Poor": "Poor",
-                "PoorTooltip": "1-24: Struggling resources",
-                "Modest": "Modest",
-                "ModestTooltip": "25-49: Modest wealth",
-                "Notable": "Notable",
-                "NotableTooltip": "50-74: Notable dynasty",
-                "Mighty": "Mighty",
-                "MightyTooltip": "75-99: Mighty empire",
-                "Legendary": "Legendary",
-                "LegendaryTooltip": "100+: Legendary wealth"
-            },
-            "StartingPF": "Starting PF:",
-            "EffectivePF": "Effective PF:",
-            "MisfortunesAndNotes": "Misfortunes & Notes",
-            "MisfortunesPlaceholder": "Track PF losses, temporary modifiers...",
-            "AcquisitionModifiers": "Acquisition Modifiers",
-            "EndeavourName": "Endeavour Name",
-            "EndeavourNamePlaceholder": "Name of current endeavour...",
-            "PfReward": "PF Reward",
-            "ObjectivesAndNotes": "Objectives & Notes",
-            "ObjectivesPlaceholder": "Track objectives and progress...",
-            "Header": "Dynasty",
-            "Name": "Dynasty Name",
-            "History": "Dynasty History",
-            "Reputation": "Reputation",
-            "ShipName": "Ship Name"
         },
         "Endeavours": {
             "Header": "Endeavours",
@@ -4257,298 +3418,6 @@
             "OriginPath": "Origin Path",
             "Condition": "Condition"
         },
-        "Voidcraft": {
-            "Name": "Ship Name",
-            "HullType": "Hull Type",
-            "HullClass": "Hull Class",
-            "Tabs": {
-                "Stats": "Stats",
-                "Components": "Components",
-                "Weapons": "Weapons",
-                "Crew": "Crew",
-                "History": "History",
-                "ExtendedActions": "Actions",
-                "ManoeuvreActions": "Manoeuvres"
-            },
-            "ExtendedAction": {
-                "Header": "Extended Actions",
-                "Description": "Per the Rogue Trader Stars of Inequity and Battlefleet Koronus rules, the bridge crew may dispatch one Extended Action per turn. Click an action below to post its rules card to chat.",
-                "Empty": "No Extended Actions found in the active compendiums. Compendium content may not yet be loaded.",
-                "Dispatch": "Dispatch",
-                "DispatchTitle": "Post this Extended Action to chat",
-                "Skill": "Skill",
-                "Modifier": "Modifier",
-                "Duration": "Duration",
-                "Requirements": "Requirements",
-                "ChatSubtitle": "Ship Extended Action",
-                "ChatHeader": "Extended Action Dispatched"
-            },
-            "ManoeuvreAction": {
-                "Header": "Manoeuvre Actions",
-                "Description": "Manoeuvre Actions are the bridge pilot's turn-by-turn ship handling options. Click an action below to post its rules card to chat.",
-                "Empty": "No Manoeuvre Actions found in the active compendiums. Compendium content may not yet be loaded.",
-                "Dispatch": "Dispatch",
-                "DispatchTitle": "Post this Manoeuvre Action to chat",
-                "Skill": "Skill",
-                "Modifier": "Modifier",
-                "Duration": "Duration",
-                "Requirements": "Requirements",
-                "ChatSubtitle": "Ship Manoeuvre Action",
-                "ChatHeader": "Manoeuvre Action Dispatched"
-            },
-            "Combat": {
-                "Header": "Combat Statistics",
-                "Speed": "Speed",
-                "Manoeuvrability": "Manoeuvrability",
-                "Detection": "Detection",
-                "DetectionBonus": "Detection Bonus",
-                "Initiative": "Initiative",
-                "RollInitiative": "Roll Ship Initiative",
-                "InitiativeFlavor": "Ship Initiative — 1d10 + Detection Bonus ({bonus})",
-                "Armour": "Armour",
-                "VoidShields": "Void Shields",
-                "TurretRating": "Turret Rating",
-                "BSTest": "BS Test",
-                "Success": "Hit",
-                "Miss": "Miss",
-                "Hits": "Hits",
-                "Pool": "Pool",
-                "Damage": "Damage",
-                "Strength": "Strength",
-                "DamageLabel": "Damage",
-                "CritLabel": "Crit Rating",
-                "RangeLabel": "Range",
-                "Special": "Special",
-                "Hull": "Hull Integrity",
-                "HullApplied": "Hull damage",
-                "ShieldAbsorbed": "Shield absorbed",
-                "NoShields": "No shields up",
-                "LanceBypass": "Lance bypasses shields",
-                "FireWeapon": "Fire",
-                "RaiseShield": "Raise Shield",
-                "LowerShield": "Lower Shield",
-                "RestoreShields": "Restore Shields",
-                "NoWeapon": "No ship weapon selected.",
-                "AllShieldsUp": "All void shields are already raised.",
-                "AllShieldsDown": "No void shields are currently raised.",
-                "NoShieldsExhausted": "No exhausted shields remain to bring back online.",
-                "ShieldsRestored": "All void shields restored."
-            },
-            "Resources": {
-                "Header": "Ship Resources",
-                "Power": "Power Available",
-                "Space": "Space Available",
-                "SpaceTotal": "Space (Total)",
-                "SpaceUsed": "Space (Used)",
-                "PowerTotal": "Power (Total)",
-                "PowerUsed": "Power (Used)",
-                "ShipPoints": "Ship Points"
-            },
-            "WeaponCapacity": {
-                "Header": "Weapon Capacity",
-                "Prow": "Prow",
-                "Dorsal": "Dorsal",
-                "Port": "Port",
-                "Starboard": "Starboard",
-                "Keel": "Keel"
-            },
-            "Physical": {
-                "Header": "Physical Details",
-                "Dimensions": "Dimensions"
-            },
-            "Components": {
-                "Header": "Ship Components",
-                "Name": "Component",
-                "Type": "Type",
-                "Power": "Power",
-                "Space": "Space",
-                "SP": "SP"
-            },
-            "Upgrades": {
-                "Header": "Ship Upgrades",
-                "Name": "Upgrade",
-                "Power": "Power",
-                "Space": "Space",
-                "Effect": "Effect"
-            },
-            "Weapons": {
-                "Header": "Ship Weapons",
-                "Name": "Weapon",
-                "Location": "Location",
-                "Strength": "Str",
-                "Damage": "Dmg",
-                "Crit": "Crit",
-                "Range": "Range"
-            },
-            "Crew": {
-                "Header": "Crew Statistics",
-                "Population": "Population",
-                "Rating": "Crew Rating",
-                "MoraleCurrent": "Morale (Current)",
-                "MoraleMax": "Morale (Max)",
-                "Officers": "Ship Officers",
-                "OfficersDesc": "Assign characters to ship roles for bonuses.",
-                "Role": "Role",
-                "Officer": "Officer",
-                "Bonus": "Bonus",
-                "NotifyCancelled": "Prior-turn damage cancelled: +{hull} hull, +{crew} crew, +{morale} morale.",
-                "NotifyNothingToCancel": "No prior-turn damage to cancel.",
-                "NotifyReplenished": "Crew morale replenished between combats."
-            },
-            "Manoeuvre": {
-                "BarTitle": "Manoeuvre Actions",
-                "Helmsman": "Helmsman",
-                "Target": "Target",
-                "Opposed": "Opposed",
-                "Roll": "Roll",
-                "RollTitle": "Roll this Manoeuvre Action (Pilot (Space Craft) + Manoeuvrability)",
-                "Empty": "No Manoeuvre Actions available for this game system.",
-                "AdjustBearing": {
-                    "Label": "Adjust Bearing",
-                    "Benefit": "Turn earlier than normal."
-                },
-                "AdjustSpeed": {
-                    "Label": "Adjust Speed",
-                    "Benefit": "Move faster or slower than normal."
-                },
-                "AdjustSpeedAndBearing": {
-                    "Label": "Adjust Speed & Bearing",
-                    "Benefit": "Can turn sooner than usual, even when travelling above or below standard speed."
-                },
-                "ComeToNewHeading": {
-                    "Label": "Come to New Heading",
-                    "Benefit": "Make two turns in one Round (-20 BS to fire this turn)."
-                },
-                "Disengage": {
-                    "Label": "Disengage",
-                    "Benefit": "Escape combat (opposed by enemy Detection+Scrutiny within 20 VU)."
-                },
-                "EvasiveManoeuvres": {
-                    "Label": "Evasive Manoeuvres",
-                    "Benefit": "Inflicts -10 (per DoS) penalty on incoming fire; same penalty applies to own shooting."
-                }
-            },
-            "Ramming": {
-                "ChatTitle": "Ramming Action",
-                "OutcomeHit": "Ram lands",
-                "OutcomeMiss": "Ram misses",
-                "AttackerDoS": "Attacker Pilot DoS",
-                "DefenderDoS": "Defender Pilot DoS",
-                "NetDoS": "Net DoS",
-                "DamageHeader": "Collision Damage",
-                "DefenderHull": "Defender Hull damage",
-                "AttackerHull": "Attacker Hull damage",
-                "ArmourSuffix": "armour",
-                "BonusDamage": "Imposing / Good an' Ard prow bonus",
-                "MissExplain": "The defender out-flew the ram; no collision occurs and neither hull takes damage."
-            },
-            "Boarding": {
-                "ChatTitle": "Boarding Action",
-                "OutcomeBreach": "Boarders breach the hull",
-                "OutcomeRepelled": "Defenders repel the boarders",
-                "OutcomeBoardersLost": "Boarding party lost",
-                "AttackerCommandDoS": "Attacker Command DoS",
-                "DefenderCommandDoS": "Defender Command DoS",
-                "NetDoS": "Net DoS",
-                "DamageHeader": "Damage to defender",
-                "HullDamage": "Hull Integrity damage (1 / DoS)",
-                "CrewDamage": "Crew Population damage (1d5)",
-                "MoraleDamage": "Morale damage (1d5)",
-                "RepelledExplain": "The defenders held the breach; the boarders withdrew without inflicting damage.",
-                "BoardersLostExplain": "The defenders won the Command Test by 3+ degrees of success — the boarding party is captured or killed."
-            },
-            "HitAndRun": {
-                "ChatTitle": "Hit-and-Run Action",
-                "ApproachHeader": "Approach (Pilot vs Turret Rating)",
-                "PilotTarget": "Composed Pilot target",
-                "Outcome": "Outcome",
-                "OutcomeApproachHit": "Boarding craft reaches target",
-                "OutcomeApproachMiss": "Boarders forced back to ship",
-                "OutcomeShotDown": "Boarding craft shot down (4+ DoF)",
-                "ApproachDoS": "Approach DoS",
-                "ApproachDoF": "Approach DoF",
-                "CommandHeader": "Opposed Command (Ordinary +10)",
-                "AttackerCommandDoS": "Attacker Command DoS",
-                "DefenderCommandDoS": "Defender Command DoS",
-                "NetDoS": "Net DoS",
-                "OutcomeCommandWin": "Sabotage succeeds",
-                "OutcomeCommandLose": "Boarders forced to retreat",
-                "ResultHeader": "Result — pick-worse 1d5 crit + Hull damage",
-                "CritPicks": "Crit picks (1d5 ×2)",
-                "AppliedCrit": "Applied crit (attacker picks)",
-                "HullDamage": "Hull Integrity damage (1 / DoS)",
-                "ShotDownExplain": "The boarding craft is destroyed. The pilot is stranded in a crippled craft or killed at the GM's discretion.",
-                "NoResultExplain": "The Hit-and-Run resolves with no damage to the target."
-            },
-            "History": {
-                "MachineSpirit": "Machine Spirit Oddities",
-                "PastHistory": "Past History",
-                "Complications": "Complications",
-                "Notes": "Notes"
-            },
-            "Errors": {
-                "InvalidShipWeapon": "Invalid ship weapon"
-            },
-            "Build": {
-                "Header": "Ship Points & Build",
-                "SpentLabel": "SP Spent",
-                "BudgetLabel": "SP Budget",
-                "OverBudget": "Build exceeds the hull's Ship Points budget.",
-                "EssentialSlots": "Essential Components",
-                "SlotFilled": "Filled",
-                "SlotMissing": "Missing",
-                "Valid": "Build complete",
-                "Invalid": "Build incomplete",
-                "Validate": "Validate Build",
-                "Commit": "Save Build",
-                "NotifyValid": "Starship build is valid.",
-                "NotifyOverBudgetBy": "Over budget by {amount} SP",
-                "NotifyMissingSlots": "{count} essential slot(s) unfilled",
-                "NotifyCannotCommit": "Cannot save: starship build is invalid.",
-                "NotifyCommitted": "Starship build saved.",
-                "SummaryHeader": "Build Summary",
-                "SummaryEmpty": "No components, upgrades, or roles are contributing modifiers.",
-                "Stat": {
-                    "Speed": "Speed",
-                    "Manoeuvrability": "Manoeuvrability",
-                    "Detection": "Detection",
-                    "Armour": "Armour",
-                    "HullIntegrity": "Hull Integrity",
-                    "TurretRating": "Turret Rating",
-                    "VoidShields": "Void Shields",
-                    "Morale": "Morale",
-                    "CrewRating": "Crew Rating",
-                    "BallisticSkill": "Ballistic Skill",
-                    "WeaponCapacityDorsal": "Weapon Capacity (Dorsal)",
-                    "WeaponCapacityProw": "Weapon Capacity (Prow)",
-                    "WeaponCapacityPort": "Weapon Capacity (Port)",
-                    "WeaponCapacityStarboard": "Weapon Capacity (Starboard)",
-                    "WeaponCapacityKeel": "Weapon Capacity (Keel)"
-                },
-                "SourceType": {
-                    "shipComponent": "Component",
-                    "shipUpgrade": "Upgrade",
-                    "shipRole": "Role"
-                }
-            },
-            "Critical": {
-                "Header": "Critical Hit",
-                "Roll": "Roll Critical Hit",
-                "RollTooltip": "Roll 1d5 on the Critical Hit chart (Battlefleet Koronus)",
-                "ChatSubtitle": "Ship Critical Hit",
-                "RollLabel": "Rolled {rolled} on 1d5",
-                "StatusApplied": "Status Applied",
-                "PersistsUntilRepaired": "Persists until cleared by Emergency Repair or Quick Repair.",
-                "TableUnavailable": "Critical Hit roll table unavailable — rolled {rolled} on 1d5. Apply the corresponding effect from Battlefleet Koronus by hand.",
-                "Effect": {
-                    "Vacuum": "Vacuum / Hull Breach",
-                    "Fire": "Fire",
-                    "Bridge": "Bridge Damage",
-                    "Drive": "Drive Damage",
-                    "Crew": "Crew Casualties"
-                }
-            }
-        },
         "WarpTravel": {
             "DialogTitle": "Warp Travel — Navigator's Test",
             "DialogIntro": "Resolve the 5-stage Navigation workflow. GM enters base voyage duration plus per-stage d100 rolls.",
@@ -4590,81 +3459,6 @@
                 "PostChat": "Post Chat",
                 "RollPeril": "Roll Peril",
                 "Cancel": "Cancel"
-            }
-        },
-        "AcquisitionScale": {
-            "Title": "Profit Factor Acquisition Test",
-            "TitleForItem": "Acquire: {name}",
-            "Header": "Profit Factor Acquisition",
-            "CurrentPF": "Current PF:",
-            "AvailabilityHeader": "Availability",
-            "CraftsmanshipHeader": "Craftsmanship",
-            "ScaleHeader": "Scale",
-            "AdditionalHeader": "Additional Modifiers",
-            "CustomModifier": "Custom Modifier:",
-            "BasePF": "Base PF:",
-            "TotalModifiers": "Total Modifiers:",
-            "FinalTarget": "Final Target:",
-            "AutoSuccessBanner": "Automatic Success",
-            "AutoFailBanner": "Automatic Failure",
-            "RollButton": "Roll Acquisition Test",
-            "CancelButton": "Cancel",
-            "RecentHeader": "Recent Acquisitions",
-            "Availability": {
-                "Header": "Availability",
-                "Ubiquitous": "Ubiquitous",
-                "Abundant": "Abundant",
-                "Plentiful": "Plentiful",
-                "Common": "Common",
-                "Average": "Average",
-                "Scarce": "Scarce",
-                "Rare": "Rare",
-                "VeryRare": "Very Rare",
-                "ExtremelyRare": "Extremely Rare",
-                "NearUnique": "Near Unique",
-                "Unique": "Unique"
-            },
-            "Craftsmanship": {
-                "Header": "Craftsmanship",
-                "Poor": "Poor",
-                "Common": "Common",
-                "Good": "Good",
-                "Best": "Best"
-            },
-            "Scale": {
-                "Header": "Scale",
-                "Negligible": "Negligible",
-                "Trivial": "Trivial",
-                "Minor": "Minor",
-                "Standard": "Standard",
-                "Major": "Major",
-                "Significant": "Significant",
-                "Vast": "Vast"
-            },
-            "Extra": "Other",
-            "CombinePenalty": "Combining ({count} extra)",
-            "ChatSubtitle": "Profit Factor Acquisition",
-            "ChatFlavor": "Profit Factor Acquisition Test",
-            "ChatItem": "Item:",
-            "ChatRoll": "Roll:",
-            "ChatVs": "vs",
-            "ChatAutoSuccessLine": "Adjusted PF ≥ 100, no roll required —",
-            "ChatAutoFailLine": "Adjusted PF ≤ 0, no roll attempted —",
-            "ChatFooter": "Acquisition Test",
-            "Success": "SUCCESS",
-            "Failure": "FAILURE",
-            "DoS": "DoS",
-            "DoF": "DoF",
-            "Notification": {
-                "Acquired": "Acquired {name}",
-                "CriticalFailure": "Critical failure! Profit Factor reduced to {pf}"
-            },
-            "Common": {
-                "Haggling": "Haggling Successful",
-                "Rushed": "Rushed Purchase",
-                "Supplier": "Known Supplier",
-                "Bulk": "Bulk Purchase",
-                "RareMarket": "Rare Market"
             }
         },
         "ShipComponent": {
@@ -7059,7 +5853,8 @@
             "Customised": "Customised",
             "ViewDetails": "View Details",
             "EnterEditMode": "Enter Edit Mode",
-            "ExitEditMode": "Exit Edit Mode"
+            "ExitEditMode": "Exit Edit Mode",
+            "RollD100": "d100 Roll"
         },
         "Encumbrance": {
             "Label": "Carrying",
@@ -7755,6 +6550,43 @@
             "Latitude": {
                 "Label": "Latitude",
                 "Hint": "Where on its celestial body this scene lies, from −90 (south pole) to 90 (north pole). With a body bound, the sun's place in the sky follows the body's hour, season and axial tilt, and drop shadows fall away from it. Leave empty to keep the map's own sun."
+            }
+        },
+        "Horde": {
+            "MagnitudeLost": "Magnitude Lost",
+            "Magnitude": "Magnitude",
+            "RawTag": "RAW Horde",
+            "ToHitBonus": "To-Hit Bonus",
+            "BonusDamageDice": "Bonus Damage Dice",
+            "SizeKeyword": {
+                "Massive": "Massive",
+                "Immense": "Immense",
+                "Monumental": "Monumental",
+                "Titanic": "Titanic"
+            },
+            "Tier": {
+                "Mob": "A mob",
+                "Throng": "A thronged phalanx",
+                "MassedAssault": "A massed assault",
+                "SerriedTide": "A serried tide of foes"
+            },
+            "Break": {
+                "NoTest": "No break test required",
+                "TestNormal": "Willpower test to hold",
+                "TestPenalised": "Willpower test at -10",
+                "AutoBreak": "Auto-break: routs at Sprint",
+                "Fearless": "Fearless — never breaks",
+                "RollTestButton": "Roll Willpower Test"
+            },
+            "Trait": {
+                "BloodSoakedTide": "Blood Soaked Tide",
+                "BrutalCharge": "Brutal Charge",
+                "Disciplined": "Disciplined",
+                "Fearless": "Fearless",
+                "FightingWithdrawal": "Fighting Withdrawal",
+                "FireDrill": "Fire Drill",
+                "Frenzy": "Frenzy",
+                "Overwhelming": "Overwhelming"
             }
         }
     }

@@ -38,83 +38,6 @@
     "scripts": [],
     "documentTypes": {
         "Actor": {
-            "dh2-character": {
-                "htmlFields": [
-                    "details.biography"
-                ]
-            },
-            "dh2-npc": {
-                "htmlFields": [
-                    "description",
-                    "tactics",
-                    "specialAbilities",
-                    "quickNotes"
-                ]
-            },
-            "dh2-vehicle": {
-                "htmlFields": [
-                    "details.biography"
-                ]
-            },
-            "dh1-character": {
-                "htmlFields": [
-                    "details.biography"
-                ]
-            },
-            "dh1-npc": {
-                "htmlFields": [
-                    "description",
-                    "tactics",
-                    "specialAbilities",
-                    "quickNotes"
-                ]
-            },
-            "dh1-vehicle": {
-                "htmlFields": [
-                    "details.biography"
-                ]
-            },
-            "rt-character": {
-                "htmlFields": [
-                    "details.biography"
-                ]
-            },
-            "rt-npc": {
-                "htmlFields": [
-                    "description",
-                    "tactics",
-                    "specialAbilities",
-                    "quickNotes"
-                ]
-            },
-            "rt-vehicle": {
-                "htmlFields": [
-                    "details.biography"
-                ]
-            },
-            "rt-starship": {
-                "htmlFields": [
-                    "details.biography"
-                ]
-            },
-            "bc-character": {
-                "htmlFields": [
-                    "details.biography"
-                ]
-            },
-            "bc-npc": {
-                "htmlFields": [
-                    "description",
-                    "tactics",
-                    "specialAbilities",
-                    "quickNotes"
-                ]
-            },
-            "bc-vehicle": {
-                "htmlFields": [
-                    "details.biography"
-                ]
-            },
             "ow-character": {
                 "htmlFields": [
                     "details.biography"
@@ -133,110 +56,9 @@
                     "details.biography"
                 ]
             },
-            "dw-character": {
-                "htmlFields": [
-                    "details.biography"
-                ]
-            },
-            "dw-npc": {
-                "htmlFields": [
-                    "description",
-                    "tactics",
-                    "specialAbilities",
-                    "quickNotes"
-                ]
-            },
-            "dw-vehicle": {
-                "htmlFields": [
-                    "details.biography"
-                ]
-            },
-            "im-character": {
-                "htmlFields": [
-                    "details.biography"
-                ]
-            },
-            "im-npc": {
-                "htmlFields": [
-                    "description",
-                    "tactics",
-                    "specialAbilities",
-                    "quickNotes"
-                ]
-            },
-            "im-vehicle": {
-                "htmlFields": [
-                    "details.biography"
-                ]
-            },
-            "character": {
-                "htmlFields": [
-                    "details.biography"
-                ]
-            },
-            "npc": {
-                "htmlFields": [
-                    "description",
-                    "tactics",
-                    "specialAbilities",
-                    "quickNotes"
-                ]
-            },
-            "vehicle": {
-                "htmlFields": [
-                    "details.biography"
-                ]
-            },
-            "starship": {
-                "htmlFields": [
-                    "details.biography"
-                ]
-            },
             "loot": {
                 "htmlFields": [
                     "description"
-                ]
-            },
-            "dh2-terracraft": {
-                "htmlFields": [
-                    "weapons",
-                    "specialRules"
-                ]
-            },
-            "dh2-aircraft": {
-                "htmlFields": [
-                    "weapons",
-                    "specialRules"
-                ]
-            },
-            "dh1-terracraft": {
-                "htmlFields": [
-                    "weapons",
-                    "specialRules"
-                ]
-            },
-            "rt-terracraft": {
-                "htmlFields": [
-                    "weapons",
-                    "specialRules"
-                ]
-            },
-            "rt-aircraft": {
-                "htmlFields": [
-                    "weapons",
-                    "specialRules"
-                ]
-            },
-            "rt-voidcraft": {
-                "htmlFields": [
-                    "weapons",
-                    "specialRules"
-                ]
-            },
-            "bc-terracraft": {
-                "htmlFields": [
-                    "weapons",
-                    "specialRules"
                 ]
             },
             "ow-terracraft": {
@@ -251,43 +73,7 @@
                     "specialRules"
                 ]
             },
-            "dw-terracraft": {
-                "htmlFields": [
-                    "weapons",
-                    "specialRules"
-                ]
-            },
-            "dw-aircraft": {
-                "htmlFields": [
-                    "weapons",
-                    "specialRules"
-                ]
-            },
-            "im-terracraft": {
-                "htmlFields": [
-                    "weapons",
-                    "specialRules"
-                ]
-            },
-            "terracraft": {
-                "htmlFields": [
-                    "weapons",
-                    "specialRules"
-                ]
-            },
-            "aircraft": {
-                "htmlFields": [
-                    "weapons",
-                    "specialRules"
-                ]
-            },
             "watercraft": {
-                "htmlFields": [
-                    "weapons",
-                    "specialRules"
-                ]
-            },
-            "voidcraft": {
                 "htmlFields": [
                     "weapons",
                     "specialRules"
@@ -350,17 +136,6 @@
                     "description.value"
                 ]
             },
-            "endeavour": {
-                "htmlFields": [
-                    "description.value",
-                    "reward.narrative"
-                ]
-            },
-            "enemy": {
-                "htmlFields": [
-                    "description.value"
-                ]
-            },
             "forceField": {
                 "htmlFields": [
                     "description.value"
@@ -372,11 +147,6 @@
                 ]
             },
             "journalEntry": {
-                "htmlFields": [
-                    "description.value"
-                ]
-            },
-            "lead": {
                 "htmlFields": [
                     "description.value"
                 ]
@@ -401,23 +171,11 @@
                     "description.value"
                 ]
             },
-            "navigatorPower": {
-                "htmlFields": [
-                    "description.value"
-                ]
-            },
             "npcTemplate": {
                 "htmlFields": [
                     "description",
                     "tactics",
                     "specialAbilities"
-                ]
-            },
-            "oath": {
-                "htmlFields": [
-                    "description.value",
-                    "requirement",
-                    "effect"
                 ]
             },
             "order": {
@@ -430,37 +188,7 @@
                     "description.value"
                 ]
             },
-            "peer": {
-                "htmlFields": [
-                    "description.value"
-                ]
-            },
             "psychicPower": {
-                "htmlFields": [
-                    "description.value"
-                ]
-            },
-            "ritual": {
-                "htmlFields": [
-                    "description.value"
-                ]
-            },
-            "shipComponent": {
-                "htmlFields": [
-                    "description.value"
-                ]
-            },
-            "shipRole": {
-                "htmlFields": [
-                    "description.value"
-                ]
-            },
-            "shipUpgrade": {
-                "htmlFields": [
-                    "description.value"
-                ]
-            },
-            "shipWeapon": {
                 "htmlFields": [
                     "description.value"
                 ]

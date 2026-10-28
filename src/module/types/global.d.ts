@@ -363,24 +363,6 @@ interface TooltipsWH40K {
 }
 
 /**
- * The actor surface `openMutantBackgroundDialog` touches: narrow enough to avoid
- * Document coupling, and tolerant of both `corruption` schema shapes (a bare
- * number on some lines, `{ value }` on others). Lives here so the dialog and the
- * {@link WH40KPromptLaunchers} signature share one definition without the
- * launcher interface having to import the dialog module.
- */
-export interface WH40KMutantBackgroundTarget {
-    /** `null` on an unsaved Document, per Foundry's `Document#id`. */
-    id?: string | null | undefined;
-    name?: string | undefined;
-    system?: { corruption?: { value?: number } | number };
-    // eslint-disable-next-line no-restricted-syntax -- boundary: Foundry Document.update accepts a path-keyed payload and resolves to the updated Document (framework signature)
-    update?: (data: Record<string, unknown>) => Promise<unknown>;
-    // eslint-disable-next-line no-restricted-syntax -- boundary: Foundry Document.setFlag stores arbitrary serializable values keyed by scope/key (framework signature)
-    setFlag?: (scope: string, key: string, value: unknown) => Promise<unknown>;
-}
-
-/**
  * The GM-facing prompt launchers published as `game.wh40k.prompts` (#516). One
  * entry per dialog a GM opens directly; the runtime namespace is
  * `applications/prompts/_module.ts`, installed by `hooks-manager.init()`.
@@ -395,34 +377,16 @@ export interface WH40KMutantBackgroundTarget {
  * module directly.
  */
 interface WH40KPromptLaunchers {
-    /** Beyond-supplement home-world reference cards. */
-    openBeyondHomeworldInfoDialog: () => void;
-    /** Within-supplement home-world reference cards. */
-    openWithinHomeworldInfoDialog: () => void;
-    /** Without-supplement home-world reference cards. */
-    openWithoutHomeworldInfoDialog: () => void;
     /** Cybernetic install (Medicae surgery) test. */
     openCyberneticsInstallDialog: () => void;
     /** Errata p. 183 "Staunch Blood Loss" Half Action for a Medicae Mechadendrite owner. */
     openMedicaeMechadendriteDialog: (opts?: { actor?: WH40KBaseActorDocument }) => void;
-    /** Mutant origin-path background confirmation; applies the grant when given an actor. */
-    openMutantBackgroundDialog: (actor?: WH40KMutantBackgroundTarget | null) => void;
-    /** Radical Services hire — Influence requisition test against the chosen service. */
-    openRadicalServicesDialog: (actor: WH40KBaseActor) => void;
-    /** Daemonhost Binding Strength tier selection. */
-    openDaemonhostBindingDialog: () => void;
     /** Mental Disorder roll at a chosen severity tier. */
     openDisorderRollDialog: () => void;
     /** Fear (X) Willpower test against a chosen observer. */
     openFearTestDialog: () => void;
     /** Mutation table roll after a failed Malignancy test. */
     openMutationRollDialog: () => void;
-    /** RT five-stage Warp Travel workflow. */
-    openWarpTravelDialog: () => void;
-    /** Daemon Weapon Attribute roller for a chosen alignment + binding strength. */
-    promptDaemonWeaponAttributes: () => Promise<void>;
-    /** Sister of Battle elite-advance confirmation. */
-    openSisterOfBattleDialog: () => void;
 }
 
 // =========================================================================

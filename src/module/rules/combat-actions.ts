@@ -9,21 +9,12 @@ type CombatAction = {
     description: string;
     attack?: {
         modifier: number;
-        /** A game line's own printed modifier for this action, where it differs from the shared default (`ow` → +10). */
-        byLine?: Readonly<Partial<Record<string, number>>>;
     };
 };
 
-/**
- * The to-hit modifier an action carries on a game line: that line's own printing when it has one,
- * else the shared default. The shared default is 0 for a plain attack, so lines whose book prints a
- * bonus on the Standard Attack (Only War: Ordinary +10) declare it under `byLine` rather than the
- * Dark Heresy 2e figure being changed.
- */
-export function attackModifierFor(attack: CombatAction['attack'], line: string | undefined): number {
-    if (attack === undefined) return 0;
-    const own = line === undefined ? undefined : attack.byLine?.[line];
-    return own ?? attack.modifier;
+/** The to-hit modifier an action carries; a plain attack with no declared modifier is 0. */
+export function attackModifierFor(attack: CombatAction['attack']): number {
+    return attack === undefined ? 0 : attack.modifier;
 }
 
 /** The slice of {@link WeaponRollData} that {@link calculateCombatActionModifier}
@@ -32,10 +23,7 @@ export function attackModifierFor(attack: CombatAction['attack'], line: string |
 export type CombatActionModifierInput = Pick<
     WeaponRollData,
     'actions' | 'action' | 'isCalledShot' | 'calledShotLocation' | 'modifiers' | 'sourceActor' | 'weapon' | 'twoWeaponPlan'
-> & {
-    /** The game line of the acting actor; selects a line's own printed action modifiers (see {@link attackModifierFor}). */
-    gameSystemId?: string | undefined;
-};
+>;
 
 /** The canonical action name whose penalties {@link resolveTwoWeaponPenalties} owns. */
 const TWO_WEAPON_ACTION = 'Two-Weapon Fighting';
@@ -82,7 +70,7 @@ export function calculateCombatActionModifier(rollData: CombatActionModifierInpu
     // which also writes modifiers['attack'] in RollData.update(). Previously
     // whichever ran last won, silently dropping the Called Shot −20 (#408).
     const actionInfo = allCombatActions().find((action: CombatAction) => action.name === currentAction);
-    rollData.modifiers['combat-action'] = attackModifierFor(actionInfo?.attack, rollData.gameSystemId);
+    rollData.modifiers['combat-action'] = attackModifierFor(actionInfo?.attack);
 
     // Two-Weapon Fighting's penalties are talent-dependent, so they cannot be a
     // fixed `attack.modifier` on the action entry like Called Shot's −20 (#517).
@@ -207,11 +195,8 @@ export function allCombatActions(): CombatAction[] {
             type: ['Half'],
             subtype: ['Attack', 'Melee', 'Ranged'],
             description: 'A single melee or ranged attack. Ranged rolls of 96+ jam.',
-            attack: {
-                modifier: 0,
-                // Only War prints the Standard Attack as an Ordinary (+10) WS or BS Test (core rulebook p. 248).
-                byLine: { ow: 10 },
-            },
+            // Only War prints the Standard Attack as an Ordinary (+10) WS or BS Test (core rulebook p. 248).
+            attack: { modifier: 10 },
         },
         {
             // DH2 Core "Throw" (Half Action): hurl a grenade or thrown weapon.

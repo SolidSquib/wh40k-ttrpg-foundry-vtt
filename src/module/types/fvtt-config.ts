@@ -21,31 +21,7 @@
  */
 
 // Actor data models (concrete per-system classes)
-import type {
-    BCCharacterData,
-    BCNPCData,
-    BCTerracraftData,
-    DH1CharacterData,
-    DH1NPCData,
-    DH1TerracraftData,
-    DH2AircraftData,
-    DH2CharacterData,
-    DH2NPCData,
-    DH2TerracraftData,
-    DWAircraftData,
-    DWCharacterData,
-    DWNPCData,
-    DWTerracraftData,
-    OWAircraftData,
-    OWCharacterData,
-    OWNPCData,
-    OWTerracraftData,
-    RTAircraftData,
-    RTCharacterData,
-    RTNPCData,
-    RTTerracraftData,
-    RTVoidcraftData,
-} from '../data/actor/_module.ts';
+import type { OWAircraftData, OWCharacterData, OWNPCData, OWTerracraftData } from '../data/actor/_module.ts';
 // Item data models
 import type {
     AmmunitionData,
@@ -57,27 +33,17 @@ import type {
     ConditionData,
     CriticalInjuryData,
     CyberneticData,
-    EndeavourData,
     ForceFieldData,
     GearData,
     JournalEntryItemData,
-    LeadData,
     LocationData,
     MalignancyData,
     MentalDisorderData,
     MutationData,
-    NavigatorPowerData,
     NPCTemplateData,
-    OathData,
     OrderData,
     OriginPathData,
-    PeerEnemyData,
     PsychicPowerData,
-    RitualData,
-    ShipComponentData,
-    ShipRoleData,
-    ShipUpgradeData,
-    ShipWeaponData,
     SkillData,
     SpecialAbilityData,
     StorageLocationData,
@@ -172,29 +138,10 @@ declare module 'fvtt-types/configuration' {
 
     interface DataModelConfig {
         Actor: {
-            'dh2-character': typeof DH2CharacterData;
-            'dh2-npc': typeof DH2NPCData;
-            'dh2-terracraft': typeof DH2TerracraftData;
-            'dh2-aircraft': typeof DH2AircraftData;
-            'dh1-character': typeof DH1CharacterData;
-            'dh1-npc': typeof DH1NPCData;
-            'dh1-terracraft': typeof DH1TerracraftData;
-            'rt-character': typeof RTCharacterData;
-            'rt-npc': typeof RTNPCData;
-            'rt-terracraft': typeof RTTerracraftData;
-            'rt-aircraft': typeof RTAircraftData;
-            'rt-voidcraft': typeof RTVoidcraftData;
-            'bc-character': typeof BCCharacterData;
-            'bc-npc': typeof BCNPCData;
-            'bc-terracraft': typeof BCTerracraftData;
             'ow-character': typeof OWCharacterData;
             'ow-npc': typeof OWNPCData;
             'ow-terracraft': typeof OWTerracraftData;
             'ow-aircraft': typeof OWAircraftData;
-            'dw-character': typeof DWCharacterData;
-            'dw-npc': typeof DWNPCData;
-            'dw-terracraft': typeof DWTerracraftData;
-            'dw-aircraft': typeof DWAircraftData;
         };
         Item: {
             weapon: typeof WeaponData;
@@ -213,17 +160,8 @@ declare module 'fvtt-types/configuration' {
             skill: typeof SkillData;
             originPath: typeof OriginPathData;
             aptitude: typeof AptitudeData;
-            peer: typeof PeerEnemyData;
-            enemy: typeof PeerEnemyData;
             condition: typeof ConditionData;
             psychicPower: typeof PsychicPowerData;
-            navigatorPower: typeof NavigatorPowerData;
-            ritual: typeof RitualData;
-            oath: typeof OathData;
-            shipComponent: typeof ShipComponentData;
-            shipWeapon: typeof ShipWeaponData;
-            shipUpgrade: typeof ShipUpgradeData;
-            shipRole: typeof ShipRoleData;
             order: typeof OrderData;
             vehicleTrait: typeof VehicleTraitData;
             vehicleUpgrade: typeof VehicleUpgradeData;
@@ -237,8 +175,6 @@ declare module 'fvtt-types/configuration' {
             malignancy: typeof MalignancyData;
             mentalDisorder: typeof MentalDisorderData;
             journalEntry: typeof JournalEntryItemData;
-            endeavour: typeof EndeavourData;
-            lead: typeof LeadData;
             location: typeof LocationData;
             npcTemplate: typeof NPCTemplateData;
         };

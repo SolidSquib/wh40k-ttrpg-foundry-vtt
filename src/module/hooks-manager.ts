@@ -9,34 +9,7 @@
 import { DHBasicActionManager } from './actions/basic-action-manager.ts';
 import { DHCombatActionManager } from './actions/combat-action-manager.ts';
 import { onRegimentPresetCreated } from './actions/ow-regiment-apply.ts';
-import {
-    // Player sheets (default for {system}-character)
-    DarkHeresy1PlayerSheet,
-    DarkHeresy2PlayerSheet,
-    RogueTraderPlayerSheet,
-    BlackCrusadePlayerSheet,
-    OnlyWarPlayerSheet,
-    DeathwatchPlayerSheet,
-    ImperiumMaledictumPlayerSheet,
-    // NPC sheets (default for {system}-npc)
-    DarkHeresy1NPCSheet,
-    DarkHeresy2NPCSheet,
-    RogueTraderNPCSheet,
-    BlackCrusadeNPCSheet,
-    OnlyWarNPCSheet,
-    DeathwatchNPCSheet,
-    ImperiumMaledictumNPCSheet,
-    // Craft sheets (default for {system}-terracraft/aircraft/watercraft)
-    DarkHeresy1CraftSheet,
-    DarkHeresy2CraftSheet,
-    RogueTraderCraftSheet,
-    BlackCrusadeCraftSheet,
-    OnlyWarCraftSheet,
-    DeathwatchCraftSheet,
-    ImperiumMaledictumCraftSheet,
-    // Voidcraft sheet (default for rt-voidcraft)
-    RogueTraderVoidcraftSheet,
-} from './applications/actor/game-system-sheets.ts';
+import { OnlyWarPlayerSheet, OnlyWarNPCSheet, OnlyWarCraftSheet } from './applications/actor/game-system-sheets.ts';
 import LootActorSheet from './applications/actor/loot-sheet.ts';
 import * as characterCreation from './applications/character-creation/_module.ts';
 import { CogitatorTerminal, type CogitatorTerminalOptions } from './applications/cogitator/cogitator-terminal.ts';
@@ -66,42 +39,26 @@ import {
     MentalDisorderSheet,
     StorageLocationSheet,
     LocationSheet,
-    PeerEnemySheet,
     JournalEntryItemSheet,
-    EndeavourSheet,
-    LeadSheet,
     OriginPathSheet,
     WeaponModSheet,
     WeaponQualitySheet,
     AttackSpecialSheet,
-    ShipComponentSheet,
-    ShipWeaponSheet,
-    ShipUpgradeSheet,
     NPCTemplateSheet,
 } from './applications/item/_module.ts';
 import * as npcApplications from './applications/npc/_module.ts';
-import { openBeyondHomeworldInfoDialog } from './applications/prompts/beyond-homeworld-info-dialog.ts';
 import { openCyberneticsInstallDialog } from './applications/prompts/cybernetics-install-dialog.ts';
-import { promptDaemonWeaponAttributes } from './applications/prompts/daemon-weapon-attribute-dialog.ts';
-import { openDaemonhostBindingDialog } from './applications/prompts/daemonhost-binding-dialog.ts';
 import { prepareDamageRoll } from './applications/prompts/damage-roll-dialog.ts';
 import { openDisorderRollDialog } from './applications/prompts/disorder-roll-dialog.ts';
 import { openFearTestDialog } from './applications/prompts/fear-test-dialog.ts';
 import { openMedicaeMechadendriteDialog } from './applications/prompts/medicae-mechadendrite-dialog.ts';
-import { openMutantBackgroundDialog } from './applications/prompts/mutant-background-dialog.ts';
 import { openMutationRollDialog } from './applications/prompts/mutation-roll-dialog.ts';
-import { openRadicalServicesDialog } from './applications/prompts/radical-services-dialog.ts';
-import { openSisterOfBattleDialog } from './applications/prompts/sister-of-battle-dialog.ts';
 import { prepareUnifiedRoll } from './applications/prompts/unified-roll-dialog.ts';
-import { openWarpTravelDialog } from './applications/prompts/warp-travel-dialog.ts';
-import { openWithinHomeworldInfoDialog } from './applications/prompts/within-homeworld-info-dialog.ts';
-import { openWithoutHomeworldInfoDialog } from './applications/prompts/without-homeworld-info-dialog.ts';
 import TokenRulerWH40K from './canvas/ruler.ts';
 import { registerStackedTokenPicker } from './canvas/stacked-token-picker-hook.ts';
 import { onRefreshToken } from './canvas/token-mask.ts';
 import { onRefreshRoundedToken } from './canvas/token-rounded-ring.ts';
 import { hydrateActorInMemory } from './compendium-hydrate.ts';
-import { buildCareerAdvancementIndex } from './config/advancements/career-advancement-cache.ts';
 import type { WH40KSystemConfig } from './config.ts';
 import { DEAD_STATUS_ID, SYSTEM_ID } from './constants.ts';
 import * as dataModels from './data/_module.ts';
@@ -152,12 +109,19 @@ import {
     type PortraitActorLike,
     type PortraitTokenLike,
 } from './rules/portrait-spawn.ts';
-import { buildCelestialBodyField, buildLatitudeField, sceneBodyKey, sceneLatitude, syncSceneLighting } from './rules/scene-lighting.ts';
+import {
+    buildCelestialBodyField,
+    buildLatitudeField,
+    CELESTIAL_BODY_INPUT_NAME,
+    sceneBodyKey,
+    sceneLatitude,
+    syncSceneLighting,
+    type BodyBoundScene,
+} from './rules/scene-lighting.ts';
 import { buildSkillSpecializationIndex } from './rules/skill-specialization-index.ts';
 import { buildSkillVariantIndex } from './rules/skill-variant-index.ts';
 import { SURPRISED_STATUS_ID, surpriseHasExpired } from './rules/surprise.ts';
 import { runTokenImageGeneration, type TokenImageActor } from './rules/token-image-gen-runtime.ts';
-import { buildWarpWeaknessField, isWarpWeak, WARP_WEAKNESS_INPUT_NAME, type WarpWeaknessScene } from './rules/warp-weakness.ts';
 import { buildWeaponQualityPayloadIndex } from './rules/weapon-quality-payloads.ts';
 import { DHTourMain } from './tours/main-tour.ts';
 import type { WH40KGameSystem } from './types/global.d.ts';
@@ -177,13 +141,13 @@ interface DirectoryContextOption {
 }
 
 /**
- * Minimal SceneConfig shape needed by the Warp-weakness toggle injection.
+ * Minimal SceneConfig shape needed by the lighting-control injection.
  * Both `document` (ApplicationV2) and `object` (V1 sheets) are read so the hook
  * works across Foundry's sheet generations.
  */
-interface WarpWeaknessSceneConfig {
-    document?: WarpWeaknessScene | null;
-    object?: WarpWeaknessScene | null;
+interface SceneConfigLike {
+    document?: BodyBoundScene | null;
+    object?: BodyBoundScene | null;
 }
 
 /** Minimal Token HUD shape needed by the loot pickup-button injection. */
@@ -235,10 +199,10 @@ export class HooksManager {
             HooksManager.renderDocumentSheetConfig(app, html, data),
         );
         /* eslint-enable no-restricted-syntax, @typescript-eslint/no-deprecated */
-        // Per-scene Warp weakness (#137). Injects the GM toggle into Scene Config;
-        // Foundry submits `flags.<scope>.<key>` inputs onto the document itself, so
-        // the checkbox name is the entire wiring — no submit handler needed.
-        hooksOn('renderSceneConfig', (app: WarpWeaknessSceneConfig, html: HTMLElement | JQuery) => HooksManager.onRenderSceneConfig(app, html));
+        // Injects the GM lighting controls into Scene Config; Foundry submits
+        // `flags.<scope>.<key>` inputs onto the document itself, so the input
+        // name is the entire wiring — no submit handler needed.
+        hooksOn('renderSceneConfig', (app: SceneConfigLike, html: HTMLElement | JQuery) => HooksManager.onRenderSceneConfig(app, html));
         hooksOn('getActorDirectoryEntryContext', (_html: JQuery, options: DirectoryContextOption[]) => HooksManager.getActorDirectoryEntryContext(options));
         hooksOn('renderTokenHUD', (app: LootTokenHUDLike, html: HTMLElement | JQuery) => HooksManager.onLootTokenHUD(app, html));
         // Loot piles are dropped in place — non-GM players can't drag them around.
@@ -744,7 +708,7 @@ export class HooksManager {
      * `flags.<scope>.<key>` input directly onto the document, so no submit handler
      * is required.
      */
-    static onRenderSceneConfig(app: WarpWeaknessSceneConfig, html: HTMLElement | JQuery): void {
+    static onRenderSceneConfig(app: SceneConfigLike, html: HTMLElement | JQuery): void {
         if (!game.user.isGM) return;
 
         let root: HTMLElement | undefined;
@@ -758,19 +722,11 @@ export class HooksManager {
         }
         // Re-renders reuse the same element; a second copy would post a duplicate
         // control and the last one submitted would win at random.
-        if (root.querySelector(`input[name="${WARP_WEAKNESS_INPUT_NAME}"]`) !== null) return;
+        if (root.querySelector(`[name="${CELESTIAL_BODY_INPUT_NAME}"]`) !== null) return;
 
         const scene = app.document ?? app.object ?? null;
         if (scene === null) return;
 
-        const warpField = buildWarpWeaknessField(
-            document,
-            {
-                label: game.i18n.localize('WH40K.Scene.WarpWeakness.Label'),
-                hint: game.i18n.localize('WH40K.Scene.WarpWeakness.Hint'),
-            },
-            isWarpWeak(scene),
-        );
         // Bind the scene's lighting to a celestial body's local time + weather (#588).
         const bodyField = buildCelestialBodyField(
             document,
@@ -795,7 +751,7 @@ export class HooksManager {
         // Append to the ambience/environment tab when present, else the form body,
         // so the controls land somewhere sensible across Foundry's config layouts.
         const host = root.querySelector('.tab[data-tab="ambience"]') ?? root.querySelector('.tab[data-tab="basic"]') ?? root.querySelector('form') ?? root;
-        host.append(warpField, bodyField, latitudeField);
+        host.append(bodyField, latitudeField);
     }
 
     static onLootTokenHUD(app: LootTokenHUDLike, html: HTMLElement | JQuery): void {
@@ -934,20 +890,11 @@ export class HooksManager {
             // `prompts/_module.ts`. Naming each launcher keeps the wiring
             // enumerable by knip and readable here.
             prompts: {
-                openBeyondHomeworldInfoDialog,
-                openWithinHomeworldInfoDialog,
-                openWithoutHomeworldInfoDialog,
                 openCyberneticsInstallDialog,
                 openMedicaeMechadendriteDialog,
-                openMutantBackgroundDialog,
-                openRadicalServicesDialog,
-                openDaemonhostBindingDialog,
                 openDisorderRollDialog,
                 openFearTestDialog,
                 openMutationRollDialog,
-                openWarpTravelDialog,
-                promptDaemonWeaponAttributes,
-                openSisterOfBattleDialog,
             },
             // Compendium browser
             openCompendiumBrowser: async (options: Record<string, unknown> = {}) => Promise.resolve(RTCompendiumBrowser.open(options)),
@@ -1017,53 +964,14 @@ export class HooksManager {
         // dispatches to the right concrete class based on the actor's `type`.
         // eslint-disable-next-line no-restricted-syntax -- boundary: CONFIG.Actor documentClasses is a system extension not in fvtt-types
         (CONFIG.Actor as Record<string, unknown>)['documentClasses'] = {
-            // #308: the per-(system,kind) concrete document subclasses were empty
-            // (`extends <Kind>DocBase {}`); WH40KActorProxy dispatches by the `type`
-            // string, so every key points straight at its kind-base. Keys + order are
-            // preserved byte-for-byte (the legacy/generic fallbacks below are load-bearing).
-            'dh2-character': documents.CharacterDocBase,
-            'dh2-npc': documents.NPCDocBase,
-            'dh2-terracraft': documents.VehicleDocBase,
-            'dh2-aircraft': documents.VehicleDocBase,
-            'dh1-character': documents.CharacterDocBase,
-            'dh1-npc': documents.NPCDocBase,
-            'dh1-terracraft': documents.VehicleDocBase,
-            'rt-character': documents.CharacterDocBase,
-            'rt-npc': documents.NPCDocBase,
-            'rt-terracraft': documents.VehicleDocBase,
-            'rt-aircraft': documents.VehicleDocBase,
-            'rt-voidcraft': documents.VoidcraftDocBase,
-            'bc-character': documents.CharacterDocBase,
-            'bc-npc': documents.NPCDocBase,
-            'bc-terracraft': documents.VehicleDocBase,
+            // WH40KActorProxy dispatches by the `type` string, so every key points
+            // straight at its kind-base.
             'ow-character': documents.CharacterDocBase,
             'ow-npc': documents.NPCDocBase,
             'ow-terracraft': documents.VehicleDocBase,
             'ow-aircraft': documents.VehicleDocBase,
-            'dw-character': documents.CharacterDocBase,
-            'dw-npc': documents.NPCDocBase,
-            'dw-terracraft': documents.VehicleDocBase,
-            'dw-aircraft': documents.VehicleDocBase,
-            'im-character': documents.CharacterDocBase,
-            'im-npc': documents.NPCDocBase,
-            'im-terracraft': documents.VehicleDocBase,
-            // Legacy-type + generic fallbacks — kept so pre-craft-rename world
-            // actors still load until the ready-hook migration retypes them.
-            'character': documents.CharacterDocBase,
-            'npc': documents.NPCDocBase,
-            'dh2-vehicle': documents.VehicleDocBase,
-            'dh1-vehicle': documents.VehicleDocBase,
-            'rt-vehicle': documents.VehicleDocBase,
-            'rt-starship': documents.VoidcraftDocBase,
-            'bc-vehicle': documents.VehicleDocBase,
             'ow-vehicle': documents.VehicleDocBase,
-            'dw-vehicle': documents.VehicleDocBase,
-            'im-vehicle': documents.VehicleDocBase,
-            'vehicle': documents.VehicleDocBase,
-            'terracraft': documents.VehicleDocBase,
-            'aircraft': documents.VehicleDocBase,
-            'starship': documents.VoidcraftDocBase,
-            'voidcraft': documents.VoidcraftDocBase,
+            'watercraft': documents.VehicleDocBase,
             // Loot piles are minimal inventory actors with no kind-specific document
             // behaviour — map to the base (matches the proxy's unmapped-type fallback,
             // now explicit so the type is a registered concrete class like every other).
@@ -1088,49 +996,12 @@ export class HooksManager {
         // Register data models for actors — one per (system, kind) type.
         // DataModels handle schema validation and data preparation.
         CONFIG.Actor.dataModels = {
-            'dh2-character': dataModels.DH2CharacterData,
-            'dh2-npc': dataModels.DH2NPCData,
-            'dh2-terracraft': dataModels.DH2TerracraftData,
-            'dh2-aircraft': dataModels.DH2AircraftData,
-            'dh1-character': dataModels.DH1CharacterData,
-            'dh1-npc': dataModels.DH1NPCData,
-            'dh1-terracraft': dataModels.DH1TerracraftData,
-            'rt-character': dataModels.RTCharacterData,
-            'rt-npc': dataModels.RTNPCData,
-            'rt-terracraft': dataModels.RTTerracraftData,
-            'rt-aircraft': dataModels.RTAircraftData,
-            'rt-voidcraft': dataModels.RTVoidcraftData,
-            'bc-character': dataModels.BCCharacterData,
-            'bc-npc': dataModels.BCNPCData,
-            'bc-terracraft': dataModels.BCTerracraftData,
             'ow-character': dataModels.OWCharacterData,
             'ow-npc': dataModels.OWNPCData,
             'ow-terracraft': dataModels.OWTerracraftData,
             'ow-aircraft': dataModels.OWAircraftData,
-            'dw-character': dataModels.DWCharacterData,
-            'dw-npc': dataModels.DWNPCData,
-            'dw-terracraft': dataModels.DWTerracraftData,
-            'dw-aircraft': dataModels.DWAircraftData,
-            'im-character': dataModels.IMCharacterData,
-            'im-npc': dataModels.IMNPCData,
-            'im-terracraft': dataModels.IMTerracraftData,
-            // Legacy-type data-model fallbacks (same reasoning as documentClasses).
-            'character': dataModels.DH2CharacterData,
-            'npc': dataModels.DH2NPCData,
-            'dh2-vehicle': dataModels.DH2TerracraftData,
-            'dh1-vehicle': dataModels.DH1TerracraftData,
-            'rt-vehicle': dataModels.RTTerracraftData,
-            'rt-starship': dataModels.RTVoidcraftData,
-            'bc-vehicle': dataModels.BCTerracraftData,
             'ow-vehicle': dataModels.OWTerracraftData,
-            'dw-vehicle': dataModels.DWTerracraftData,
-            'im-vehicle': dataModels.IMTerracraftData,
-            'vehicle': dataModels.DH2TerracraftData,
-            'terracraft': dataModels.TerracraftData,
-            'aircraft': dataModels.AircraftData,
             'watercraft': dataModels.WatercraftData,
-            'starship': dataModels.RTVoidcraftData,
-            'voidcraft': dataModels.VoidcraftData,
             // Content-agnostic loot pile — one homologated type for all lines.
             // No concrete document class: the actor proxy falls back to
             // WH40KBaseActor, which is all a pile of embedded items needs.
@@ -1159,19 +1030,10 @@ export class HooksManager {
             skill: dataModels.SkillData,
             originPath: dataModels.OriginPathData,
             aptitude: dataModels.AptitudeData,
-            peer: dataModels.PeerEnemyData,
-            enemy: dataModels.PeerEnemyData,
             condition: dataModels.ConditionData,
-            oath: dataModels.OathData,
             // Powers
             psychicPower: dataModels.PsychicPowerData,
-            navigatorPower: dataModels.NavigatorPowerData,
-            ritual: dataModels.RitualData,
             // Ship & Vehicle
-            shipComponent: dataModels.ShipComponentData,
-            shipWeapon: dataModels.ShipWeaponData,
-            shipUpgrade: dataModels.ShipUpgradeData,
-            shipRole: dataModels.ShipRoleData,
             order: dataModels.OrderData,
             vehicleTrait: dataModels.VehicleTraitData,
             vehicleUpgrade: dataModels.VehicleUpgradeData,
@@ -1188,8 +1050,6 @@ export class HooksManager {
             malignancy: dataModels.MalignancyData,
             mentalDisorder: dataModels.MentalDisorderData,
             journalEntry: dataModels.JournalEntryItemData,
-            endeavour: dataModels.EndeavourData,
-            lead: dataModels.LeadData,
             // NPC Templates
             npcTemplate: dataModels.NPCTemplateData,
         };
@@ -1214,41 +1074,9 @@ export class HooksManager {
         type SheetReg = { sheet: Parameters<typeof DocumentSheetConfig.registerSheet>[2]; types?: string[]; label: string };
 
         const ACTOR_SHEETS: SheetReg[] = [
-            // Per-system default PC sheets. `character` is also the legacy/generic
-            // fallback type (see CONFIG.Actor.dataModels above, which already maps it
-            // to DH2CharacterData) — without it here, a `character`-typed actor has a
-            // data model but no registered sheet, so it silently rendered with only a
-            // bare core fallback (name only, no fields). Craft sheets already handle
-            // their legacy aliases this way (see DarkHeresy2CraftSheet below); PC/NPC
-            // sheets did not, which was the actual gap, not the craft sheets being
-            // special-cased.
-            { sheet: DarkHeresy2PlayerSheet, types: ['dh2-character', 'character'], label: 'WH40K.Sheet.DarkHeresy2' },
-            { sheet: DarkHeresy1PlayerSheet, types: ['dh1-character'], label: 'WH40K.Sheet.DarkHeresy1' },
-            { sheet: RogueTraderPlayerSheet, types: ['rt-character'], label: 'WH40K.Sheet.RogueTrader' },
-            { sheet: BlackCrusadePlayerSheet, types: ['bc-character'], label: 'WH40K.Sheet.BlackCrusade' },
             { sheet: OnlyWarPlayerSheet, types: ['ow-character'], label: 'WH40K.Sheet.OnlyWar' },
-            { sheet: DeathwatchPlayerSheet, types: ['dw-character'], label: 'WH40K.Sheet.Deathwatch' },
-            { sheet: ImperiumMaledictumPlayerSheet, types: ['im-character'], label: 'WH40K.Sheet.ImperiumMaledictum' },
-            // Per-system default NPC sheets. `npc` is the same kind of legacy/generic
-            // fallback as `character` above (already mapped to DH2NPCData); same fix.
-            { sheet: DarkHeresy2NPCSheet, types: ['dh2-npc', 'npc'], label: 'WH40K.Sheet.DarkHeresy2NPC' },
-            { sheet: DarkHeresy1NPCSheet, types: ['dh1-npc'], label: 'WH40K.Sheet.DarkHeresy1NPC' },
-            { sheet: RogueTraderNPCSheet, types: ['rt-npc'], label: 'WH40K.Sheet.RogueTraderNPC' },
-            { sheet: BlackCrusadeNPCSheet, types: ['bc-npc'], label: 'WH40K.Sheet.BlackCrusadeNPC' },
             { sheet: OnlyWarNPCSheet, types: ['ow-npc'], label: 'WH40K.Sheet.OnlyWarNPC' },
-            { sheet: DeathwatchNPCSheet, types: ['dw-npc'], label: 'WH40K.Sheet.DeathwatchNPC' },
-            { sheet: ImperiumMaledictumNPCSheet, types: ['im-npc'], label: 'WH40K.Sheet.ImperiumMaledictumNPC' },
-            // Per-system default Craft sheets — each also covers its legacy `{line}-vehicle`
-            // (+ -aircraft) type so pre-rename world actors keep rendering until migration.
-            { sheet: DarkHeresy2CraftSheet, types: ['dh2-terracraft', 'dh2-aircraft', 'dh2-vehicle'], label: 'WH40K.Sheet.DarkHeresy2Vehicle' },
-            { sheet: DarkHeresy1CraftSheet, types: ['dh1-terracraft', 'dh1-vehicle'], label: 'WH40K.Sheet.DarkHeresy1Vehicle' },
-            { sheet: RogueTraderCraftSheet, types: ['rt-terracraft', 'rt-aircraft', 'rt-vehicle'], label: 'WH40K.Sheet.RogueTraderVehicle' },
-            { sheet: BlackCrusadeCraftSheet, types: ['bc-terracraft', 'bc-vehicle'], label: 'WH40K.Sheet.BlackCrusadeVehicle' },
             { sheet: OnlyWarCraftSheet, types: ['ow-terracraft', 'ow-aircraft', 'ow-vehicle'], label: 'WH40K.Sheet.OnlyWarVehicle' },
-            { sheet: DeathwatchCraftSheet, types: ['dw-terracraft', 'dw-aircraft', 'dw-vehicle'], label: 'WH40K.Sheet.DeathwatchVehicle' },
-            { sheet: ImperiumMaledictumCraftSheet, types: ['im-terracraft', 'im-vehicle'], label: 'WH40K.Sheet.ImperiumMaledictumVehicle' },
-            // Voidcraft (RT only for now); also covers legacy `rt-starship`
-            { sheet: RogueTraderVoidcraftSheet, types: ['rt-voidcraft', 'rt-starship'], label: 'WH40K.Sheet.RogueTraderStarship' },
             // Loot pile (content-agnostic, all systems)
             { sheet: LootActorSheet, types: ['loot'], label: 'WH40K.Sheet.Loot' },
         ];
@@ -1280,18 +1108,12 @@ export class HooksManager {
             { sheet: MentalDisorderSheet, types: ['mentalDisorder'], label: 'WH40K.Sheet.MentalDisorder' },
             { sheet: StorageLocationSheet, types: ['storageLocation'], label: 'WH40K.Sheet.StorageLocation' },
             { sheet: LocationSheet, types: ['location'], label: 'WH40K.Sheet.Location' },
-            { sheet: PeerEnemySheet, types: ['peer', 'enemy'], label: 'WH40K.Sheet.PeerEnemy' },
             { sheet: JournalEntryItemSheet, types: ['journalEntry'], label: 'WH40K.Sheet.JournalEntry' },
-            { sheet: EndeavourSheet, types: ['endeavour'], label: 'WH40K.Sheet.Endeavour' },
-            { sheet: LeadSheet, types: ['lead'], label: 'WH40K.Sheet.Lead' },
             { sheet: OriginPathSheet, types: ['originPath'], label: 'WH40K.Sheet.OriginPath' },
             { sheet: WeaponModSheet, types: ['weaponModification'], label: 'WH40K.Sheet.WeaponModification' },
             { sheet: ArmourModSheet, types: ['armourModification'], label: 'WH40K.Sheet.ArmourModification' },
             { sheet: AttackSpecialSheet, types: ['attackSpecial'], label: 'WH40K.Sheet.AttackSpecial' },
             { sheet: WeaponQualitySheet, types: ['weaponQuality'], label: 'WH40K.Sheet.WeaponQuality' },
-            { sheet: ShipComponentSheet, types: ['shipComponent'], label: 'WH40K.Sheet.ShipComponent' },
-            { sheet: ShipWeaponSheet, types: ['shipWeapon'], label: 'WH40K.Sheet.ShipWeapon' },
-            { sheet: ShipUpgradeSheet, types: ['shipUpgrade'], label: 'WH40K.Sheet.ShipUpgrade' },
             { sheet: NPCTemplateSheet, types: ['npcTemplate'], label: 'WH40K.Sheet.NPCTemplate' },
         ];
         for (const { sheet, types, label } of ITEM_SHEETS) {
@@ -1359,7 +1181,6 @@ export class HooksManager {
         await buildWeaponQualityPayloadIndex();
         await buildSkillVariantIndex();
         await buildSkillSpecializationIndex();
-        await buildCareerAdvancementIndex();
         await backfillOriginPathUuids();
         await reconcileWorldOriginGrants();
         // #33: the campaign event graph now lives in a GM-only JournalEntry in the

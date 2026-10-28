@@ -19,7 +19,7 @@ void randomId('npc', rng); // seed advance only — id not used at module level
 
 /** Actor types are `<systemId>-<role>`; the prefix is the active game-system id. */
 function systemIdOf(ctx: SheetContextLike): string {
-    const [systemId = 'dh2'] = ctx.actor.type.split('-');
+    const [systemId = 'ow'] = ctx.actor.type.split('-');
     return systemId;
 }
 
@@ -37,7 +37,7 @@ type Story = StoryObj<SheetContextLike>;
 
 export const Default: Story = {
     name: 'Default — Imperium Maledictum NPC',
-    args: mockNpcSheetContext({ systemId: 'im' }),
+    args: mockNpcSheetContext({ systemId: 'ow' }),
     render: (args) => renderNPCSheet(args),
     play: async ({ canvasElement }) => {
         const view = within(canvasElement);
@@ -51,7 +51,7 @@ export const Default: Story = {
 export const HordeEnabled: Story = {
     name: 'Horde Mode enabled',
     args: mockNpcSheetContext({
-        systemId: 'im',
+        systemId: 'ow',
         contextOverrides: {
             horde: {
                 enabled: true,
@@ -76,7 +76,7 @@ export const HordeEnabled: Story = {
 
 export const ScaleToThreatClick: Story = {
     name: 'Interaction — scaleToThreat fires',
-    args: mockNpcSheetContext({ systemId: 'im' }),
+    args: mockNpcSheetContext({ systemId: 'ow' }),
     render: (args) => renderNPCSheet(args),
     play: ({ canvasElement }) => {
         clickAction(canvasElement, 'scaleToThreat');
@@ -85,69 +85,15 @@ export const ScaleToThreatClick: Story = {
 
 // ── Per-system: Dark Heresy 2e NPC ────────────────────────────────────────────
 
-export const DarkHeresy2NPC: Story = {
-    name: 'Per-system — Dark Heresy 2e NPC',
-    args: mockNpcSheetContext({
-        systemId: 'dh2',
-        actorOverrides: { name: 'Chaos Cultist' },
-    }),
-    render: (args) => renderNPCSheet(args),
-    play: async ({ canvasElement }) => {
-        const view = within(canvasElement);
-        // GM Tools section always present regardless of system
-        await expect(view.getByText('GM Tools')).toBeVisible();
-    },
-};
-
 // ── Per-system homologation variants ─────────────────────────────────────────
 // Each variant pins a different game-system context so the NPC tab's GM-tools
 // section, characteristic display, and horde controls are exercised across all
 // seven lines. GM Tools are system-agnostic, so the assertion is intentionally
 // the same — the value is catching per-system template divergence in visual review.
 
-export const BlackCrusadeNPC: Story = {
-    name: 'Per-system — Black Crusade NPC',
-    args: mockNpcSheetContext({ systemId: 'bc', actorOverrides: { name: 'Chaos Space Marine' } }),
-    render: (args) => renderNPCSheet(args),
-    play: async ({ canvasElement }) => {
-        const view = within(canvasElement);
-        await expect(view.getByText('GM Tools')).toBeVisible();
-    },
-};
-
-export const DarkHeresy1eNPC: Story = {
-    name: 'Per-system — Dark Heresy 1e NPC',
-    args: mockNpcSheetContext({ systemId: 'dh1', actorOverrides: { name: 'Heretek' } }),
-    render: (args) => renderNPCSheet(args),
-    play: async ({ canvasElement }) => {
-        const view = within(canvasElement);
-        await expect(view.getByText('GM Tools')).toBeVisible();
-    },
-};
-
-export const DeathwatchNPC: Story = {
-    name: 'Per-system — Deathwatch NPC',
-    args: mockNpcSheetContext({ systemId: 'dw', actorOverrides: { name: 'Tyranid Warrior' } }),
-    render: (args) => renderNPCSheet(args),
-    play: async ({ canvasElement }) => {
-        const view = within(canvasElement);
-        await expect(view.getByText('GM Tools')).toBeVisible();
-    },
-};
-
 export const OnlyWarNPC: Story = {
     name: 'Per-system — Only War NPC',
     args: mockNpcSheetContext({ systemId: 'ow', actorOverrides: { name: 'Chaos Renegade' } }),
-    render: (args) => renderNPCSheet(args),
-    play: async ({ canvasElement }) => {
-        const view = within(canvasElement);
-        await expect(view.getByText('GM Tools')).toBeVisible();
-    },
-};
-
-export const RogueTraderNPC: Story = {
-    name: 'Per-system — Rogue Trader NPC',
-    args: mockNpcSheetContext({ systemId: 'rt', actorOverrides: { name: 'Eldar Corsair' } }),
     render: (args) => renderNPCSheet(args),
     play: async ({ canvasElement }) => {
         const view = within(canvasElement);
@@ -161,7 +107,7 @@ export const RogueTraderNPC: Story = {
 
 /** NPC context with a partial fatigue load so the panel shows the meter + controls. */
 function fatiguedNpcContext(): SheetContextLike {
-    const ctx = mockNpcSheetContext({ systemId: 'dh2', actorOverrides: { name: 'Broodkin Aberrant' } });
+    const ctx = mockNpcSheetContext({ systemId: 'ow', actorOverrides: { name: 'Broodkin Aberrant' } });
     ctx.system.fatigue = { value: 3, max: 6 };
     return ctx;
 }

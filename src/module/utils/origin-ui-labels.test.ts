@@ -5,7 +5,7 @@ import { getAllCharacteristicDisplayInfo, getCharacteristicDisplayInfo, getChoic
 
 /**
  * Coverage for the origin-path UI label helpers (previously untested). The
- * system-config training path needs a BaseSystemConfig and is exercised only
+ * system-config training path needs a OWSystemConfig and is exercised only
  * via the generic fallback here; getChoiceTypeLabel's i18n is stubbed.
  */
 

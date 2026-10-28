@@ -8,7 +8,6 @@ import { AssignDamageData, type ActorLike } from '../rolls/assign-damage-data.ts
 import { Hit } from '../rolls/damage-data.ts';
 import { uuid, postChatCard, emitChatFromTemplate } from '../rolls/roll-helpers.ts';
 import { actionBudgetForActor, spendActionForActor } from '../rules/action-economy.ts';
-import { assassinsStrikeTest } from '../rules/assassins-strike.ts';
 import { DEFAULT_HIT_LOCATION, resolveHitLocationId } from '../rules/hit-locations.ts';
 import { weaponHasQuality } from '../rules/weapon-quality-effects.ts';
 import type { WH40KBaseActorDocument } from '../types/global.d.ts';
@@ -17,17 +16,6 @@ import { WH40KSettings } from '../wh40k-rpg-settings.ts';
 import { DHTargetedActionManager } from './targeted-action-manager.ts';
 
 type CanvasToken = foundry.canvas.placeables.Token;
-
-/**
- * Structural narrowing of WH40KBaseActor with the `rollSkill` method that
- * system-specific subclasses (Acolyte, Npc) define but the base type does
- * not surface. Foundry-side method shape; declared here so the cast at the
- * Foundry boundary stays localised.
- */
-type WithRollSkill = WH40KBaseActorDocument & {
-    // eslint-disable-next-line no-restricted-syntax -- boundary: rollSkill options object is forwarded to Foundry's roll dispatcher
-    rollSkill?: (skill: string, spec?: string, opts?: Record<string, unknown>) => Promise<void>;
-};
 
 export class BasicActionManager {
     // This is stored rolls for allowing re-rolls, ammo refund, etc.
@@ -85,11 +73,6 @@ export class BasicActionManager {
             html.querySelectorAll('.roll-control__replace-damage-die').forEach((el) => {
                 el.addEventListener('click', (ev: Event) => {
                     void this._replaceDamageDieWithDoS(ev);
-                });
-            });
-            html.querySelectorAll('.roll-control__assassins-strike').forEach((el) => {
-                el.addEventListener('click', (ev: Event) => {
-                    void this._assassinsStrike(ev);
                 });
             });
             html.querySelectorAll('.roll-control__horde-break-test').forEach((el) => {
@@ -292,59 +275,6 @@ export class BasicActionManager {
     }
 
     /**
-     * Handle the chat-card "Assassin's Strike" button (#149 — DH2 errata
-     * L75). Looks up the stored ActionData by `data-roll-id` so the
-     * Acrobatics test is dispatched against the same actor that just
-     * resolved the melee attack, then opens the unified roll dialog for
-     * the test the talent document authors in its rollConfig (DH2:
-     * Challenging (+0) Acrobatics). On success, the GM narrates
-     * the Half Move (Agility-bonus metres) as a Free Action per the
-     * errata — the dispatch posts a short announcement so the audit
-     * trail stays in chat.
-     */
-    async _assassinsStrike(event: Event): Promise<void> {
-        event.preventDefault();
-        const btn = event.currentTarget as HTMLButtonElement;
-        const actionData = this.#resolveStoredAction(btn, game.i18n.localize('WH40K.FateActionExpired'));
-        if (actionData == null) return;
-
-        const sourceActor: WithRollSkill | null = actionData.rollData.sourceActor;
-        if (sourceActor == null) {
-            ui.notifications.warn(game.i18n.localize('WH40K.Notify.Action.NoSourceActor'));
-            return;
-        }
-
-        // The test (skill + modifier) is authored on the talent document's
-        // rollConfig; an actor without the talent has nothing to roll.
-        const strikeTest = assassinsStrikeTest(sourceActor);
-        if (strikeTest === null) {
-            ui.notifications.warn(game.i18n.localize('WH40K.Notify.Action.AcrobaticsDispatchFailed'));
-            return;
-        }
-
-        // Disable the button so the action cannot be double-dispatched.
-        btn.disabled = true;
-
-        try {
-            await sourceActor.rollSkill?.(strikeTest.skill, undefined, {
-                modifier: strikeTest.modifier,
-                flavor: game.i18n.localize('WH40K.AssassinsStrike.TestTitle'),
-            });
-        } catch {
-            ui.notifications.warn(game.i18n.localize('WH40K.Notify.Action.AcrobaticsDispatchFailed'));
-            btn.disabled = false;
-            return;
-        }
-
-        // Short announcement keeps the audit trail in chat so the GM can
-        // narrate the Half Move (Agility-bonus metres) immediately after.
-        const announcement = game.i18n.localize('WH40K.AssassinsStrike.SuccessChatLine');
-        await postChatCard(
-            `<div class="wh40k-rpg tw-font-ui tw-px-3 tw-py-2 tw-rounded-md tw-border tw-border-gray-700 tw-bg-gray-800/60 tw-text-gray-100 tw-text-[0.85rem]">${announcement}</div>`,
-        );
-    }
-
-    /**
      * Chat-card "Willpower test to hold" button (#166 — DW Horde RAW).
      * Resolves the target horde from the dataset UUID, then dispatches a
      * Willpower characteristic test with the resolver-supplied modifier
@@ -359,7 +289,7 @@ export class BasicActionManager {
         const modifierRaw = btn.dataset['willpowerModifier'];
 
         if (targetUuid == null || targetUuid === '') {
-            ui.notifications.warn(game.i18n.localize('WH40K.DW.Horde.Break.NoTest'));
+            ui.notifications.warn(game.i18n.localize('WH40K.Horde.Break.NoTest'));
             return;
         }
 
@@ -371,7 +301,7 @@ export class BasicActionManager {
         const actor = resolved as unknown as WH40KBaseActorDocument & { rollCharacteristic?: (key: string, flavor?: string) => void | Promise<void> };
 
         const modifier = modifierRaw !== undefined && modifierRaw !== '' ? Number.parseInt(modifierRaw, 10) : 0;
-        const flavorKey = modifier < 0 ? 'WH40K.DW.Horde.Break.TestPenalised' : 'WH40K.DW.Horde.Break.TestNormal';
+        const flavorKey = modifier < 0 ? 'WH40K.Horde.Break.TestPenalised' : 'WH40K.Horde.Break.TestNormal';
         btn.disabled = true;
         try {
             await Promise.resolve(actor.rollCharacteristic('willpower', game.i18n.localize(flavorKey)));

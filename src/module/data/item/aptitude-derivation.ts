@@ -128,7 +128,7 @@ export interface AptitudeDerivation {
  *   is not already in `computed`, and is not repeated among the electives.
  * - `aptitudes` is `computed` ∪ the valid electives. The General universal
  *   aptitude is NOT added here — it is injected at consumer time
- *   (`AptitudeBasedSystemConfig.universalAptitudes`) so the stored/derived set
+ *   (`OWSystemConfig.universalAptitudes`) so the stored/derived set
  *   stays origin-faithful and the pill source attribution keeps one source of
  *   truth.
  *

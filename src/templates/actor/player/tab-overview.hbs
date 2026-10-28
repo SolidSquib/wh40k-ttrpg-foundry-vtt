@@ -73,18 +73,6 @@
             {{/systems/wh40k-rpg/templates/actor/partial/dashboard-zone}}
             {{/unless}}
 
-            {{!-- Party Overview (DH2-only: Subtlety shared pool) --}}
-            {{#if isDH2}}
-            <section class="tw-flex tw-flex-col tw-overflow-hidden tw-bg-[var(--color-bg-secondary)] tw-rounded-[6px] tw-border tw-border-solid tw-border-[color:rgb(from_var(--wh40k-color-gold)_r_g_b_/_0.4)] tw-border-l-[3px] tw-border-l-[var(--wh40k-color-gold)]">
-                <div class="tw-flex tw-items-center tw-gap-1.5 tw-py-1.5 tw-px-2.5 tw-bg-[linear-gradient(90deg,rgb(from_var(--wh40k-color-gold)_r_g_b_/_0.12)_0%,var(--color-bg-tertiary)_100%)] tw-text-xs tw-font-bold tw-uppercase tw-tracking-[0.05em] tw-text-[color:var(--color-text-secondary)] [&>i]:tw-text-[color:var(--wh40k-color-gold)]">
-                    <i class="fas fa-users"></i>
-                    <span>{{localize "WH40K.PartyOverview.Header"}}</span>
-                </div>
-                <div class="tw-p-2">
-                    {{> systems/wh40k-rpg/templates/actor/panel/subtlety-panel.hbs}}
-                </div>
-            </section>
-            {{/if}}
         </div>
 
         {{!-- COLUMN 2: Favourite Skills → Favourite Talents → Progression --}}
@@ -238,60 +226,13 @@
 
         </div>
 
-        {{!-- Per-game-system overview panels (batch-1 + batch-2 integration).
-             BC psychic strength (#178), DW Astartes implants (#167),
-             OW Regiment Creation (#151). Each gates on its system flag
-             so the include is no-op on the other six systems.
-             Batch-2 additions: BC Ritual (#179), Gifts (#180), Supplements
-             (#181), Daemon Prince (#182); DW Distinctions (#171), Special
-             Ammo (#172). --}}
-        {{#if isBC}}
-            {{> systems/wh40k-rpg/templates/actor/panel/bc-psychic-panel.hbs psychicPanel=psychicPanel}}
-            {{> systems/wh40k-rpg/templates/actor/panel/bc-ritual-panel.hbs ritualPanel=ritualPanel}}
-            {{> systems/wh40k-rpg/templates/actor/panel/bc-gifts-panel.hbs giftsPanel=giftsPanel}}
-            {{> systems/wh40k-rpg/templates/actor/panel/bc-supplements-panel.hbs supplementsPanel=supplementsPanel}}
-            {{> systems/wh40k-rpg/templates/actor/panel/bc-daemon-prince-panel.hbs daemonPrincePanel=daemonPrincePanel}}
-        {{/if}}
-        {{#if isDW}}
-            {{> systems/wh40k-rpg/templates/actor/panel/dw-astartes-panel.hbs astartesPanel=astartesPanel}}
-            {{> systems/wh40k-rpg/templates/actor/panel/dw-distinction-panel.hbs distinctionPanel=distinctionPanel}}
-            {{> systems/wh40k-rpg/templates/actor/panel/dw-ammo-panel.hbs ammoPanel=ammoPanel}}
-        {{/if}}
         {{#if isOW}}
             {{> systems/wh40k-rpg/templates/actor/panel/ow-regiment-panel.hbs regimentPanel=regimentPanel}}
             {{> systems/wh40k-rpg/templates/actor/panel/ow-craftsmanship-panel.hbs craftsmanshipPanel=craftsmanshipPanel}}
             {{> systems/wh40k-rpg/templates/actor/panel/ow-drawback-panel.hbs drawbackPanel=drawbackPanel}}
         {{/if}}
 
-        {{!-- ══ Relocated from the former Status tab (#263) ══
-             The Status tab was redundant with Overview (wounds / fatigue /
-             corruption / insanity / experience / fate already shown above;
-             movement moved to Combat in #266). These panels were Status-only,
-             so they move here to avoid silent data loss. Each keeps its
-             original system / state gate; the context vars (alignmentPanel,
-             cohesionPanel, …) come from the shared CharacterSheet context. --}}
-
-        {{!-- Possession (#82) — only when the possession track is engaged. --}}
-        {{#if (neq system.possession.state 'none')}}
-            {{> systems/wh40k-rpg/templates/actor/panel/possession-panel.hbs}}
-        {{/if}}
-
-        {{!-- BC Alignment / Infamy (#173) — Black-Crusade-only. --}}
-        {{#if isBC}}
-            {{> systems/wh40k-rpg/templates/actor/panel/bc-alignment-panel.hbs alignmentPanel=alignmentPanel}}
-        {{/if}}
-
-        {{!-- DW engine panels (#162-165, #168-170) — Deathwatch-only. --}}
-        {{#if isDW}}
-            {{> systems/wh40k-rpg/templates/actor/panel/dw-cohesion-panel.hbs cohesionPanel=cohesionPanel}}
-            {{> systems/wh40k-rpg/templates/actor/panel/dw-mode-panel.hbs modePanel=modePanel}}
-            {{> systems/wh40k-rpg/templates/actor/panel/dw-renown-panel.hbs renownPanel=renownPanel}}
-            {{> systems/wh40k-rpg/templates/actor/panel/dw-requisition-panel.hbs requisitionPanel=requisitionPanel}}
-            {{> systems/wh40k-rpg/templates/actor/panel/dw-oath-panel.hbs oathPanel=oathPanel}}
-            {{> systems/wh40k-rpg/templates/actor/panel/dw-mission-panel.hbs missionPanel=missionPanel}}
-            {{> systems/wh40k-rpg/templates/actor/panel/dw-vehicle-panel.hbs vehiclePanel=vehiclePanel}}
-        {{/if}}
-
+        {{!-- Panels relocated from the former Status tab (#263); the context vars come from the shared CharacterSheet context. --}}
         {{!-- OW engine panels (#152-155 + batch-2) — Only-War-only. --}}
         {{#if isOW}}
             {{> systems/wh40k-rpg/templates/actor/panel/ow-comrade-panel.hbs comradePanel=comradePanel}}
@@ -308,14 +249,6 @@
     </div>
 
     {{!-- Status-tab action panels relocated full-width (#263). --}}
-    {{!-- Dark Pacts (Enemies Beyond p.72, #84) — renders only when a pact is active. --}}
-    {{> systems/wh40k-rpg/templates/actor/panel/dark-pact-panel.hbs}}
-
-    {{!-- Fanatic: Death to All Who Oppose Me (#93). Hidden unless hasFanatic. --}}
-    {{> systems/wh40k-rpg/templates/actor/panel/fanatic-button.hbs hasFanatic=hasFanatic}}
-
-    {{!-- Crusader: Smite the Unholy (#141). Hidden unless hasCrusader. --}}
-    {{> systems/wh40k-rpg/templates/actor/panel/crusader-button.hbs hasCrusader=hasCrusader}}
 
     {{!-- Grapple Controller (#120) — rendered only mid-grapple. --}}
     {{#if (and grappleState (neq grappleState 'none'))}}

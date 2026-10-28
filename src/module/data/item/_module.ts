@@ -20,19 +20,11 @@ export { default as SkillData } from './skill.ts';
 export { default as OriginPathData } from './origin-path.ts';
 export { default as ConditionData } from './condition.ts';
 export { default as AptitudeData } from './aptitude.ts';
-export { default as PeerEnemyData } from './peer-enemy.ts';
-export { default as OathData } from './oath.ts';
 
 // Powers
 export { default as PsychicPowerData } from './psychic-power.ts';
-export { default as NavigatorPowerData } from './navigator-power.ts';
-export { default as RitualData } from './ritual.ts';
 
 // Ship & Vehicle
-export { default as ShipComponentData } from './ship-component.ts';
-export { default as ShipWeaponData } from './ship-weapon.ts';
-export { default as ShipUpgradeData } from './ship-upgrade.ts';
-export { default as ShipRoleData } from './ship-role.ts';
 export { default as OrderData } from './order.ts';
 export { default as VehicleTraitData } from './vehicle-trait.ts';
 export { default as VehicleUpgradeData } from './vehicle-upgrade.ts';
@@ -50,8 +42,6 @@ export { default as MutationData } from './mutation.ts';
 export { default as MalignancyData } from './malignancy.ts';
 export { default as MentalDisorderData } from './mental-disorder.ts';
 export { default as JournalEntryItemData } from './journal-entry.ts';
-export { default as EndeavourData } from './endeavour.ts';
-export { default as LeadData } from './lead.ts';
 
 // NPC Templates
 export { default as NPCTemplateData } from './npc-template.ts';

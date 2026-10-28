@@ -113,13 +113,8 @@ describe('inferActiveGameLine', () => {
     });
 
     it('falls back to the world primary game system when there is no actor', () => {
-        vi.stubGlobal('game', { settings: { get: (): string => 'bc' } });
-        expect(inferActiveGameLine()).toBe('bc');
-    });
-
-    it('resolves im from the world primary now that it is a recognised variant line', () => {
-        vi.stubGlobal('game', { settings: { get: (): string => 'im' } });
-        expect(inferActiveGameLine()).toBe('im');
+        vi.stubGlobal('game', { settings: { get: (): string => 'ow' } });
+        expect(inferActiveGameLine()).toBe('ow');
     });
 
     it("resolves an NPC-owned item to the NPC's type line, not the world line (NPC systems carry no gameSystem)", () => {

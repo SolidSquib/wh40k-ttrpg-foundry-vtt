@@ -1,4 +1,3 @@
-import { RENOWN_RANK_ORDER, type RenownRank } from '../../rules/dw-renown.ts';
 import { availabilityDisplayLabel, type PlaceRating, placeRatingLabels } from '../../utils/config-choices.ts';
 import { inferActiveGameLine } from '../../utils/item-variant-utils.ts';
 import { WH40KSettings } from '../../wh40k-rpg-settings.ts';
@@ -23,7 +22,6 @@ export default class PhysicalItemTemplate extends SystemDataModel {
     declare availabilityByPlace: PlaceRating[];
     declare availabilityRestriction: string;
     declare craftsmanship: string;
-    declare renown: RenownRank | null;
     declare quantity: number;
     declare bound: boolean;
     declare variantOf: string;
@@ -98,15 +96,6 @@ export default class PhysicalItemTemplate extends SystemDataModel {
                     const keys = Object.keys(CONFIG.wh40k.craftsmanships);
                     return keys.length > 0 ? keys : ['poor', 'common', 'good', 'best'];
                 },
-            }),
-            // Deathwatch Renown rank required to requisition the item (printed in the
-            // armoury tables' Renown column, distinct from availability); null elsewhere.
-            renown: new fields.StringField({
-                required: false,
-                nullable: true,
-                blank: false,
-                initial: null,
-                choices: [...RENOWN_RANK_ORDER],
             }),
             quantity: new fields.NumberField({
                 required: true,

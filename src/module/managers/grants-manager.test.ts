@@ -170,4 +170,17 @@ describe('GrantsManager._extractGrants', () => {
         );
         expect(grant).toMatchObject({ items: [{ uuid: 'M1', overrides: { 'system.level': 2 } }, { uuid: 'M2' }] });
     });
+
+    it('hands a skill grant the skill’s display name, which the grant resolves to the schema key', () => {
+        const [grant] = GrantsManager._extractGrants(
+            itemWith({ skills: [{ name: 'Common Lore', specialization: 'Imperial Guard', level: 'trained' }, { name: 'Tech-Use' }] }),
+        );
+        expect(grant).toMatchObject({
+            type: 'skill',
+            skills: [
+                { key: 'Common Lore', specialization: 'Imperial Guard', level: 'trained' },
+                { key: 'Tech-Use', level: 'trained' },
+            ],
+        });
+    });
 });

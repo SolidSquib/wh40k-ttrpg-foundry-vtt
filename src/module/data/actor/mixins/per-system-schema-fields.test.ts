@@ -2,11 +2,8 @@ import { afterAll, describe, expect, it } from 'vitest';
 
 /**
  * Characterization of every per-system DataModel mixin's `*SchemaFields()`
- * contract — the exact set of schema fields each Black Crusade / Deathwatch /
- * Only War template spreads into its Character DataModel. #308 (collapse the
- * per-system subclasses + table-drive registration) and #282 (table-drive the
- * per-system overview panels) must preserve these field sets; a refactor that
- * drops or renames a field fails here.
+ * contract — the exact set of schema fields each template spreads into the
+ * Character DataModel. A refactor that drops or renames a field fails here.
  *
  * The mixins destructure `foundry.data.fields` at module-load, so a recording
  * stub of the five field constructors is installed BEFORE the (dynamic) imports.
@@ -54,21 +51,7 @@ afterAll(() => {
 });
 
 // Imported after the stub is in place (mixins destructure foundry.data.fields at load).
-const { bcDaemonPrinceSchemaFields } = await import('./bc-daemon-prince-template.ts');
-const { bcGiftsSchemaFields } = await import('./bc-gifts-template.ts');
-const { bcPsychicSchemaFields } = await import('./bc-psychic-template.ts');
-const { bcRitualSchemaFields } = await import('./bc-ritual-template.ts');
-const { bcSupplementsSchemaFields } = await import('./bc-supplements-template.ts');
-const { dwAmmoSchemaFields } = await import('./dw-ammo-template.ts');
-const { dwAstartesSchemaFields } = await import('./dw-astartes-template.ts');
-const { dwCohesionSchemaFields } = await import('./dw-cohesion-template.ts');
-const { dwDistinctionSchemaFields } = await import('./dw-distinction-template.ts');
-const { dwMissionSchemaFields } = await import('./dw-mission-template.ts');
-const { dwModeSchemaFields } = await import('./dw-mode-template.ts');
-const { dwOathSchemaFields } = await import('./dw-oath-template.ts');
-const { dwRenownSchemaFields } = await import('./dw-renown-template.ts');
-const { dwRequisitionSchemaFields } = await import('./dw-requisition-template.ts');
-const { dwVehicleSchemaFields } = await import('./dw-vehicle-template.ts');
+const { cohesionSchemaFields } = await import('./cohesion-template.ts');
 const { owBattlefieldSchemaFields } = await import('./ow-battlefield-template.ts');
 const { owComradeHealingSchemaFields } = await import('./ow-comrade-healing-template.ts');
 const { owComradeSchemaFields } = await import('./ow-comrade-template.ts');
@@ -84,21 +67,7 @@ const { owVehicleMovementSchemaFields } = await import('./ow-vehicle-movement-te
 type SchemaFieldsFn = () => Record<string, object>;
 
 const cases: Array<[name: string, fn: SchemaFieldsFn, keys: string[]]> = [
-    ['bcDaemonPrinceSchemaFields', bcDaemonPrinceSchemaFields, ['daemonPrinceAscension']],
-    ['bcGiftsSchemaFields', bcGiftsSchemaFields, ['gifts']],
-    ['bcPsychicSchemaFields', bcPsychicSchemaFields, ['psykerClass', 'psyRating', 'sustainedPowerCount']],
-    ['bcRitualSchemaFields', bcRitualSchemaFields, ['ritualMastery']],
-    ['bcSupplementsSchemaFields', bcSupplementsSchemaFields, ['daemonEngineRating']],
-    ['dwAmmoSchemaFields', dwAmmoSchemaFields, ['selectedAmmo']],
-    ['dwAstartesSchemaFields', dwAstartesSchemaFields, ['implants']],
-    ['dwCohesionSchemaFields', dwCohesionSchemaFields, ['cohesionMax', 'cohesionCurrent', 'cohesionLostThisTurn', 'rallied']],
-    ['dwDistinctionSchemaFields', dwDistinctionSchemaFields, ['distinctions', 'marksOfDistinction']],
-    ['dwMissionSchemaFields', dwMissionSchemaFields, ['activeMission']],
-    ['dwModeSchemaFields', dwModeSchemaFields, ['combatMode', 'sustainedAbilities']],
-    ['dwOathSchemaFields', dwOathSchemaFields, ['activeOathId', 'isLeader']],
-    ['dwRenownSchemaFields', dwRenownSchemaFields, ['renown']],
-    ['dwRequisitionSchemaFields', dwRequisitionSchemaFields, ['requisitionPoints', 'missionRating']],
-    ['dwVehicleSchemaFields', dwVehicleSchemaFields, ['vehicleIntegrity', 'overIntegrity']],
+    ['cohesionSchemaFields', cohesionSchemaFields, ['cohesionMax', 'cohesionCurrent', 'cohesionLostThisTurn', 'rallied']],
     ['owBattlefieldSchemaFields', owBattlefieldSchemaFields, ['supportCooldown', 'regimentalAwards']],
     ['owComradeHealingSchemaFields', owComradeHealingSchemaFields, ['comradeRecoveryDays', 'refitAvailable']],
     ['owComradeSchemaFields', owComradeSchemaFields, ['comrade']],
@@ -112,18 +81,14 @@ const cases: Array<[name: string, fn: SchemaFieldsFn, keys: string[]]> = [
     ['owVehicleMovementSchemaFields', owVehicleMovementSchemaFields, ['chaseState']],
 ];
 
-describe('per-system mixin *SchemaFields()', () => {
+describe('mixin *SchemaFields()', () => {
     it.each(cases)('%s contributes exactly its declared schema fields', (_name, fn, keys) => {
         expect(Object.keys(fn()).sort()).toEqual([...keys].sort());
     });
 
-    it('pins field TYPES for a representative template (dw-astartes implants → ArrayField)', () => {
-        const schema = dwAstartesSchemaFields();
-        expect(schema['implants']).toBeInstanceOf(fields.ArrayField);
-    });
-
-    it('pins a numeric field type (dw-renown renown → NumberField)', () => {
-        const schema = dwRenownSchemaFields();
-        expect(schema['renown']).toBeInstanceOf(fields.NumberField);
+    it('pins field TYPES for a representative template (cohesion → NumberField / BooleanField)', () => {
+        const schema = cohesionSchemaFields();
+        expect(schema['cohesionMax']).toBeInstanceOf(fields.NumberField);
+        expect(schema['rallied']).toBeInstanceOf(fields.BooleanField);
     });
 });

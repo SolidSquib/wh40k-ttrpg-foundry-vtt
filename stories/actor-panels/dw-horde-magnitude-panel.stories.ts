@@ -15,7 +15,7 @@
  * sheet on a DW horde actor and snaps the rendered panel.
  */
 import type { Meta, StoryObj } from '@storybook/html-vite';
-import { getHordeTier, bonusDamageDiceForMagnitude, toHitBonusForMagnitude } from '../../src/module/rules/dw-horde-magnitude';
+import { getHordeTier, bonusDamageDiceForMagnitude, toHitBonusForMagnitude } from '../../src/module/rules/horde-magnitude';
 import { renderSheet } from '../test-helpers';
 
 interface HordePanelArgs {

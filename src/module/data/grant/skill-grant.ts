@@ -1,4 +1,4 @@
-import { BaseSystemConfig } from '../../config/game-systems/base-system-config.ts';
+import { OWSystemConfig } from '../../config/game-systems/ow-config.ts';
 import type { WH40KBaseActor } from '../../documents/base-actor.ts';
 import { SkillKeyHelper } from '../../helpers/skill-key-helper.ts';
 import BaseGrantData, { type GrantApplicationResult, type GrantApplyOptions, type GrantRestoreData, type GrantSummary } from './base-grant.ts';
@@ -70,20 +70,20 @@ export default class SkillGrantData extends BaseGrantData {
      * Valid skill training levels.
      *
      * `order` is the numeric rank each level maps to and is the SINGLE consumer
-     * of {@link BaseSystemConfig.skillLevelToRank} (#340) — the same canonical
+     * of {@link OWSystemConfig.skillLevelToRank} (#340) — the same canonical
      * level→rank table the actor templates / config helper use — so the grant and
      * the sheet can never disagree on an alias's rank. `label` (i18n key) and
      * `bonus` (display offset) are grant-presentation-only and stay local.
      * @type {object}
      */
     static TRAINING_LEVELS: Record<string, { order: number; label: string; bonus: number } | undefined> = {
-        known: { order: BaseSystemConfig.skillLevelToRank('known'), label: 'WH40K.Skills.Rank.Known', bonus: 0 },
-        trained: { order: BaseSystemConfig.skillLevelToRank('trained'), label: 'WH40K.Skills.Rank.Trained', bonus: 0 }, // RT/DH1e/DW rank 1 alias
-        plus10: { order: BaseSystemConfig.skillLevelToRank('plus10'), label: 'WH40K.Skills.Rank.Plus10', bonus: 10 }, // RT/DH1e/DW rank 2 alias
-        experienced: { order: BaseSystemConfig.skillLevelToRank('experienced'), label: 'WH40K.Skills.Rank.Experienced', bonus: 20 },
-        plus20: { order: BaseSystemConfig.skillLevelToRank('plus20'), label: 'WH40K.Skills.Rank.Plus20', bonus: 20 }, // RT/DH1e/DW rank 3 alias
-        veteran: { order: BaseSystemConfig.skillLevelToRank('veteran'), label: 'WH40K.Skills.Rank.Veteran', bonus: 30 },
-        plus30: { order: BaseSystemConfig.skillLevelToRank('plus30'), label: 'WH40K.Skills.Rank.Plus30', bonus: 30 }, // DH2e/BC/OW rank 4 alias
+        known: { order: OWSystemConfig.skillLevelToRank('known'), label: 'WH40K.Skills.Rank.Known', bonus: 0 },
+        trained: { order: OWSystemConfig.skillLevelToRank('trained'), label: 'WH40K.Skills.Rank.Trained', bonus: 0 }, // RT/DH1e/DW rank 1 alias
+        plus10: { order: OWSystemConfig.skillLevelToRank('plus10'), label: 'WH40K.Skills.Rank.Plus10', bonus: 10 }, // RT/DH1e/DW rank 2 alias
+        experienced: { order: OWSystemConfig.skillLevelToRank('experienced'), label: 'WH40K.Skills.Rank.Experienced', bonus: 20 },
+        plus20: { order: OWSystemConfig.skillLevelToRank('plus20'), label: 'WH40K.Skills.Rank.Plus20', bonus: 20 }, // RT/DH1e/DW rank 3 alias
+        veteran: { order: OWSystemConfig.skillLevelToRank('veteran'), label: 'WH40K.Skills.Rank.Veteran', bonus: 30 },
+        plus30: { order: OWSystemConfig.skillLevelToRank('plus30'), label: 'WH40K.Skills.Rank.Plus30', bonus: 30 }, // DH2e/BC/OW rank 4 alias
     };
 
     /** Property declarations */
@@ -433,11 +433,11 @@ export default class SkillGrantData extends BaseGrantData {
         // so writing the boolean flags directly is clobbered immediately.
         // Persist the numeric `advance` instead, which is the field
         // _prepareSkills reads from. The level→rank mapping is the canonical
-        // BaseSystemConfig.skillLevelToRank table (#340) — same one the sheet /
+        // OWSystemConfig.skillLevelToRank table (#340) — same one the sheet /
         // actor templates rank skills by — so the grant and the sheet agree on
         // every alias (known/experienced/veteran included, which the old local
         // table dropped to 0).
-        return { advance: BaseSystemConfig.skillLevelToRank(level) };
+        return { advance: OWSystemConfig.skillLevelToRank(level) };
     }
 
     /** @inheritDoc */

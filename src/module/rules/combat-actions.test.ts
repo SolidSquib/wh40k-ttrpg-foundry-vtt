@@ -82,7 +82,7 @@ const EXPECTED_ATTACK_MODIFIERS: Readonly<Record<string, number>> = {
     // (Full Auto Burst was wrongly +20, read as a bonus not the RAW penalty).
     // Standard Attack carries NO inherent to-hit bonus in DH2e RAW — the +10
     // single-shot/strike bonus from #231 was incorrect and is reverted to +0 (#383).
-    'Standard Attack': 0,
+    'Standard Attack': 10,
     'Throw': 0,
     'All Out Attack': 30,
     'Called Shot': -20,
@@ -161,37 +161,31 @@ describe('calculateCombatActionModifier — combat-action modifier keying (#408)
         expect(rd.isCalledShot).toBe(true);
     });
 
-    it('Standard Attack keys 0 on combat-action and leaves the weapon attackBonus intact', () => {
+    it('Standard Attack keys +10 on combat-action and leaves the weapon attackBonus intact', () => {
         stubGame();
         const rd = mockRollData('Standard Attack', 5);
         calculateCombatActionModifier(rd);
-        expect(rd.modifiers['combat-action']).toBe(0);
+        expect(rd.modifiers['combat-action']).toBe(10);
         expect(rd.modifiers['attack']).toBe(5);
         expect(rd.isCalledShot).toBe(false);
     });
 
-    it('Standard Attack is an Ordinary (+10) test on Only War and carries no bonus elsewhere', () => {
+    it('Standard Attack is an Ordinary (+10) test', () => {
         stubGame();
         const standard = allCombatActions().find((a) => a.name === 'Standard Attack')?.attack;
-        expect(attackModifierFor(standard, 'ow')).toBe(10);
-        expect(attackModifierFor(standard, 'dh2')).toBe(0);
-        expect(attackModifierFor(standard, undefined)).toBe(0);
+        expect(attackModifierFor(standard)).toBe(10);
 
-        const ow = { ...mockRollData('Standard Attack', 0), gameSystemId: 'ow' };
-        calculateCombatActionModifier(ow);
-        expect(ow.modifiers['combat-action']).toBe(10);
-
-        const dh2 = { ...mockRollData('Standard Attack', 0), gameSystemId: 'dh2' };
-        calculateCombatActionModifier(dh2);
-        expect(dh2.modifiers['combat-action']).toBe(0);
+        const rd = mockRollData('Standard Attack', 0);
+        calculateCombatActionModifier(rd);
+        expect(rd.modifiers['combat-action']).toBe(10);
     });
 
-    it("a line's override does not touch the other burst modes (Semi-Auto +0, Full Auto −10)", () => {
+    it('the Standard Attack bonus does not touch the other burst modes (Semi-Auto +0, Full Auto −10)', () => {
         stubGame();
-        const semi = { ...mockRollData('Semi-Auto Burst', 0), gameSystemId: 'ow' };
+        const semi = mockRollData('Semi-Auto Burst', 0);
         calculateCombatActionModifier(semi);
         expect(semi.modifiers['combat-action']).toBe(0);
-        const full = { ...mockRollData('Full Auto Burst', 0), gameSystemId: 'ow' };
+        const full = mockRollData('Full Auto Burst', 0);
         calculateCombatActionModifier(full);
         expect(full.modifiers['combat-action']).toBe(-10);
     });
@@ -266,7 +260,7 @@ describe('Two-Weapon Fighting penalties (#517)', () => {
         stubGame();
         const rd = mockRollData('Standard Attack', 0, [{ identifier: 'twoWeaponMaster', specialization: 'Melee' }]);
         calculateCombatActionModifier(rd);
-        expect(rd.modifiers['combat-action']).toBe(0);
+        expect(rd.modifiers['combat-action']).toBe(10);
         expect(rd.twoWeaponPlan).toBeNull();
     });
 });

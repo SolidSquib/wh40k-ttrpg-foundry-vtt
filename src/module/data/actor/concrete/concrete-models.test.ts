@@ -28,19 +28,11 @@ const characterBase: Loaded = importModelOrSkip<{ default: object }>(import('../
 const npcBase: Loaded = importModelOrSkip<{ default: object }>(import('../bases/npc-base.ts'));
 
 const CASES: ConcreteModelCase[] = [
-    { label: 'BCCharacterData', gameSystem: 'bc', mod: importModelOrSkip<{ default: object }>(import('./bc-character.ts')), base: characterBase },
-    { label: 'BCNPCData', gameSystem: 'bc', mod: importModelOrSkip<{ default: object }>(import('./bc-npc.ts')), base: npcBase },
-    { label: 'DH1CharacterData', gameSystem: 'dh1', mod: importModelOrSkip<{ default: object }>(import('./dh1-character.ts')), base: characterBase },
-    { label: 'DH1NPCData', gameSystem: 'dh1', mod: importModelOrSkip<{ default: object }>(import('./dh1-npc.ts')), base: npcBase },
-    { label: 'DH2CharacterData', gameSystem: 'dh2', mod: importModelOrSkip<{ default: object }>(import('./dh2-character.ts')), base: characterBase },
-    { label: 'DH2NPCData', gameSystem: 'dh2', mod: importModelOrSkip<{ default: object }>(import('./dh2-npc.ts')), base: npcBase },
-    { label: 'DWCharacterData', gameSystem: 'dw', mod: importModelOrSkip<{ default: object }>(import('./dw-character.ts')), base: characterBase },
-    { label: 'IMCharacterData', gameSystem: 'im', mod: importModelOrSkip<{ default: object }>(import('./im-character.ts')), base: characterBase },
     { label: 'OWCharacterData', gameSystem: 'ow', mod: importModelOrSkip<{ default: object }>(import('./ow-character.ts')), base: characterBase },
-    { label: 'RTCharacterData', gameSystem: 'rt', mod: importModelOrSkip<{ default: object }>(import('./rt-character.ts')), base: characterBase },
+    { label: 'OWNPCData', gameSystem: 'ow', mod: importModelOrSkip<{ default: object }>(import('./ow-npc.ts')), base: npcBase },
 ];
 
-describe('concrete per-system actor DataModels', () => {
+describe('concrete actor DataModels', () => {
     for (const { label, gameSystem, mod, base } of CASES) {
         it(`${label}: default export, static gameSystem='${gameSystem}', inherits its kind-base`, async () => {
             const [m, b] = await Promise.all([mod, base]);

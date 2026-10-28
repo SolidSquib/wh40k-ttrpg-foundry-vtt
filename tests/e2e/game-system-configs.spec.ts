@@ -57,7 +57,7 @@ const ROLE_PREFIX: Record<'primary' | 'accent' | 'border', string> = {
     border: 'tw-border-',
 };
 
-/** Systems whose config extends AptitudeBasedSystemConfig (4 ranks, 5 tiers, aptitude dispatch). */
+/** Systems whose config extends OWSystemConfig (4 ranks, 5 tiers, aptitude dispatch). */
 const APTITUDE_SYSTEMS = ['dh2', 'bc', 'ow', 'im'] as const;
 /** Systems whose config extends CareerBasedSystemConfig (3 ranks, 4 tiers, career dispatch). */
 const CAREER_SYSTEMS = ['rt', 'dh1', 'dw'] as const;
@@ -153,7 +153,7 @@ test.describe.serial('game-system config registry + helpers (Tier B)', () => {
                 interface GameSystemsModule {
                     SystemConfigRegistry?: SystemConfigRegistryCls;
                     themeClassFor?: (id: string, role: string) => string;
-                    BaseSystemConfig?: BaseSystemConfigCls;
+                    OWSystemConfig?: BaseSystemConfigCls;
                 }
 
                 const results: { name: string; ok: boolean; detail: string }[] = [];
@@ -545,12 +545,12 @@ test.describe.serial('game-system config registry + helpers (Tier B)', () => {
                     }
 
                     // ── skill-level-to-rank ────────────────────────────────
-                    // The static BaseSystemConfig.skillLevelToRank maps both
+                    // The static OWSystemConfig.skillLevelToRank maps both
                     // RT terminology ('plus10') and DH2e terminology
                     // ('experienced') to the shared numeric rank, and unknown
                     // strings fall back to 0.
                     try {
-                        const base = mod.BaseSystemConfig;
+                        const base = mod.OWSystemConfig;
                         const fn = base?.skillLevelToRank;
                         const ok =
                             typeof fn === 'function' &&

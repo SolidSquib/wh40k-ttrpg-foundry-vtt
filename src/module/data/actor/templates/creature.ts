@@ -1,5 +1,5 @@
-import { BaseSystemConfig } from '../../../config/game-systems/base-system-config.ts';
 import { SystemConfigRegistry } from '../../../config/game-systems/index.ts';
+import { OWSystemConfig } from '../../../config/game-systems/ow-config.ts';
 import type { FatigueModelDef } from '../../../config/game-systems/types.ts';
 import type { WH40KItem } from '../../../documents/item.ts';
 import { SkillKeyHelper } from '../../../helpers/skill-key-helper.ts';
@@ -233,7 +233,7 @@ export function synthesizeOriginSpecialistEntries(
             if (SkillKeyHelper.nameToKey(grant.name ?? '') !== skillKey) continue;
             const specialization = (grant.specialization ?? '').trim();
             if (specialization.length === 0) continue;
-            if (BaseSystemConfig.skillLevelToRank(grant.level ?? 'trained') <= 0) continue;
+            if (OWSystemConfig.skillLevelToRank(grant.level ?? 'trained') <= 0) continue;
             if (present.has(specialization.toLowerCase())) continue;
             present.add(specialization.toLowerCase());
 
@@ -577,7 +577,7 @@ export default class CreatureTemplate extends CommonTemplate {
             }),
 
             // Skills — union of all game lines. Per-system visibility controlled by
-            // BaseSystemConfig.getVisibleSkills(); hidden skills don't render on sheet.
+            // OWSystemConfig.getVisibleSkills(); hidden skills don't render on sheet.
             // Built from the single-sourced SKILL_DEFINITIONS catalog (#273) — the
             // skill→characteristic association is authored once in data/shared and
             // shared with NPCData's fallback map. Insertion order in the catalog
@@ -1536,7 +1536,7 @@ export default class CreatureTemplate extends CommonTemplate {
                     if (grantSpec.length > 0 && grantSpec !== specialization.toLowerCase()) continue;
                 }
 
-                const rank = BaseSystemConfig.skillLevelToRank(grant.level ?? 'trained');
+                const rank = OWSystemConfig.skillLevelToRank(grant.level ?? 'trained');
                 maxRank = Math.max(maxRank, rank);
             }
 
@@ -1571,7 +1571,7 @@ export default class CreatureTemplate extends CommonTemplate {
                 const grantKey = SkillKeyHelper.nameToKey(grant.name ?? '');
                 if (grantKey === '') continue;
 
-                const rank = BaseSystemConfig.skillLevelToRank(grant.level ?? 'trained');
+                const rank = OWSystemConfig.skillLevelToRank(grant.level ?? 'trained');
                 if (rank > 0) {
                     const list = this.modifierSources.skills[grantKey] ?? [];
                     this.modifierSources.skills[grantKey] = list;

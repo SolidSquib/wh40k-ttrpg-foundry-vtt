@@ -117,7 +117,7 @@ async function promptSupportRequest(): Promise<RequestSupportPromptResult | null
                 <input type="number" name="currentLogisticsTarget" id="ow-support-target" value="40" min="0" step="1" />
             </div>
             <div class="form-group">
-                <label for="ow-support-roll">${game.i18n.localize('WH40K.BC.Ritual.ChatRoll')}</label>
+                <label for="ow-support-roll">${game.i18n.localize('WH40K.Common.RollD100')}</label>
                 <input type="number" name="roll" id="ow-support-roll" value="50" min="1" max="100" step="1" />
             </div>
         </fieldset>

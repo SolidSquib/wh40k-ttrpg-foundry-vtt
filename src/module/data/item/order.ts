@@ -1,4 +1,3 @@
-import { SHIP_ACTION_EFFECTS, type ShipActionEffect } from '../../rules/ship-crew-morale.ts';
 import { formatSigned } from '../../utils/format.ts';
 import ItemDataModel from '../abstract/item-data-model.ts';
 import IdentifierField from '../fields/identifier-field.ts';
@@ -38,16 +37,7 @@ export default class OrderData extends ItemDataModel.mixin(DescriptionTemplate) 
     declare failure: string;
     declare notes: string;
 
-    /**
-     * Optional content-agnostic effect identifier (issue #189). Compendium
-     * Hold Fast! / Triage entries tag themselves with the matching primitive
-     * (`cancelPriorTurnDamage` / `replenishMorale`) so the document layer
-     * can route the dispatch into the RT Crew/Morale economy without
-     * string-matching display names. Empty string ⇒ no built-in effect.
-     */
-    declare shipActionEffect: ShipActionEffect | '';
-
-    /** Only War ground-order details; `type` is empty on a ship order. */
+    /** Only War ground-order details; `type` is empty when unset. */
     declare ground: GroundOrder;
 
     /** @inheritdoc */
@@ -91,14 +81,6 @@ export default class OrderData extends ItemDataModel.mixin(DescriptionTemplate) 
 
             // Notes
             notes: new fields.StringField({ required: false, blank: true }),
-
-            // RT Crew/Morale economy hook (issue #189). Compendium opt-in.
-            shipActionEffect: new fields.StringField({
-                required: false,
-                initial: '',
-                blank: true,
-                choices: ['', ...SHIP_ACTION_EFFECTS],
-            }),
 
             // Only War ground orders (issued to a Comrade, bought with XP). Plain values: the catalog and
             // the Advancement dialog read them straight from the pack index.

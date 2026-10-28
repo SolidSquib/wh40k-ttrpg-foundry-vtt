@@ -21,7 +21,7 @@ import { describe, expect, it } from 'vitest';
 
 const TEMPLATES = resolve(__dirname, '..', 'src/templates');
 /** Sheet families whose templates render into one form: header + every tab. */
-const FAMILIES = ['actor/player', 'actor/npc', 'actor/craft', 'actor/voidcraft'] as const;
+const FAMILIES = ['actor/player', 'actor/npc', 'actor/craft'] as const;
 /** A literal `system.*` field path bound to an input, directly or via a partial's hash param. */
 const FIELD_NAME = /\b(?:name|valueName|maxName)="(system\.[\w.]+)"/g;
 /** A partial call that renders its fields as text, not inputs. */

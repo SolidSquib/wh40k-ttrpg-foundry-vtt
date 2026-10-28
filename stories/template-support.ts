@@ -289,8 +289,8 @@ export function initializeStoryHandlebars(): typeof HandlebarsLib {
         const opts = rest[rest.length - 1] as { data?: { root?: { _gameSystemId?: string; gameSystemId?: string } } } | undefined;
         const explicit = typeof userArgs[0] === 'string' ? userArgs[0] : undefined;
         const fromRoot = opts?.data?.root?._gameSystemId ?? opts?.data?.root?.gameSystemId;
-        const candidate = explicit ?? fromRoot ?? 'rt';
-        const systemId: GameSystemId = SystemConfigRegistry.has(candidate) ? (candidate as GameSystemId) : 'rt';
+        const candidate = explicit ?? fromRoot ?? 'ow';
+        const systemId: GameSystemId = SystemConfigRegistry.has(candidate) ? (candidate as GameSystemId) : 'ow';
         return themeClassFor(systemId, role as SystemThemeRole);
     });
     HandlebarsLib.registerHelper('select', function selectHelper(this: HbsValue, selected: HbsValue, options: { fn: (ctx: HbsValue) => string }): string {

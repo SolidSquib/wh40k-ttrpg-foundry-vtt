@@ -86,7 +86,7 @@ export default class QuickActionsBar {
                 this.#createAction('rollSeverity', 'fa-solid fa-dice', 'Roll Severity', 'rollSeverity', { itemId }),
                 this.#createAction('treat', 'fa-solid fa-kit-medical', 'Treat', 'treatInjury', { itemId }),
             );
-        } else if (type === 'psychicPower' || type === 'navigatorPower') {
+        } else if (type === 'psychicPower') {
             actions.push(this.#createAction('manifest', 'fa-solid fa-brain', 'Manifest', 'manifestPower', { itemId }));
         } else if (type === 'ammunition') {
             actions.push(this.#createAction('load', 'fa-solid fa-arrow-up-from-bracket', 'Load', 'loadAmmo', { itemId }));

@@ -276,36 +276,19 @@ WH40K.availabilities = {
 /* -------------------------------------------- */
 
 /**
- * Per-line acquisition currencies. `throne` is the universal baseline
- * (DH1's native price and every other line's homebrew gelt) mirrored to the
- * derived `system.price`; the rest are each line's RAW acquisition stat.
+ * Acquisition currencies. `throne` is the baseline gelt mirrored to the
+ * derived `system.price`; `logistics` is Only War's RAW acquisition stat.
  * Consumed by the Item Piles integration and documented in docs/VALUATION.md.
  */
 WH40K.currencies = {
     throne: {
         label: 'WH40K.Currency.ThroneGelt',
         abbreviation: 'tg',
-        line: 'dh1',
-        costPath: 'system.cost.dh1.throneGelt',
+        line: 'ow',
+        costPath: 'system.cost.ow.homebrew.throneGelt',
         walletPath: 'system.throneGelt',
         primary: true,
     },
-    influence: { label: 'WH40K.Currency.Influence', abbreviation: 'Inf', line: 'dh2', costPath: 'system.cost.dh2.influence', walletPath: 'system.influence' },
-    profitFactor: {
-        label: 'WH40K.Currency.ProfitFactor',
-        abbreviation: 'PF',
-        line: 'rt',
-        costPath: 'system.cost.rt.profitFactor',
-        walletPath: 'system.rogueTrader.profitFactor.current',
-    },
-    requisition: {
-        label: 'WH40K.Currency.Requisition',
-        abbreviation: 'Req',
-        line: 'dw',
-        costPath: 'system.cost.dw.requisition',
-        walletPath: 'system.requisition',
-    },
-    infamy: { label: 'WH40K.Currency.Infamy', abbreviation: 'Ifm', line: 'bc', costPath: 'system.cost.bc.infamy', walletPath: 'system.infamy' },
     logistics: {
         label: 'WH40K.Currency.Logistics',
         abbreviation: 'Log',

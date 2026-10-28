@@ -6,21 +6,7 @@ import { type AptitudeDerivation, type AptitudeGrantSource, collectGrantedAptitu
 import { parseCharacteristicBonusTerm } from '../shared/characteristic-formula.ts';
 import { experienceBalance } from '../shared/experience-math.ts';
 import { originStepLabel } from '../shared/origin-steps.ts';
-import { bcDaemonPrinceSchemaFields, type BcDaemonPrinceDeclarations } from './mixins/bc-daemon-prince-template.ts';
-import { bcGiftsSchemaFields, type BcGiftsDeclarations } from './mixins/bc-gifts-template.ts';
-import { bcPsychicSchemaFields, type BcPsychicDeclarations } from './mixins/bc-psychic-template.ts';
-import { bcRitualSchemaFields, type BcRitualDeclarations } from './mixins/bc-ritual-template.ts';
-import { bcSupplementsSchemaFields, type BcSupplementsDeclarations } from './mixins/bc-supplements-template.ts';
-import { dwAmmoSchemaFields, type DwAmmoDeclarations } from './mixins/dw-ammo-template.ts';
-import { dwAstartesSchemaFields, type DwAstartesDeclarations } from './mixins/dw-astartes-template.ts';
-import { dwCohesionSchemaFields, type DwCohesionDeclarations } from './mixins/dw-cohesion-template.ts';
-import { dwDistinctionSchemaFields, type DwDistinctionDeclarations } from './mixins/dw-distinction-template.ts';
-import { dwMissionSchemaFields, type DwMissionDeclarations } from './mixins/dw-mission-template.ts';
-import { dwModeSchemaFields, type DwModeDeclarations } from './mixins/dw-mode-template.ts';
-import { dwOathSchemaFields, type DwOathDeclarations } from './mixins/dw-oath-template.ts';
-import { dwRenownSchemaFields, type DwRenownDeclarations } from './mixins/dw-renown-template.ts';
-import { dwRequisitionSchemaFields, type DwRequisitionDeclarations } from './mixins/dw-requisition-template.ts';
-import { dwVehicleSchemaFields, type DwVehicleDeclarations } from './mixins/dw-vehicle-template.ts';
+import { cohesionSchemaFields, type CohesionDeclarations } from './mixins/cohesion-template.ts';
 import { owBattlefieldSchemaFields, type OwBattlefieldDeclarations } from './mixins/ow-battlefield-template.ts';
 import { owComradeHealingSchemaFields, type OwComradeHealingDeclarations } from './mixins/ow-comrade-healing-template.ts';
 import { owComradeSchemaFields, type OwComradeDeclarations } from './mixins/ow-comrade-template.ts';
@@ -273,7 +259,7 @@ export default class CharacterData extends CreatureTemplate {
      * The schema slot persists, but `_computeOriginPathEffects` overwrites it on
      * every prepare — editing or clearing the stored array has no lasting effect
      * (#381). The universal General aptitude is injected by consumers
-     * (`AptitudeBasedSystemConfig`), not stored here.
+     * (`OWSystemConfig`), not stored here.
      */
     declare aptitudes: string[];
     /**
@@ -361,27 +347,13 @@ export default class CharacterData extends CreatureTemplate {
             // engine. The matching `*Declarations` interface is merged
             // into CharacterData below the class so the compiler narrows
             // `system.<slot>` without per-field repetition.
-            ...bcPsychicSchemaFields(),
-            ...dwAstartesSchemaFields(),
-            ...dwCohesionSchemaFields(),
-            ...dwModeSchemaFields(),
-            ...dwRenownSchemaFields(),
-            ...dwRequisitionSchemaFields(),
+            ...cohesionSchemaFields(),
             ...owComradeSchemaFields(),
             ...owLogisticsSchemaFields(),
             ...owOrdersSchemaFields(),
             ...owRegimentSchemaFields(),
 
             // Batch-2 engine slots (BC #179-#182, DW #168-#172, OW #155).
-            ...bcDaemonPrinceSchemaFields(),
-            ...bcGiftsSchemaFields(),
-            ...bcRitualSchemaFields(),
-            ...bcSupplementsSchemaFields(),
-            ...dwAmmoSchemaFields(),
-            ...dwDistinctionSchemaFields(),
-            ...dwMissionSchemaFields(),
-            ...dwOathSchemaFields(),
-            ...dwVehicleSchemaFields(),
             ...owMissionGearSchemaFields(),
 
             // Batch-3 engine slots (OW #156, #157).
@@ -1331,25 +1303,11 @@ export default class CharacterData extends CreatureTemplate {
  */
 /* eslint-disable @typescript-eslint/no-empty-object-type, @typescript-eslint/no-unsafe-declaration-merging -- declaration-merging target: all members come from the extends list; intentional merge with the class above */
 export default interface CharacterData
-    extends BcPsychicDeclarations,
-        DwAstartesDeclarations,
-        DwCohesionDeclarations,
-        DwModeDeclarations,
-        DwRenownDeclarations,
-        DwRequisitionDeclarations,
+    extends CohesionDeclarations,
         OwComradeDeclarations,
         OwLogisticsDeclarations,
         OwOrdersDeclarations,
         OwRegimentDeclarations,
-        BcDaemonPrinceDeclarations,
-        BcGiftsDeclarations,
-        BcRitualDeclarations,
-        BcSupplementsDeclarations,
-        DwAmmoDeclarations,
-        DwDistinctionDeclarations,
-        DwMissionDeclarations,
-        DwOathDeclarations,
-        DwVehicleDeclarations,
         OwMissionGearDeclarations,
         OwVehicleMovementDeclarations,
         OwComradeHealingDeclarations,

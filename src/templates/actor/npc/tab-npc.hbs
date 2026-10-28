@@ -44,11 +44,6 @@
     </div>
     {{/if}}
 
-    {{!-- ═══ IM STATBLOCK (#im) — resolve / crit wounds / encounter / skills / attacks / traits / possessions ═══ --}}
-    {{#if isIM}}
-    {{> systems/wh40k-rpg/templates/actor/panel/im-statblock-panel.hbs}}
-    {{/if}}
-
     {{!-- ═══ HORDE ═══ --}}
     <div class="wh40k-panel">
       <div class="wh40k-panel-header">
@@ -239,14 +234,6 @@
         </div>
       </div>
     </div>
-    {{/if}}
-
-    {{!-- DW Vehicle Crit / Repair panel (#170). Hostile gun-wagons /
-         transports persist Integrity + over-Integrity; gated on `isDW`
-         (set by CharacterSheet._prepareContext via _resolveGameSystemId,
-         inherited by NPCSheet). --}}
-    {{#if isDW}}
-      {{> systems/wh40k-rpg/templates/actor/panel/dw-vehicle-panel.hbs vehiclePanel=vehiclePanel}}
     {{/if}}
 
   </div>

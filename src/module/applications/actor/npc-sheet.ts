@@ -8,7 +8,6 @@
 
 import type { GameSystemId, SidebarHeaderField } from '../../config/game-systems/types.ts';
 import type { WH40KNPC } from '../../documents/npc.ts';
-import { hasDaemonic } from '../../rules/daemonic-immunities.ts';
 import { getInteractionCap } from '../../rules/disposition.ts';
 import { resolveSenses, senseBearersOf, tokenSensesUpdate } from '../../rules/token-senses.ts';
 import { tokenPresetFromActor } from '../../utils/token-footprint.ts';
@@ -370,11 +369,6 @@ export default class NPCSheet extends CharacterSheet {
         // so the panel keeps rendering for them.
         const npcTier = this.npcActor.system.tier;
         context['npcFateHidden'] = !(npcTier === 'elite' || npcTier === 'master');
-
-        // Daemonic immunities header badge (#143 — DH2 Errata L69-73).
-        // Surfaces a crimson skull pill above the sidebar-fields panel when
-        // the actor carries the Daemonic trait (matched by identifier).
-        context['isDaemonic'] = hasDaemonic(this.actor);
 
         // Header + NPC-tab additions
         context['threatTier'] = this.npcActor.system.threatTier;

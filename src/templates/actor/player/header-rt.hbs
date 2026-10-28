@@ -1,9 +1,0 @@
-{{!-- Rogue Trader Character Sheet Header.
-     Per-system entry file (referenced by the `headerFile` mapping in
-     `game-system-sheets.ts`). Delegates to the shared `header-sidebar`
-     partial — the single source of truth for the sidebar header body. Kept
-     as a separate file so the `headerFile` mapping and any future
-     RT-specific divergence stay opt-in per-system; the `isDaemonic` guard
-     inside the shared partial is harmless (a no-op) for RT. --}}
-
-{{> systems/wh40k-rpg/templates/actor/player/header-sidebar.hbs}}

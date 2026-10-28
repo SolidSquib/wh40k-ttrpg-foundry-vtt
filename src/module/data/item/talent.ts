@@ -6,22 +6,17 @@ import IdentifierField from '../fields/identifier-field.ts';
 import DescriptionTemplate from '../shared/description-template.ts';
 import ModifiersTemplate from '../shared/modifiers-template.ts';
 import RerollTemplate from '../shared/reroll-template.ts';
-import SubtletyAdjusterTemplate from '../shared/subtlety-adjuster-template.ts';
-import type { SubtletyAdjusterKind } from '../shared/subtlety-adjuster.ts';
 
 /**
  * Data model for Talent items.
  * @extends ItemDataModel
  * @mixes DescriptionTemplate
  * @mixes ModifiersTemplate
- * @mixes SubtletyAdjusterTemplate
  * @mixes RerollTemplate
  */
-export default class TalentData extends ItemDataModel.mixin(DescriptionTemplate, ModifiersTemplate, SubtletyAdjusterTemplate, RerollTemplate) {
+export default class TalentData extends ItemDataModel.mixin(DescriptionTemplate, ModifiersTemplate, RerollTemplate) {
     // Typed property declarations matching defineSchema()
     declare identifier: string;
-    // From SubtletyAdjusterTemplate (mixin static type does not surface it).
-    declare subtletyAdjuster?: { kind: SubtletyAdjusterKind; delta: number; minAbsoluteDelta: number; requiresEquipped: boolean };
     // From RerollTemplate (mixin static type does not surface it).
     declare reroll: {
         enabled: boolean;

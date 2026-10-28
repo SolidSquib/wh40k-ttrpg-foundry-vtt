@@ -3,7 +3,6 @@ import { DEAD_STATUS_ID, SYSTEM_ID, UNCONSCIOUS_STATUS_ID } from '../constants.t
 import { applyEffectiveCharacteristicFields, computeCharacteristicTotals } from '../data/shared/characteristic-math.ts';
 import { isEffectSuppressedByEquipState, isWeaponAttackBlockedByEquip } from '../data/shared/equip-state.ts';
 import { computeMovement } from '../data/shared/movement-math.ts';
-import { type RawSubtletyAdjuster, subtletyAdjusterEffectOf } from '../data/shared/subtlety-adjuster.ts';
 import type D100Roll from '../dice/d100-roll.ts';
 import { toCamelCase } from '../handlebars/handlebars-helpers.ts';
 import { t } from '../i18n/t.ts';
@@ -14,30 +13,17 @@ import { type AddictionTier, resolveAddictionCheck } from '../rules/addiction.ts
 import { bearerLine, conditionEffectData } from '../rules/condition-registry.ts';
 import { clampDisposition } from '../rules/disposition.ts';
 import { ARMED_TEST_HOOKS_FLAG, endBearerTurnForArmedHooks, readArmedTestHooks } from '../rules/dynamic-modifiers.ts';
-import { ENCOUNTER_GRANT_FLAG } from '../rules/fanatic.ts';
 import { getFatigueAfterRest, isFatigueDeath, isFatigueUnconscious } from '../rules/fatigue.ts';
 import { clampFearRating, getFearTestPenalty } from '../rules/fear.ts';
 import { resolveEscapePinningTest, resolvePinningTest } from '../rules/pinning.ts';
 import { type PortraitActorLike, rerollSpawnPortrait, togglePinnedIndex } from '../rules/portrait-spawn.ts';
 import { type RerollOption, type RerollRollContext, type RerollSpec, rerollApplies, rerollLedgerKey, rerollUseAvailable } from '../rules/reroll.ts';
-import {
-    type DesiredSubtletyAdjusterEffect,
-    desiredSubtletyAdjusterEffects,
-    type ExistingSubtletyAdjusterEffect,
-    planSubtletyAdjusterEffects,
-    type SubtletyAdjusterEffectPlan,
-    SUBTLETY_EFFECT_FLAG_KEY,
-    SUBTLETY_EFFECT_FLAG_SCOPE,
-    SUBTLETY_EFFECT_ICON,
-} from '../rules/subtlety-adjuster-effects.ts';
-import { type CollectedAdjuster, clampSubtletyLoss, isSubtletyPrimitive, type SubtletySourceRef } from '../rules/subtlety-adjusters.ts';
 import { weaponFireBlockReason } from '../rules/weapon-jam.ts';
 import { isRecharging, type RechargeMark } from '../rules/weapon-recharge.ts';
 import type { WH40KActorSystemData, WH40KCharacteristic, WH40KModifierEntry, WH40KSkill, WH40KStatBreakdown } from '../types/global.d.ts';
 import { firstSystemId } from '../utils/chat-system-id.ts';
 import { materializeOwnedItemSources } from '../utils/item-variant-utils.ts';
 import { handleTalentRemoval, processTalentGrants } from '../utils/talent-grants.ts';
-import { uuidNameCache } from '../utils/uuid-name-cache.ts';
 import { WH40KSettings } from '../wh40k-rpg-settings.ts';
 import { isActorWritable } from './actor-liveness.ts';
 import type { WH40KItem } from './item.ts';
@@ -494,206 +480,6 @@ export class WH40KBaseActor extends Actor {
     }
 
     /**
-     * Tree-walk the actor's owned items (origin-path steps are materialized as
-     * `originPath` items, so this covers homeworld clamps too) and collect
-     * every Subtlety adjuster declared on a governing compendium entry.
-     *
-     * Mechanic values come straight from each item's `system.subtletyAdjuster`
-     * (authored on the compendium document, kept current on owned items by the
-     * boot-time compendium→world resync). Nothing is hardcoded here per
-     * CLAUDE.md Direction #7. `passive` adjusters that require an equipped
-     * carrier (e.g. a Daemon Weapon) are only collected while wielded.
-     */
-    collectSubtletyAdjusters(): CollectedAdjuster[] {
-        const out: CollectedAdjuster[] = [];
-        for (const item of this.items) {
-            // eslint-disable-next-line no-restricted-syntax -- boundary: subtletyAdjuster/equipped live on specific item DataModels; the mixin static type is not surfaced through SystemDataModel.mixin
-            const sys = item.system as { subtletyAdjuster?: RawSubtletyAdjuster; state?: { equipped?: boolean } } | undefined;
-            const effect = subtletyAdjusterEffectOf(sys?.subtletyAdjuster);
-            if (effect === null) continue;
-            // If `requiresEquipped` is set, the carrier item must expose an
-            // explicit `equipped: true`. Items that don't declare an
-            // `equipped` field at all (e.g. talents) are treated as
-            // always-on, so they pass this gate when the adjuster does not
-            // require equipping.
-            if (effect.kind === 'passive' && effect.requiresEquipped && !('equipped' in (sys?.state ?? {}) && sys?.state?.equipped === true)) continue;
-            const sourceUuid = WH40KBaseActor.#compendiumSourceUuidOf(item);
-            out.push({
-                sourceUuid,
-                primitive: null,
-                // Owned-item name mirrors the compendium document (resync keeps
-                // it synced); never a hardcoded string.
-                label: item.name,
-                kind: effect.kind,
-                delta: effect.delta,
-                minAbsoluteDelta: effect.minAbsoluteDelta,
-            });
-        }
-        return out;
-    }
-
-    /** Compendium-source UUID an owned item was created from, or `null`. */
-    static #compendiumSourceUuidOf(item: WH40KItem): string | null {
-        // eslint-disable-next-line no-restricted-syntax -- boundary: _stats is Foundry-managed document metadata not in our schema
-        const stats = (item as { _stats?: { compendiumSource?: string | null } })._stats;
-        const src = stats?.compendiumSource;
-        return typeof src === 'string' && src.length > 0 ? src : null;
-    }
-
-    /**
-     * Resolve a Subtlety attribution to a display label. Content sources
-     * resolve to the live compendium document name (single source of truth,
-     * via the owned item or `uuidNameCache`); non-content primitives resolve
-     * to their langpack string OUTSIDE the content namespace.
-     */
-    subtletySourceLabel(ref: SubtletySourceRef): string {
-        if (isSubtletyPrimitive(ref)) {
-            return ref === 'manual' ? t('WH40K.Subtlety.ManualAdjustment') : t('WH40K.Subtlety.Inquest');
-        }
-        const found = this.collectSubtletyAdjusters().find((a) => a.sourceUuid === ref);
-        return found?.label ?? uuidNameCache.getName(ref);
-    }
-
-    /**
-     * Adjust the actor's Subtlety pool (DH2-only, core.md §"Influence
-     * And Subtlety"). Positive amounts raise the warband's subtlety;
-     * negative amounts (most common, since missions usually erode it)
-     * lower it. Clamps at 0..max.
-     *
-     * Any "resist Subtlety loss" clamp the actor carries (e.g. Quarantine
-     * World, Enemies Beyond p. 30) is applied to losses first — discovered by
-     * tree-walking owned items, with the minimum retained loss read from the
-     * governing compendium entry rather than hardcoded.
-     *
-     * @param source Optional attribution: a compendium UUID (label resolved
-     *   from the live document) or a non-content primitive. Stored on
-     *   `flags.wh40k-rpg.lastSubtletySource` so the activity-log layer can
-     *   group entries by cause.
-     */
-    async applySubtlety(amount: number, source?: SubtletySourceRef): Promise<void> {
-        if (!Number.isFinite(amount) || amount === 0) return;
-        // Subtlety is a single warband-wide, world-scoped pool (#64), DH2-only.
-        // The current value mirrors that world setting on `system.subtlety.value`
-        // (see CharacterData#_syncWarbandSubtlety); the actor's own carried clamps
-        // still shape how far THIS player's action moves the shared pool.
-        // eslint-disable-next-line no-restricted-syntax -- boundary: subtlety + gameSystem live on character.ts only
-        const system = this.system as { subtlety?: { value: number; max: number }; gameSystem?: string };
-        const subtlety = system.subtlety;
-        if (!subtlety || system.gameSystem !== 'dh2') return;
-        let delta = Math.trunc(amount);
-        if (delta < 0) {
-            for (const adj of this.collectSubtletyAdjusters()) {
-                if (adj.kind === 'clamp' && adj.minAbsoluteDelta > 0) {
-                    delta = clampSubtletyLoss(delta, adj.minAbsoluteDelta);
-                }
-            }
-        }
-        if (delta === 0) return;
-        // Base the new pool on the LIVE world setting, not system.subtlety.value:
-        // that field is a per-actor mirror only re-synced on prep, so two
-        // applySubtlety calls within a single tick (no re-prep between) would both
-        // compute from the same stale baseline and lose one delta. The setting is
-        // the source of truth and reflects the prior call immediately.
-        const current = WH40KSettings.getWarbandSubtlety();
-        const next = Math.max(0, Math.min(subtlety.max, current + delta));
-        // Persist to the shared world setting: it propagates to every connected
-        // client and its onChange re-renders open sheets so all acolytes show the
-        // same pool. Attribution stays on the acting actor's flag for the
-        // activity-log layer.
-        await WH40KSettings.setWarbandSubtlety(next);
-        if (source !== undefined) await this.update({ 'flags.wh40k-rpg.lastSubtletySource': source });
-    }
-
-    /**
-     * Apply the one-shot Subtlety hit declared by a compendium-backed source
-     * the actor owns (e.g. a Dark Pact talent being discovered). The delta is
-     * read from that entry's `subtletyAdjuster` (`kind: 'event'`) and scaled
-     * by `scale`. `passive` and `clamp` adjusters are NOT applied here — they
-     * are standing effects surfaced by `collectSubtletyAdjusters()` for
-     * display/aggregation, applying them as one-shots would double-count.
-     */
-    async applySubtletyFromSource(sourceUuid: string, scale = 1): Promise<void> {
-        const adj = this.collectSubtletyAdjusters().find((a) => a.sourceUuid === sourceUuid);
-        if (adj?.kind !== 'event') return;
-        const delta = Math.trunc(adj.delta * scale);
-        if (delta === 0) return;
-        await this.applySubtlety(delta, sourceUuid);
-    }
-
-    /**
-     * Reconcile the actor's standing Subtlety adjusters into display-only
-     * Foundry ActiveEffects so they appear in the sheet's Active Effects
-     * section (DH2-only — issue #391). One effect per governing source (e.g.
-     * the Quarantine World loss clamp); each carries NO `changes`, so the pool
-     * math stays single-sourced in `applySubtlety` / `clampSubtletyLoss` and is
-     * never double-applied.
-     *
-     * Idempotent: effects whose source is still owned are left untouched,
-     * effects whose source is gone are removed, and missing ones are created.
-     * Called from the owned-item descendant hooks under a single-writer guard.
-     */
-    async syncSubtletyAdjusterEffects(): Promise<void> {
-        // eslint-disable-next-line no-restricted-syntax -- boundary: gameSystem lives on character.ts only
-        if ((this.system as { gameSystem?: string }).gameSystem !== 'dh2') return;
-        // Fire-and-forget off the descendant hooks, so the actor can already be
-        // on its way out by the time this runs — see documents/actor-liveness.ts.
-        if (!isActorWritable(this)) return;
-
-        const desired = desiredSubtletyAdjusterEffects(this.collectSubtletyAdjusters());
-        const existing: ExistingSubtletyAdjusterEffect[] = [];
-        for (const effect of this.effects) {
-            // ActiveEffect#getFlag's scope union excludes our system id, so read the
-            // per-module flag bag directly (boundary: effect.flags is untyped).
-            const flag = (effect.flags as { 'wh40k-rpg'?: { subtletyAdjuster?: { sourceKey?: string } } })[SUBTLETY_EFFECT_FLAG_SCOPE]?.[
-                SUBTLETY_EFFECT_FLAG_KEY
-            ];
-            if (typeof flag?.sourceKey === 'string' && typeof effect.id === 'string') {
-                existing.push({ id: effect.id, sourceKey: flag.sourceKey });
-            }
-        }
-
-        const plan: SubtletyAdjusterEffectPlan = planSubtletyAdjusterEffects(desired, existing);
-        if (plan.toDeleteIds.length > 0) {
-            await this.deleteEmbeddedDocuments('ActiveEffect', plan.toDeleteIds);
-        }
-        if (plan.toCreate.length > 0) {
-            // The delete above is a socket round-trip; re-check rather than
-            // dispatch a create at an actor that went away during it.
-            if (!isActorWritable(this)) return;
-            const data = plan.toCreate.map((descriptor) => WH40KBaseActor.#subtletyEffectCreateData(descriptor));
-            // eslint-disable-next-line no-restricted-syntax -- boundary: createEmbeddedDocuments accepts Foundry's untyped embedded-document create schema
-            await this.createEmbeddedDocuments('ActiveEffect', data as unknown as Parameters<typeof this.createEmbeddedDocuments<'ActiveEffect'>>[1]);
-        }
-    }
-
-    /** Build the Foundry ActiveEffect create payload for a derived descriptor. */
-    static #subtletyEffectCreateData(descriptor: DesiredSubtletyAdjusterEffect): {
-        name: string;
-        icon: string;
-        description: string;
-        changes: never[];
-        disabled: boolean;
-        transfer: boolean;
-        flags: { 'wh40k-rpg': { subtletyAdjuster: { sourceKey: string } } };
-    } {
-        const description =
-            descriptor.kind === 'clamp'
-                ? t('WH40K.SubtletyPanel.EffectClampDescription', { value: descriptor.minAbsoluteDelta })
-                : t('WH40K.SubtletyPanel.EffectPassiveDescription', { value: descriptor.delta });
-        return {
-            name: descriptor.name,
-            icon: SUBTLETY_EFFECT_ICON,
-            description,
-            // No `changes`: this effect is display-only, so it never modifies the
-            // Subtlety pool — the math stays sourced from applySubtlety.
-            changes: [],
-            disabled: false,
-            transfer: false,
-            flags: { [SUBTLETY_EFFECT_FLAG_SCOPE]: { [SUBTLETY_EFFECT_FLAG_KEY]: { sourceKey: descriptor.sourceKey } } },
-        };
-    }
-
-    /**
      * Adjust an NPC's disposition toward the warband (core.md §"Disposition").
      * Clamps at the −3..+3 range. The reason is informational only; an
      * audit log would be a separate sheet feature.
@@ -735,9 +521,6 @@ export class WH40KBaseActor extends Actor {
                         }, 100);
                     }
                 }
-                // Surface any standing Subtlety adjuster the new item carries
-                // (e.g. the Quarantine World loss clamp) as an ActiveEffect (#391).
-                void this.syncSubtletyAdjusterEffects();
             }
         }
     }
@@ -748,14 +531,9 @@ export class WH40KBaseActor extends Actor {
      */
     protected override _onUpdateDescendantDocuments(...args: Actor.OnUpdateDescendantDocumentsArgs): void {
         super._onUpdateDescendantDocuments(...args);
-        const [, collection, , , , userId] = args;
+        const [, collection] = args;
         if (collection === 'items') {
             this._onItemsChanged();
-            // An equip toggle can switch a `requiresEquipped` passive adjuster
-            // on or off, so re-reconcile its display-only effect (#391).
-            if (game.user.id === userId) {
-                void this.syncSubtletyAdjusterEffects();
-            }
         }
     }
 
@@ -782,11 +560,6 @@ export class WH40KBaseActor extends Actor {
         super._onDeleteDescendantDocuments(...args);
         if (collection === 'items') {
             this._onItemsChanged();
-            // Removing the source item (e.g. a home-world origin step) must
-            // retire its display-only Subtlety effect (#391).
-            if (game.user.id === userId) {
-                void this.syncSubtletyAdjusterEffects();
-            }
         }
     }
 
@@ -928,8 +701,8 @@ export class WH40KBaseActor extends Actor {
      * field) applies only while that item is equipped. Effects on the actor
      * itself and on always-on items (talents / traits / conditions / origin
      * paths) are unaffected. This makes Foundry's native effect transfer follow
-     * the same rule already enforced for item stat modifiers (creature template)
-     * and passive Subtlety adjusters (collectSubtletyAdjusters), so unequipping
+     * the same rule already enforced for item stat modifiers (creature template),
+     * so unequipping
      * a piece of gear removes its bonuses and re-equipping restores them.
      *
      * `applyActiveEffects()` (invoked from the super `prepareData`) consumes this
@@ -1162,13 +935,9 @@ export class WH40KBaseActor extends Actor {
 
     /**
      * Clear the state that lasts only for one encounter, called when the
-     * encounter Combat is deleted: items granted for the encounter (the Hatred
-     * a Fanatic's "Death to All Who Oppose Me!" confers against his foe) and
-     * any `onDamaged` test hooks still armed (Penitent's Cleansing Pain).
+     * encounter Combat is deleted: any `onDamaged` test hooks still armed.
      */
     async clearEncounterScopedState(): Promise<void> {
-        const grantIds = this.items.filter((item) => item.getFlag(SYSTEM_ID, ENCOUNTER_GRANT_FLAG) === true).map((item) => item.id);
-        if (grantIds.length > 0) await this.deleteEmbeddedDocuments('Item', grantIds);
         if (this.getFlag(SYSTEM_ID, ARMED_TEST_HOOKS_FLAG) !== undefined) await this.unsetFlag(SYSTEM_ID, ARMED_TEST_HOOKS_FLAG);
     }
 

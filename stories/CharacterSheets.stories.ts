@@ -62,7 +62,7 @@ function buildPlayerArgs(systemId: GameSystemId): CharacterSheetArgs {
 }
 
 function buildNpcArgs(): CharacterSheetArgs {
-    return mockNpcSheetContext({ systemId: 'im' });
+    return mockNpcSheetContext({ systemId: 'ow' });
 }
 
 function renderCharacterSheet(args: CharacterSheetArgs, bodyTemplate: HandlebarsTemplateDelegate): HTMLElement {
@@ -87,8 +87,8 @@ const meta: Meta<CharacterSheetArgs> = {
 export default meta;
 type Story = StoryObj<CharacterSheetArgs>;
 
-export const DarkHeresy2Biography: Story = {
-    args: buildPlayerArgs('dh2'),
+export const OnlyWarBiography: Story = {
+    args: buildPlayerArgs('ow'),
     render: (args) => renderCharacterSheet(args, biographyTemplate),
     play: async ({ canvasElement }) => {
         const queries = within(canvasElement);
@@ -98,18 +98,8 @@ export const DarkHeresy2Biography: Story = {
     },
 };
 
-export const ImperiumMaledictumBiography: Story = {
-    args: buildPlayerArgs('im'),
-    render: (args) => renderCharacterSheet(args, biographyTemplate),
-    play: async ({ canvasElement }) => {
-        const queries = within(canvasElement);
-        await expect(queries.getByDisplayValue('House Varonius')).toBeVisible();
-        await expect(queries.getByDisplayValue('Recover a lost ledger')).toBeVisible();
-    },
-};
-
-export const ImperiumMaledictumNpc: Story = {
-    name: 'Imperium Maledictum NPC',
+export const OnlyWarNpc: Story = {
+    name: 'Only War NPC',
     args: buildNpcArgs(),
     render: (args) => renderCharacterSheet(args, npcTemplate),
     play: async ({ canvasElement }) => {

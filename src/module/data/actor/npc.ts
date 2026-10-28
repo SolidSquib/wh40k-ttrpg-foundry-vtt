@@ -25,7 +25,6 @@ import { computeMovement } from '../shared/movement-math.ts';
 import { skillCharacteristicMap, standardSkillsForSystem, type StandardSkillEntry } from '../shared/skill-definitions.ts';
 import { computeSkillTarget, untrainedSkillBase } from '../shared/skill-math.ts';
 import { characteristicField, initiativeField, movementField, sizeField, woundsField } from '../shared/stat-fields.ts';
-import { dwVehicleSchemaFields, type DwVehicleDeclarations } from './mixins/dw-vehicle-template.ts';
 import HordeTemplate, { type HordeData } from './mixins/horde-template.ts';
 import { owVehicleMovementSchemaFields, type OwVehicleMovementDeclarations } from './mixins/ow-vehicle-movement-template.ts';
 import type { NpcArmour } from './npc-armour-edit.ts';
@@ -115,7 +114,7 @@ interface NPCTrainedSkillRow {
 /**
  * The advancement-pricing capability {@link NPCData._prepareAdvancement} needs.
  *
- * Declared structurally rather than importing `AptitudeBasedSystemConfig` as a
+ * Declared structurally rather than importing `OWSystemConfig` as a
  * value: that class reaches into the documents/applications layers, so a direct
  * import pulls a cycle back into the DataModel layer (`no-circular`). The model
  * depends on the capability, not the class — career-based lines (RT/DH1) simply do
@@ -359,13 +358,6 @@ export default class NPCData extends HordeTemplate(ActorDataModel) {
     static override defineSchema(): Record<string, foundry.data.fields.DataField.Any> {
         return {
             ...super.defineSchema(),
-
-            // ===== ENGINE MIXIN SCHEMA SLOTS (batch-2) =====
-            // DW Vehicle Crit (#170) applies to BOTH CharacterData and NPCData
-            // so hostile gun-wagons / transports persist the Integrity + over-
-            // Integrity pair. The DwVehicleDeclarations interface is merged
-            // onto NPCData below the class.
-            ...dwVehicleSchemaFields(),
 
             // OW Vehicle Movement (#156) — chase tracker slot, NPC drivers too.
             ...owVehicleMovementSchemaFields(),
@@ -1596,4 +1588,4 @@ export default class NPCData extends HordeTemplate(ActorDataModel) {
  * vehicles persist Integrity + over-Integrity for crit-table lookups.
  */
 /* eslint-disable @typescript-eslint/no-empty-object-type, @typescript-eslint/no-unsafe-declaration-merging -- declaration-merging target: all members come from the extends list; intentional merge with the class above */
-export default interface NPCData extends DwVehicleDeclarations, OwVehicleMovementDeclarations {}
+export default interface NPCData extends OwVehicleMovementDeclarations {}

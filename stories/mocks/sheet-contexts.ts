@@ -105,15 +105,9 @@ export interface SheetContextLike {
     [key: string]: unknown;
 }
 
-/** Per-system `withSystem` accepts `'dh2'`/`'dh1'` etc., the registry uses `'dh2'`/`'dh1'`. */
+/** Maps a registry system id onto the `withSystem` mock id. */
 const SYSTEM_ID_TO_WITH_SYSTEM: Record<GameSystemId, SystemId> = {
-    rt: 'rt',
-    dh1: 'dh1',
-    dh2: 'dh2',
-    bc: 'bc',
     ow: 'ow',
-    dw: 'dw',
-    im: 'im',
 };
 
 // ── i18n stub ───────────────────────────────────────────────────────────────
@@ -176,9 +170,9 @@ function ensureGameI18nStub(): void {
  * both contexts (no tests assert step count).
  */
 function defaultOriginPathSteps(systemId: GameSystemId): OriginPathStep[] {
-    const homeWorld = systemId === 'im' ? 'House Varonius' : 'Hive World';
-    const background = systemId === 'im' ? 'Administratum' : 'Adeptus Administratum';
-    const role = systemId === 'im' ? 'Savant' : 'Seeker';
+    const homeWorld = 'Hive World';
+    const background = 'Adeptus Administratum';
+    const role = 'Seeker';
     return [
         { label: 'Home World', icon: 'fa-globe', item: { _id: randomId('origin'), img: 'icons/svg/book.svg', name: homeWorld } },
         { label: 'Background', icon: 'fa-scroll', item: { _id: randomId('origin'), img: 'icons/svg/book.svg', name: background } },
@@ -219,9 +213,8 @@ function defaultBiography(): SheetBiographyContext {
  * regardless of which system config consumes its `system.originPath`.
  */
 function defaultSystemActorOverrides(systemId: GameSystemId): MockActorInput {
-    const isIM = systemId === 'im';
     return {
-        name: isIM ? 'Interrogator Hale' : 'Acolyte Vex',
+        name: 'Acolyte Vex',
         system: {
             bio: {
                 playerName: 'Player One',
@@ -230,10 +223,10 @@ function defaultSystemActorOverrides(systemId: GameSystemId): MockActorInput {
                 description: '',
             },
             originPath: {
-                homeWorld: isIM ? 'House Varonius' : 'Hive World',
-                background: isIM ? 'Administratum' : 'Imperial Guard',
-                role: isIM ? 'Savant' : 'Warrior',
-                motivation: isIM ? 'Recover a lost ledger' : 'Duty',
+                homeWorld: 'Hive World',
+                background: 'Imperial Guard',
+                role: 'Warrior',
+                motivation: 'Duty',
                 trialsAndTravails: '',
                 career: 'Adept',
                 divination: 'A clean lasgun outlasts a clever plan.',
@@ -262,7 +255,7 @@ export interface PlayerSheetContextOptions {
  */
 export function mockPlayerSheetContext(opts: PlayerSheetContextOptions = {}): SheetContextLike {
     ensureGameI18nStub();
-    const systemId: GameSystemId = opts.systemId ?? 'dh2';
+    const systemId: GameSystemId = opts.systemId ?? 'ow';
     const activeTab = opts.activeTab ?? 'biography';
 
     const baseOverrides = defaultSystemActorOverrides(systemId);
@@ -351,7 +344,7 @@ const NPC_DEFAULT_HORDE = {
  */
 export function mockNpcSheetContext(opts: NpcSheetContextOptions = {}): SheetContextLike {
     ensureGameI18nStub();
-    const systemId: GameSystemId = opts.systemId ?? 'im';
+    const systemId: GameSystemId = opts.systemId ?? 'ow';
     const activeTab = opts.activeTab ?? 'npc';
 
     const baseActor = {
@@ -424,7 +417,7 @@ export type { GameSystemId };
 
 export function mockVehicleSheetContext(opts: VehicleSheetContextOptions = {}): SheetContextLike {
     ensureGameI18nStub();
-    const systemId: GameSystemId = opts.systemId ?? 'dh2';
+    const systemId: GameSystemId = opts.systemId ?? 'ow';
 
     const baseActor = mockActor({
         _id: `vehicle-${systemId}`,
@@ -449,52 +442,6 @@ export function mockVehicleSheetContext(opts: VehicleSheetContextOptions = {}): 
             { tab: 'crew', group: 'primary', label: 'Crew', cssClass: 'tab-crew', active: false },
         ],
         tab: { id: 'overview', group: 'primary', cssClass: 'tab-overview', active: true },
-        headerFields: [],
-        originPathComplete: false,
-        originPathSteps: [],
-        ...(opts.contextOverrides ?? {}),
-    };
-    return context;
-}
-
-export interface StarshipSheetContextOptions {
-    systemId?: GameSystemId;
-    actorOverrides?: MockActorInput;
-    contextOverrides?: Partial<SheetContextLike>;
-}
-
-/**
- * Starship sheet context (Rogue Trader). Same chrome shape as the vehicle
- * stub; the per-system divergence lives in the template.
- */
-export function mockStarshipSheetContext(opts: StarshipSheetContextOptions = {}): SheetContextLike {
-    ensureGameI18nStub();
-    const systemId: GameSystemId = opts.systemId ?? 'rt';
-
-    const baseActor = mockActor({
-        _id: `starship-${systemId}`,
-        name: 'Sword of Terra',
-        type: 'starship',
-        ...(opts.actorOverrides ?? {}),
-    });
-    // Starships piggyback on the vehicle role in withSystem (no dedicated kind yet).
-    const actor = withSystem(baseActor, SYSTEM_ID_TO_WITH_SYSTEM[systemId], 'vehicle');
-
-    const context: SheetContextLike = {
-        actor: actor as SheetContextLike['actor'],
-        system: actor.system,
-        source: actor.system,
-        editable: true,
-        inEditMode: false,
-        isGM: true,
-        isNPC: false,
-        biography: defaultBiography(),
-        journalEntries: [],
-        tabs: [
-            { tab: 'bridge', group: 'primary', label: 'Bridge', cssClass: 'tab-bridge', active: true },
-            { tab: 'components', group: 'primary', label: 'Components', cssClass: 'tab-components', active: false },
-        ],
-        tab: { id: 'bridge', group: 'primary', cssClass: 'tab-bridge', active: true },
         headerFields: [],
         originPathComplete: false,
         originPathSteps: [],

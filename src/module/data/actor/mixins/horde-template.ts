@@ -1,5 +1,5 @@
 import type { WH40KBaseActor } from '../../../documents/base-actor.ts';
-import { bonusDamageDiceForMagnitude, getHordeTier, toHitBonusForMagnitude } from '../../../rules/dw-horde-magnitude.ts';
+import { bonusDamageDiceForMagnitude, getHordeTier, toHitBonusForMagnitude } from '../../../rules/horde-magnitude.ts';
 
 const { SchemaField, NumberField, BooleanField, ArrayField, StringField } = foundry.data.fields;
 

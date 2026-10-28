@@ -34,7 +34,6 @@ import {
     useNeedsItemChoice,
 } from '../rules/skill-uses.ts';
 import { shouldSkipSelfTargetDefenderMods } from '../rules/target-situationals.ts';
-import { isWarpWeak, type WarpWeaknessScene } from '../rules/warp-weakness.ts';
 import { shouldDestroyOnCriticalFail, weaponDestroysOnCriticalFail } from '../rules/weapon-destroy.ts';
 import { getJamFloor, shouldJamRoll } from '../rules/weapon-jam.ts';
 import { attackTriggersRecharge } from '../rules/weapon-recharge.ts';
@@ -152,20 +151,6 @@ export class ActionData {
         // No-op default — subclasses (e.g. PsychicActionData) can override
     }
 
-    /**
-     * Warp weakness of the scene the roll happens in (#137). Guarded because rolls
-     * can resolve before the canvas exists (early-boot, headless test runs), where
-     * `game.scenes` is not yet populated — an absent scene is simply not Warp-weak.
-     */
-    #activeSceneWarpWeakness(): boolean {
-        try {
-            // eslint-disable-next-line no-restricted-syntax -- boundary: game.scenes.active is a Foundry Scene document projected onto the local read-surface
-            return isWarpWeak(game.scenes.active as unknown as WarpWeaknessScene | null | undefined);
-        } catch {
-            return false;
-        }
-    }
-
     async checkForPerils(): Promise<void> {
         if (this.rollData.power === undefined) return;
 
@@ -194,7 +179,7 @@ export class ActionData {
             psyForcePhenomena: rd.psyForcePhenomena === true && this.rollData.success,
             psyPhenomenaModifier: rd.psyPhenomenaModifier ?? 0,
             powerPhenomenaModifier,
-            warpWeakness: this.#activeSceneWarpWeakness(),
+            warpWeakness: false,
             // RAW (within.md p. 58) adds +5 per Corruption Point the psyker gained
             // FROM THIS PUSH. That award does not exist anywhere in the system yet —
             // nothing grants CP on a push — and deciding which talent gates it would

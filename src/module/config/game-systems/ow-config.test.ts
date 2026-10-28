@@ -5,7 +5,7 @@ import { OWSystemConfig } from './ow-config.ts';
 /**
  * Only War psyker gating (#424). OW's unlock is the 'Sanctioned Psyker'
  * speciality; `isPsyker` delegates to the shared
- * `BaseSystemConfig.ownsOriginPathItem` helper. These pin the OW branch of the
+ * `OWSystemConfig.ownsOriginPathItem` helper. These pin the OW branch of the
  * de-duplicated predicate — the two-word name plus the case-insensitive match.
  */
 describe('OWSystemConfig: isPsyker (shared origin-path predicate)', () => {

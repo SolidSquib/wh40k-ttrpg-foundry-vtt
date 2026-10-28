@@ -102,12 +102,12 @@ const craftSource = {
 };
 
 const craftSystem = {
-    ...mockVehicleSheetContext({ systemId: 'dh2' }).system,
+    ...mockVehicleSheetContext({ systemId: 'ow' }).system,
     sizeLabel: 'Enormous',
 };
 
 const defaultCraftCtx: SheetContextLike = {
-    ...mockVehicleSheetContext({ systemId: 'dh2' }),
+    ...mockVehicleSheetContext({ systemId: 'ow' }),
     system: craftSystem,
     isCraft: true,
     isTerracraft: true,
@@ -116,7 +116,7 @@ const defaultCraftCtx: SheetContextLike = {
     craftStats,
     crew: { required: 3, notes: '' },
     source: {
-        ...mockVehicleSheetContext({ systemId: 'dh2' }).source,
+        ...mockVehicleSheetContext({ systemId: 'ow' }).source,
         ...craftSource,
     },
 };

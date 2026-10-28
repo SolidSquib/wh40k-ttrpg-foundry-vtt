@@ -6,7 +6,7 @@
  * the origin path builder, detail dialog, choice dialog, and sheets.
  */
 
-import type { BaseSystemConfig } from '../config/game-systems/base-system-config.ts';
+import type { OWSystemConfig } from '../config/game-systems/ow-config.ts';
 import { capitalize } from './format.ts';
 
 /* -------------------------------------------- */
@@ -44,7 +44,7 @@ export function getAllCharacteristicDisplayInfo(): Record<string, { label: strin
  * @param systemConfig - The active system config (optional — falls back to generic labels)
  * @returns Display label (e.g. 'Trained', 'Known', '+10', 'Experienced')
  */
-export function getTrainingLabel(level: string, systemConfig?: BaseSystemConfig): string {
+export function getTrainingLabel(level: string, systemConfig?: OWSystemConfig): string {
     if (systemConfig) {
         const rank = systemConfig.getLocalizedSkillRanks().find((r) => r.key === level);
         if (rank) return rank.tooltip;

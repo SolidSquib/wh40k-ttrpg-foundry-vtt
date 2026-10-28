@@ -1011,9 +1011,9 @@ export default class BaseActorSheet extends BaseActorSheetBase {
      */
     _getSkillTrainingConfig(): Array<{ level: number; key: string; label: string; tooltip: string; bonus: number }> {
         // The actor's own line's ladder; per-system sheet classes install the same
-        // lookup directly (game-system-sheets.ts). RT's career ladder when unresolved.
-        const systemId = firstSystemId(this.actor) ?? 'rt';
-        return (SystemConfigRegistry.getOrNull(systemId) ?? SystemConfigRegistry.get('rt')).getLocalizedSkillRanks();
+        // lookup directly (game-system-sheets.ts). Only War's ladder when unresolved.
+        const systemId = firstSystemId(this.actor) ?? 'ow';
+        return (SystemConfigRegistry.getOrNull(systemId) ?? SystemConfigRegistry.get('ow')).getLocalizedSkillRanks();
     }
 
     /**

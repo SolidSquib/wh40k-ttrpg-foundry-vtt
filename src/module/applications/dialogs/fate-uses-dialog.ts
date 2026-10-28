@@ -3,7 +3,7 @@
  * Fate Point spend options for the active game system. Triggered from the
  * Fate icon on the character sheet (data-action="viewFateUses").
  *
- * The list of uses is sourced from `BaseSystemConfig.getFatePointUses()` so
+ * The list of uses is sourced from `OWSystemConfig.getFatePointUses()` so
  * per-system overrides surface naturally without touching this class.
  *
  * Implements issue #35.
@@ -81,9 +81,9 @@ export default class FateUsesDialog extends HandlebarsApplicationMixin(Applicati
     override async _prepareContext(options: ApplicationV2Config.RenderOptions): Promise<FateUsesContext> {
         const context = await super._prepareContext(options);
         const systemId = this.#config.gameSystem;
-        // Fall back to the DH2e canon if the active actor's game system is unknown.
+        // Fall back to the Only War canon if the active actor's game system is unknown.
         const config = systemId ? SystemConfigRegistry.getOrNull(systemId) : null;
-        const fallback = SystemConfigRegistry.get('dh2');
+        const fallback = SystemConfigRegistry.get('ow');
         const uses = (config ?? fallback).getFatePointUses();
         return {
             ...context,

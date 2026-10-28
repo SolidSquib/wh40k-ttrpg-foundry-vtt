@@ -64,16 +64,6 @@ describe('Status tab removal (#263)', () => {
 describe('Status panels relocated to Overview (#263 — no silent data loss)', () => {
     const relocated = [
         'shock-panel.hbs',
-        'possession-panel.hbs',
-        'subtlety-panel.hbs',
-        'bc-alignment-panel.hbs',
-        'dw-cohesion-panel.hbs',
-        'dw-mode-panel.hbs',
-        'dw-renown-panel.hbs',
-        'dw-requisition-panel.hbs',
-        'dw-oath-panel.hbs',
-        'dw-mission-panel.hbs',
-        'dw-vehicle-panel.hbs',
         'ow-comrade-panel.hbs',
         'ow-logistics-panel.hbs',
         'ow-orders-panel.hbs',
@@ -82,9 +72,6 @@ describe('Status panels relocated to Overview (#263 — no silent data loss)', (
         'ow-comrade-healing-panel.hbs',
         'ow-mount-panel.hbs',
         'ow-battlefield-panel.hbs',
-        'dark-pact-panel.hbs',
-        'fanatic-button.hbs',
-        'crusader-button.hbs',
         'grapple-controller-panel.hbs',
     ];
 

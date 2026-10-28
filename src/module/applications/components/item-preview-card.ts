@@ -187,7 +187,6 @@ export function ItemPreviewMixin<TBase extends ActorSheetCtor>(Base: TBase): TBa
                     content = this.#generateGearPreview(item);
                     break;
                 case 'psychicPower':
-                case 'navigatorPower':
                     content = this.#generatePowerPreview(item);
                     break;
                 default:

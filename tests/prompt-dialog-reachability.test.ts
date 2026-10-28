@@ -139,25 +139,16 @@ describe('every prompt dialog is reachable', () => {
     const reachable = new Set([...reachablePrompts(), ...launcherWired()]);
 
     it('finds the prompt directory (a zero-length scan would pass vacuously)', () => {
-        expect(modules.length).toBeGreaterThan(20);
+        expect(modules.length).toBeGreaterThan(10);
     });
 
-    it('wires the fourteen GM launchers into game.wh40k.prompts', () => {
+    it('wires the GM launchers into game.wh40k.prompts', () => {
         expect([...launcherWired()].sort()).toEqual([
-            'beyond-homeworld-info-dialog',
             'cybernetics-install-dialog',
-            'daemon-weapon-attribute-dialog',
-            'daemonhost-binding-dialog',
             'disorder-roll-dialog',
             'fear-test-dialog',
             'medicae-mechadendrite-dialog',
-            'mutant-background-dialog',
             'mutation-roll-dialog',
-            'radical-services-dialog',
-            'sister-of-battle-dialog',
-            'warp-travel-dialog',
-            'within-homeworld-info-dialog',
-            'without-homeworld-info-dialog',
         ]);
     });
 

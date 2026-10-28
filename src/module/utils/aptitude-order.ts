@@ -3,7 +3,7 @@
  * rest alphabetically.
  *
  * The universal set is content-driven — it comes from the active system's
- * `AptitudeBasedSystemConfig.universalAptitudes` — so "General" is never
+ * `OWSystemConfig.universalAptitudes` — so "General" is never
  * hardcoded here (Direction #7); this helper only knows "universal sorts first".
  */
 export function orderAptitudesGeneralFirst(aptitudes: readonly string[], universal: ReadonlySet<string>): string[] {

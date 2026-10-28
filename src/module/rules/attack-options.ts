@@ -27,10 +27,6 @@ type AttackModeOption = {
     tooltip: string;
     default?: boolean;
     requires?: (weapon: AttackOptionWeapon) => boolean;
-    /** A game line's own printed modifier for this mode, where it differs (kept in step with `byLine` on the combat action). */
-    modifierByLine?: Readonly<Partial<Record<string, number>>>;
-    /** The tooltip for a line whose printed modifier differs from the default text. */
-    tooltipByLine?: Readonly<Partial<Record<string, string>>>;
 };
 
 type AttackModeAvailability = AttackModeOption & {
@@ -77,11 +73,9 @@ export const RANGED_ATTACK_MODES: AttackModeOption[] = [
         label: 'Standard Attack',
         actionName: 'Standard Attack',
         actionCost: 'Half',
-        modifier: 0,
-        modifierByLine: { ow: 10 },
+        modifier: 10,
         icon: 'fas fa-crosshairs',
-        tooltip: 'Single shot. +0 to BS. Jam on 96+.',
-        tooltipByLine: { ow: 'Single shot. +10 to BS. Jam on 96+.' },
+        tooltip: 'Single shot. +10 to BS. Jam on 96+.',
         default: true,
     },
     {
@@ -143,11 +137,9 @@ export const MELEE_ATTACK_MODES: AttackModeOption[] = [
         label: 'Standard Attack',
         actionName: 'Standard Attack',
         actionCost: 'Half',
-        modifier: 0,
-        modifierByLine: { ow: 10 },
+        modifier: 10,
         icon: 'fas fa-sword',
-        tooltip: 'Basic melee strike. +0 to WS.',
-        tooltipByLine: { ow: 'Basic melee strike. +10 to WS.' },
+        tooltip: 'Basic melee strike. +10 to WS.',
         default: true,
     },
     {
@@ -456,13 +448,10 @@ export const MELEE_SITUATIONAL_MODIFIERS: SituationalModifierOption[] = [
  * @param {Item} weapon - The weapon item
  * @returns {Array} Attack modes with `available` flag set
  */
-export function getAvailableAttackModes(weapon: AttackOptionWeapon, gameSystemId?: string): AttackModeAvailability[] {
+export function getAvailableAttackModes(weapon: AttackOptionWeapon): AttackModeAvailability[] {
     const modes = weapon.isRanged ? RANGED_ATTACK_MODES : MELEE_ATTACK_MODES;
     return modes.map((mode) => ({
         ...mode,
-        // The card shows the figure the roll will actually apply on this line (see `attackModifierFor`).
-        modifier: (gameSystemId === undefined ? undefined : mode.modifierByLine?.[gameSystemId]) ?? mode.modifier,
-        tooltip: (gameSystemId === undefined ? undefined : mode.tooltipByLine?.[gameSystemId]) ?? mode.tooltip,
         available: mode.requires ? mode.requires(weapon) : true,
     }));
 }

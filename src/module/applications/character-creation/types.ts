@@ -126,7 +126,7 @@ interface ItemSystemLike {
 export interface ActiveModifier {
     type?: string;
     key?: string;
-    value?: number | string;
+    value?: number | string | null;
     [extra: string]: string | number | boolean | null | undefined;
 }
 

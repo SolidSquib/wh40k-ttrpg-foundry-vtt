@@ -8,23 +8,20 @@ describe('isActorOfSystem (#313)', () => {
     it('prefers the sheet _resolveGameSystemId() when present', () => {
         const host = { actor: { system: {} }, _resolveGameSystemId: (): string => 'ow' };
         expect(isActorOfSystem(host, 'ow')).toBe(true);
-        expect(isActorOfSystem(host, 'bc')).toBe(false);
     });
 
     it('falls back to actor.system.gameSystem when no resolver is bound', () => {
-        const host = { actor: { system: { gameSystem: 'bc' } } };
-        expect(isActorOfSystem(host, 'bc')).toBe(true);
-        expect(isActorOfSystem(host, 'ow')).toBe(false);
+        expect(isActorOfSystem({ actor: { system: { gameSystem: 'ow' } } }, 'ow')).toBe(true);
+        expect(isActorOfSystem({ actor: { system: { gameSystem: 'dh2' } } }, 'ow')).toBe(false);
     });
 
     it('returns false when neither source identifies the system', () => {
-        expect(isActorOfSystem({ actor: { system: {} } }, 'dh2')).toBe(false);
+        expect(isActorOfSystem({ actor: { system: {} } }, 'ow')).toBe(false);
     });
 
     it('uses the resolver even when system.gameSystem disagrees', () => {
         const host = { actor: { system: { gameSystem: 'bc' } }, _resolveGameSystemId: (): string => 'ow' };
         expect(isActorOfSystem(host, 'ow')).toBe(true);
-        expect(isActorOfSystem(host, 'bc')).toBe(false);
     });
 });
 
@@ -64,7 +61,7 @@ describe('postActionChat (#313)', () => {
     });
 
     it('renders the template with the context, then posts a card spoken by the host actor', async () => {
-        const ctx = { gameSystem: 'dw', headerKey: 'WH40K.DW.Oath.Header' };
+        const ctx = { gameSystem: 'dw', headerKey: 'WH40K.Common.Roll' };
         await postActionChat('systems/wh40k-rpg/templates/chat/dw-oath-chat.hbs', ctx, { actor: { name: 'Brother Test' } });
 
         expect(renderTemplateMock).toHaveBeenCalledWith('systems/wh40k-rpg/templates/chat/dw-oath-chat.hbs', ctx);

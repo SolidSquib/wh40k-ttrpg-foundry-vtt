@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, it } from 'vitest';
-import { BaseSystemConfig } from '../../config/game-systems/base-system-config.ts';
+import { OWSystemConfig } from '../../config/game-systems/ow-config.ts';
 import type { WH40KBaseActor } from '../../documents/base-actor.ts';
 import { asBaseActor } from '../../testing/actor-stub.ts';
 import { importModelOrSkip } from '../../testing/model-import.ts';
@@ -90,10 +90,10 @@ describe('SkillGrantData._getSchemaSkillKey (#279)', () => {
 });
 
 describe('SkillGrantData level→rank single-sourcing (#340)', () => {
-    it('_getLevelUpdates writes the canonical BaseSystemConfig rank for every level', () => {
+    it('_getLevelUpdates writes the canonical OWSystemConfig rank for every level', () => {
         const grant = makeGrant();
         for (const level of Object.keys(SkillGrantData.TRAINING_LEVELS)) {
-            expect(grant._getLevelUpdates(level)).toEqual({ advance: BaseSystemConfig.skillLevelToRank(level) });
+            expect(grant._getLevelUpdates(level)).toEqual({ advance: OWSystemConfig.skillLevelToRank(level) });
         }
     });
 
@@ -107,7 +107,7 @@ describe('SkillGrantData level→rank single-sourcing (#340)', () => {
 
     it('TRAINING_LEVELS.order matches the canonical rank for every level (grant↔sheet agree)', () => {
         for (const [level, def] of Object.entries(SkillGrantData.TRAINING_LEVELS)) {
-            expect(def?.order).toBe(BaseSystemConfig.skillLevelToRank(level));
+            expect(def?.order).toBe(OWSystemConfig.skillLevelToRank(level));
         }
     });
 });

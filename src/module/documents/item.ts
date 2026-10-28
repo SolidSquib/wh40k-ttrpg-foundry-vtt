@@ -232,17 +232,13 @@ export class WH40KItem extends WH40KItemContainer {
             talent: 'icons/svg/book.svg',
             trait: 'icons/svg/blood.svg',
             psychicPower: 'icons/svg/lightning.svg',
-            navigatorPower: 'icons/svg/eye.svg',
             skill: 'icons/svg/target.svg',
             cybernetic: 'icons/svg/upgrade.svg',
             forceField: 'icons/svg/shield.svg',
-            shipComponent: 'icons/svg/clockwork.svg',
-            shipWeapon: 'icons/svg/cannon.svg',
             condition: 'icons/svg/daze.svg',
             criticalInjury: 'icons/svg/blood.svg',
             originPath: 'icons/svg/direction.svg',
             order: 'icons/svg/pawprint.svg',
-            ritual: 'icons/svg/book.svg',
         };
 
         // Return type-specific icon or generic mystery-man fallback
@@ -311,10 +307,6 @@ export class WH40KItem extends WH40KItemContainer {
         return this._type === 'psychicPower';
     }
 
-    get isNavigatorPower(): boolean {
-        return this._type === 'navigatorPower';
-    }
-
     get isPsychicBarrage(): boolean {
         return this._type === 'psychicPower' && this.system.attackType === 'Psychic Barrage';
     }
@@ -338,26 +330,6 @@ export class WH40KItem extends WH40KItemContainer {
 
     get isOrder(): boolean {
         return this._type === 'order';
-    }
-
-    get isRitual(): boolean {
-        return this._type === 'ritual';
-    }
-
-    get isShipComponent(): boolean {
-        return this._type === 'shipComponent';
-    }
-
-    get isShipRole(): boolean {
-        return this._type === 'shipRole';
-    }
-
-    get isShipUpgrade(): boolean {
-        return this._type === 'shipUpgrade';
-    }
-
-    get isShipWeapon(): boolean {
-        return this._type === 'shipWeapon';
     }
 
     get isVehicleTrait(): boolean {
@@ -617,12 +589,7 @@ export class WH40KItem extends WH40KItemContainer {
             trait: 'Trait',
             skill: 'Skill',
             psychicPower: 'Psychic Power',
-            navigatorPower: 'Navigator Power',
-            shipComponent: 'Ship Component',
-            shipRole: 'Ship Role',
-            shipWeapon: 'Ship Weapon',
             order: 'Order',
-            ritual: 'Ritual',
             originPath: 'Origin Path',
             gear: 'Gear',
             cybernetic: 'Cybernetic',
@@ -638,7 +605,7 @@ export class WH40KItem extends WH40KItemContainer {
      * @returns {boolean}
      */
     get hasActions(): boolean {
-        return this.isWeapon || this.isPsychicPower || this.isNavigatorPower || (this.isTalent && this.system.isRollable);
+        return this.isWeapon || this.isPsychicPower || (this.isTalent && this.system.isRollable);
     }
 
     /**
@@ -660,8 +627,6 @@ export class WH40KItem extends WH40KItemContainer {
             itemTypeLabel: this.itemTypeLabel,
             isWeapon: this.isWeapon,
             isArmour: this.isArmour,
-            isNavigatorPower: this.isNavigatorPower,
-            isShipComponent: this.isShipComponent,
             isPsychicPower: this.isPsychicPower,
             isTalent: this.isTalent,
             hasActions: this.hasActions,
@@ -733,18 +698,12 @@ export class WH40KItem extends WH40KItemContainer {
             const psychicActor = this.actor;
             const result = psychicActor?.rollPsychicPower(this);
             return result ?? this.sendToChat();
-        } else if (this.isNavigatorPower) {
-            // Navigator power - roll navigator power
-            return this.rollNavigatorPower();
         } else if (this.isTalent && this.system.isRollable) {
             // Rollable talent
             return this.rollTalent();
         } else if (this.isOrder) {
             // Ship order - roll order
             return this.rollOrder();
-        } else if (this.isRitual) {
-            // Ritual - roll ritual
-            return this.rollRitual();
         } else {
             // Default - send to chat
             return this.sendToChat();
@@ -834,38 +793,6 @@ export class WH40KItem extends WH40KItemContainer {
     }
 
     /**
-     * Roll a navigator power
-     */
-    // eslint-disable-next-line no-restricted-syntax -- boundary: returns opaque ChatMessage / roll result
-    async rollNavigatorPower(): Promise<unknown> {
-        if (!this.actor) {
-            return this.sendToChat();
-        }
-
-        // Navigator powers typically use Perception or Willpower
-        const navActor = this.#wh40kActor();
-        if (navActor === null) return this.sendToChat();
-        const perception = navActor.characteristics['perception'];
-        const willpower = navActor.characteristics['willpower'];
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- noUncheckedIndexedAccess: characteristics[key] may be undefined at runtime
-        if (perception === undefined || willpower === undefined) return this.sendToChat();
-
-        // Use the higher of the two as base, modified by Navigator Rank
-        // eslint-disable-next-line no-restricted-syntax -- boundary: navigatorRank lives outside the shared system schema
-        const navigatorRank: number = ((navActor.system as Record<string, unknown> | undefined)?.['navigatorRank'] as number | undefined) ?? 0;
-        const perceptionTotal: number = perception.total;
-        const willpowerTotal: number = willpower.total;
-        const baseChar = perceptionTotal > willpowerTotal ? perception : willpower;
-        const targetValue = baseChar.total + navigatorRank * 5;
-
-        return this.#rollSimpleD100({
-            targetValue,
-            itemTypeLabel: 'Navigator Power',
-            template: 'systems/wh40k-rpg/templates/chat/navigator-power-chat.hbs',
-        });
-    }
-
-    /**
      * Roll a ship order
      */
     // eslint-disable-next-line no-restricted-syntax -- boundary: returns opaque ChatMessage / roll result
@@ -883,27 +810,6 @@ export class WH40KItem extends WH40KItemContainer {
             targetValue,
             itemTypeLabel: 'Ship Order',
             template: 'systems/wh40k-rpg/templates/chat/order-roll-chat.hbs',
-        });
-    }
-
-    /**
-     * Roll a ritual
-     */
-    // eslint-disable-next-line no-restricted-syntax -- boundary: returns opaque ChatMessage / roll result
-    async rollRitual(): Promise<unknown> {
-        if (!this.actor) {
-            return this.sendToChat();
-        }
-
-        // Rituals typically use Willpower
-        const ritualActor = this.#wh40kActor();
-        const willpower = ritualActor?.characteristics['willpower'];
-        const targetValue = willpower?.total ?? 30;
-
-        return this.#rollSimpleD100({
-            targetValue,
-            itemTypeLabel: 'Ritual',
-            template: 'systems/wh40k-rpg/templates/chat/ritual-roll-chat.hbs',
         });
     }
 

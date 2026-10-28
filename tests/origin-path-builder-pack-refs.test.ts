@@ -83,14 +83,10 @@ describe.skipIf(!HAS_PRIVATE_CONTENT)('origin-path builder pack references resol
 });
 
 describe.skipIf(!HAS_PRIVATE_CONTENT)('every registered home-step origin pack is offered by the builder (#222)', () => {
-    // Reverse of the check above: a supplement's home-step pack (DH2 home worlds,
-    // DW chapters) silently missing from the config leaves those origins
+    // Reverse of the check above: a supplement's home-step pack (Only War home worlds) silently missing from the config leaves those origins
     // unselectable — "no selections available". These groups are unambiguous: the
     // step matches packs the config already lists for the other supplements.
-    const homeStepGroups: { id: GameSystemId; pattern: RegExp }[] = [
-        { id: 'dh2', pattern: /^dh2-.*-origins-homeworlds$/ },
-        { id: 'dw', pattern: /^dw-.*-origins-chapters$/ },
-    ];
+    const homeStepGroups: { id: GameSystemId; pattern: RegExp }[] = [{ id: 'ow', pattern: /^ow-.*-origins-homeworlds$/ }];
 
     for (const { id, pattern } of homeStepGroups) {
         it(`${id}: configures every registered ${pattern.source} pack`, () => {

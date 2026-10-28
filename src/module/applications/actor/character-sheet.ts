@@ -4,19 +4,6 @@
  */
 
 import { DHBasicActionManager } from '../../actions/basic-action-manager.ts';
-import { bcAscend } from '../../actions/bc-daemon-prince-actions.ts';
-import { bcPsychicTest } from '../../actions/bc-psychic-actions.ts';
-import { bcPerformRitual } from '../../actions/bc-ritual-actions.ts';
-import { dwSelectAmmo } from '../../actions/dw-ammo-actions.ts';
-import { dwAstartesToggleImplant } from '../../actions/dw-astartes-actions.ts';
-import { dwCohesionChallenge, dwCohesionRally, dwCohesionRecoverObjective } from '../../actions/dw-cohesion-actions.ts';
-import { dwToggleDistinction, dwToggleMark } from '../../actions/dw-distinction-actions.ts';
-import { dwCompleteMission, dwToggleComplication, dwToggleObjective } from '../../actions/dw-mission-actions.ts';
-import { dwEnterSquadMode, dwLeaveSquadMode } from '../../actions/dw-mode-actions.ts';
-import { dwReleaseOath, dwSwearOath } from '../../actions/dw-oath-actions.ts';
-import { dwRenownAward, dwRenownLoss } from '../../actions/dw-renown-actions.ts';
-import { dwRequisitionItem, dwRequisitionPool } from '../../actions/dw-requisition-actions.ts';
-import { dwVehicleRepair, dwVehicleRollCrit } from '../../actions/dw-vehicle-actions.ts';
 import { owRequestSupport, owToggleAward } from '../../actions/ow-battlefield-actions.ts';
 import { owComradeHeal, owComradeReplace, owComradeWound } from '../../actions/ow-comrade-actions.ts';
 import { owComradeMedicae, owComradeReplace2, owComradeTickDay } from '../../actions/ow-comrade-healing-actions.ts';
@@ -28,12 +15,9 @@ import { orderLabelKeys, owIssueOrder } from '../../actions/ow-orders-actions.ts
 import { owRegimentEdit, resolveRegimentCatalog } from '../../actions/ow-regiment-actions.ts';
 import { owVehicleAction } from '../../actions/ow-vehicle-actions.ts';
 import { DHTargetedActionManager } from '../../actions/targeted-action-manager.ts';
-import { AptitudeBasedSystemConfig } from '../../config/game-systems/aptitude-based-system-config.ts';
-import { BC_INFAMY_ADVANCE_CAP, BC_INFAMY_INCREMENT, infamyAdvanceCost } from '../../config/game-systems/bc-advancement-config.ts';
 import { SystemConfigRegistry } from '../../config/game-systems/index.ts';
-import type { ChaosAlignment, GameSystemId, SidebarHeaderField } from '../../config/game-systems/types.ts';
-import { SYSTEM_ID } from '../../constants.ts';
-import { DW_SELECTED_AMMO_CHOICES, type DwSelectedAmmoId } from '../../data/actor/mixins/dw-ammo-template.ts';
+import { OWSystemConfig } from '../../config/game-systems/ow-config.ts';
+import type { GameSystemId, SidebarHeaderField } from '../../config/game-systems/types.ts';
 import { buildOwCraftsmanshipPanel } from '../../data/actor/mixins/ow-craftsmanship-template.ts';
 import type { WH40KAcolyte } from '../../documents/acolyte.ts';
 import type { WH40KItem } from '../../documents/item.ts';
@@ -43,33 +27,6 @@ import { Hit } from '../../rolls/damage-data.ts';
 import { lineResourceRows, type ResourceRow } from '../../rules/acquisition-resources.ts';
 import type { ActionKind } from '../../rules/action-budget.ts';
 import { actionBudgetForActor, resetActionsForActor, spendActionForActor } from '../../rules/action-economy.ts';
-import {
-    deriveAlignmentFromTally,
-    nextAlignmentCheckpoint,
-    psykerLockedByAlignment,
-    shouldRecheckAlignment,
-    tallyAdvancesByAlignment,
-    type ChaosAdvanceEntry,
-} from '../../rules/bc-alignment-derivation.ts';
-import { APOTHEOSIS_CORRUPTION, isAscended, resolveApotheosis, type DaemonPrinceAlignment } from '../../rules/bc-daemon-prince.ts';
-import { maxPushLevel, resolvePsychicTest, type PsyMode } from '../../rules/bc-psychic-strength.ts';
-import { daemonEngineRageBonus } from '../../rules/bc-supplement-mechanics.ts';
-import { SMITE_THE_UNHOLY_FATE_COST, hasCrusaderRole, resolveSmiteTheUnholyDoS } from '../../rules/crusader.ts';
-import { adjustPactDisposition, type PactDisposition } from '../../rules/dark-pact.ts';
-import {
-    ASTARTES_IMPLANTS,
-    astartesStrengthBonus,
-    astartesToughnessBonus,
-    hasBlackCarapace,
-    IMPLANT_EFFECTS,
-    type AstartesImplantId,
-} from '../../rules/dw-astartes.ts';
-import { isOathActive } from '../../rules/dw-oath.ts';
-import { getRenownRank, RENOWN_RANK_ORDER, RENOWN_THRESHOLDS, type RenownRank, renownRankLabelKey } from '../../rules/dw-renown.ts';
-import { DW_SPECIAL_AMMO_EFFECTS, type AmmoEffect } from '../../rules/dw-special-ammo.ts';
-import { getSupportRange } from '../../rules/dw-squad-mode.ts';
-import type { DynamicModifierItemLike } from '../../rules/dynamic-modifiers.ts';
-import { ENCOUNTER_GRANT_FLAG, HATRED_IDENTIFIER, hasFanaticRole, hatredAgainstFoe } from '../../rules/fanatic.ts';
 import {
     resolveBreakGrapple,
     resolveDamageOpponent,
@@ -91,20 +48,10 @@ import { drawbackDescriptorFor } from '../../rules/ow-regiment-catalog.ts';
 import { buildRegimentPanelSummary, REGIMENT_BUDGET, type RegimentPanelSummary } from '../../rules/ow-regiment-creation.ts';
 import { buildDrawbackPanel, type MultiComradeRoster } from '../../rules/ow-regiment-drawback.ts';
 import { buildBattlefieldPanel } from '../../rules/ow-regimental-award.ts';
-import {
-    applyMismanifest,
-    canUnleashDaemon,
-    resetSessionUnleash,
-    resolveFrenzyTest,
-    resolveMismanifestPossession,
-    spendUnleashDaemon,
-    type PossessionSlot,
-} from '../../rules/possession.ts';
 import type { WH40KActorSystemData, WH40KArmourLocation, WH40KItemSystemData } from '../../types/global.d.ts';
 import { orderAptitudesGeneralFirst } from '../../utils/aptitude-order.ts';
 import { getArmourAPForLocation, type ArmourSystemLike } from '../../utils/armour-calculator.ts';
 import { firstSystemId } from '../../utils/chat-system-id.ts';
-import { findItemUuidByIdentifier } from '../../utils/compendium-query.ts';
 import { errorMessage } from '../../utils/error-message.ts';
 import { capitalize, formatSigned } from '../../utils/format.ts';
 import { gameSystemPackPrefix } from '../../utils/game-system-pack-prefix.ts';
@@ -113,14 +60,11 @@ import { WH40KSettings } from '../../wh40k-rpg-settings.ts';
 import type { DialogV2Like, TextEditorImplementationLike } from '../api/application-types.ts';
 import * as EffectActions from '../api/effect-actions.ts';
 import * as StatActions from '../api/stat-adjustment-actions.ts';
-import AcquisitionDialog from '../dialogs/acquisition-dialog.ts';
 import AdvancementDialog from '../dialogs/advancement-dialog.ts';
 import CharacteristicSetupDialog from '../dialogs/characteristic-setup-dialog.ts';
 import ConfirmationDialog from '../dialogs/confirmation-dialog.ts';
 import FateUsesDialog from '../dialogs/fate-uses-dialog.ts';
 import { prepareAssignDamageRoll } from '../prompts/assign-damage-dialog.ts';
-import ColonyGrowthDialog from '../prompts/colony-growth-dialog.ts';
-import { openRightStuffDialog } from '../prompts/right-stuff-dialog.ts';
 import BaseActorSheet, { ADVANCE_XP_COSTS, type SkillLike, type CharacteristicLike } from './base-actor-sheet.ts';
 import { SIDEBAR_CONTAINER } from './sidebar-container.ts';
 
@@ -140,8 +84,8 @@ function titleCase(s: string): string {
     return s.replace(/(^|-)([a-z])/g, (_m, _p, c: string) => c.toUpperCase());
 }
 
-/** Currency wallets another sheet panel already edits (RT Dynasty tab, OW Logistics panel), so the Resources panel skips them. */
-const RESOURCE_WALLETS_EDITED_ELSEWHERE: ReadonlySet<string> = new Set(['system.rogueTrader.profitFactor.current', 'system.logisticsRating']);
+/** Currency wallets another sheet panel already edits (the OW Logistics panel), so the Resources panel skips them. */
+const RESOURCE_WALLETS_EDITED_ELSEWHERE: ReadonlySet<string> = new Set(['system.logisticsRating']);
 
 type SheetTabConfig = {
     tab: string;
@@ -155,7 +99,6 @@ type SheetTabConfig = {
 type CharacterSheetContext = Record<string, unknown> & {
     actor?: Record<string, unknown> & { characteristics?: Record<string, Record<string, unknown>> };
     system?: Record<string, unknown> & {
-        rogueTrader?: Record<string, unknown>;
         modifierSources?: { characteristics?: Record<string, unknown> };
         wounds?: { value?: number; max?: number };
         fatigue?: { value?: number; max?: number };
@@ -178,35 +121,11 @@ type CharacterSheetContext = Record<string, unknown> & {
 } & CharacterSheetContextDeclaredFields;
 type CharacterSheetContextDeclaredFields = {
     inEditMode?: boolean;
-    ruleset?: unknown;
-    isDH2?: boolean;
-    isBC?: boolean;
     isOW?: boolean;
-    isDW?: boolean;
-    isIM?: boolean;
-    isHomebrew?: boolean;
-    isRaw?: boolean;
-    alignmentPanel?: BcAlignmentPanelContext;
-    psychicPanel?: BcPsychicPanelContext;
-    astartesPanel?: DwAstartesPanelContext;
-    cohesionPanel?: DwCohesionPanelContext;
-    modePanel?: DwModePanelContext;
-    renownPanel?: DwRenownPanelContext;
-    requisitionPanel?: DwRequisitionPanelContext;
     regimentPanel?: OwRegimentPanelContext;
     comradePanel?: OwComradePanelContext;
     logisticsPanel?: OwLogisticsPanelContext;
     ordersPanel?: OwOrdersPanelContext;
-    // Batch-2 panel contexts.
-    ritualPanel?: BcRitualPanelContext;
-    giftsPanel?: BcGiftsPanelContext;
-    supplementsPanel?: BcSupplementsPanelContext;
-    daemonPrincePanel?: BcDaemonPrincePanelContext;
-    distinctionPanel?: DwDistinctionPanelContext;
-    ammoPanel?: DwAmmoPanelContext;
-    oathPanel?: DwOathPanelContext;
-    missionPanel?: DwMissionPanelContext;
-    vehiclePanel?: DwVehiclePanelContext;
     missionGearPanel?: OwMissionGearPanelContext;
     vehicleMovementPanel?: OwVehicleMovementPanelContext;
     comradeHealingPanel?: OwComradeHealingPanelContext;
@@ -214,18 +133,14 @@ type CharacterSheetContextDeclaredFields = {
     mountPanel?: OwMountPanelContext;
     drawbackPanel?: Record<string, unknown>;
     battlefieldPanel?: Record<string, unknown>;
-    hideThroneGelt?: boolean;
     resourceRows?: Array<ResourceRow & { value: number | undefined }>;
     originPathSteps?: unknown;
     originPathSummary?: unknown;
     originPathComplete?: boolean;
     originOptions?: Record<string, unknown>;
     headerFields?: unknown;
-    navigatorPowers?: unknown[];
-    shipRoles?: unknown[];
     talentsCount?: number;
     traitsCount?: number;
-    dynastyData?: Record<string, unknown>;
     activeModifiers?: unknown;
     tab?: { id: string; group: string; cssClass: string; label: string; active: boolean };
     tabs?: unknown;
@@ -269,95 +184,12 @@ type CharacterSheetContextDeclaredFields = {
     equippedCount?: number;
     encumbrancePercent?: number;
     backpackPercent?: number;
-    hasFanatic?: boolean;
-    hasCrusader?: boolean;
     grappleState?: GrappleState;
-};
-
-/**
- * Render payload for the BC Alignment / Infamy panel (#173). The fields
- * are read by `src/templates/actor/panel/bc-alignment-panel.hbs` and
- * documented in its header comment. Built by `_prepareBcAlignmentPanel`
- * only when the active game system is BC.
- */
-type BcAlignmentPanelContext = {
-    current: ChaosAlignment;
-    derived: ChaosAlignment;
-    tally: { khorne: number; nurgle: number; slaanesh: number; tzeentch: number };
-    pendingFlip: boolean;
-    checkpoint: number;
-    corruption: number;
-    nextCheckpoint: number;
-    recheckDue: boolean;
-    psykerLocked: boolean;
-    infamy: number;
-    infamyCost: number | null;
-    infamyCap: number;
-    infamyIncrement: number;
 };
 
 /* -------------------------------------------------------------------- */
 /*  Per-engine panel context shapes (batch-1 integration)               */
 /* -------------------------------------------------------------------- */
-
-/** BC Psychic Strength panel (#178). */
-type BcPsychicPanelContext = {
-    psykerClass: string;
-    psyRating: number;
-    sustainedPowerCount: number;
-    mode: PsyMode;
-    pushLevel: number;
-    maxPushLevel: number;
-    effectivePR: number;
-    sustainPenalty: number;
-    phenomenaRolls: number;
-};
-
-/** DW Astartes implants panel (#167). */
-type DwAstartesPanelContext = {
-    implants: Array<{ id: AstartesImplantId; nameKey: string; categoryKey: string; has: boolean }>;
-    strengthBonus: number;
-    toughnessBonus: number;
-    hasBlackCarapace: boolean;
-};
-
-/** DW Kill-team Cohesion panel (#162). */
-type DwCohesionPanelContext = {
-    current: number;
-    max: number;
-    lostThisTurn: number;
-    rallied: boolean;
-    canRally: boolean;
-    canRecover: boolean;
-};
-
-/** DW Squad Mode panel (#163). */
-type DwModePanelContext = {
-    mode: string;
-    renownRank: string;
-    renownRankKey: string;
-    supportRange: { visual: number; vocal: number };
-    sustainedAbilities: Array<{ id: string; label: string }>;
-};
-
-/** DW Renown panel (#164). */
-type DwRenownPanelContext = {
-    value: number;
-    rank: string;
-    rankLabel: string;
-    nextRank: string | null;
-    nextRankLabel: string | null;
-    rankMin: number;
-    nextRankMin: number | null;
-    progressPercent: number;
-};
-
-/** DW Requisition panel (#165). */
-type DwRequisitionPanelContext = {
-    rp: number;
-    missionRating: string;
-    renownRank: string;
-};
 
 /** OW Regiment panel (#151). */
 type OwRegimentPanelContext = RegimentPanelSummary & {
@@ -394,134 +226,6 @@ type OwOrdersPanelContext = {
 /* -------------------------------------------------------------------- */
 /*  Per-engine panel context shapes (batch-2 integration)               */
 /* -------------------------------------------------------------------- */
-
-/** BC Chaos Ritual panel (#179). */
-type BcRitualPanelContext = {
-    ritualMastery: number;
-};
-
-/** BC Gifts of the Gods panel (#180). The full gift catalogue lives in
- *  compendium (Direction #7); without a live catalogue lookup at sheet
- *  render time we surface the persisted ids plus the current alignment
- *  and let the panel's empty-state path handle missing display data. */
-type BcGiftsPanelContext = {
-    currentAlignment: 'unaligned' | 'khorne' | 'nurgle' | 'slaanesh' | 'tzeentch';
-    gifts: Array<{
-        id: string;
-        name: string;
-        baseDescription: string;
-        riderDescription: string;
-        appliedAlignment: string;
-        subTableLabel: string;
-        characteristicDelta: Array<{ key: string; value: number }>;
-        traits: string[];
-        activeEffects: string[];
-    }>;
-    mergedDelta: Array<{ key: string; value: number }>;
-};
-
-/** BC Supplement Mechanics panel (#181). */
-type BcSupplementsPanelContext = {
-    daemonEngineRating: number;
-    daemonEngineActive: boolean;
-    turnsSinceLastDamage: number;
-    daemonEngineRageBonus: number;
-};
-
-/** BC apotheosis panel (#182 — BC Core p267). */
-type BcDaemonPrincePanelContext = {
-    ascended: boolean;
-    ascendedAt: number | null;
-    alignmentAtAscension: DaemonPrinceAlignment;
-    infamy: number;
-    corruption: number;
-    infamyThreshold: number;
-    corruptionThreshold: number;
-    canAscend: boolean;
-    /** The recorded fate once claimed, else the fate the champion would meet now. */
-    isDaemonPrince: boolean;
-};
-
-/** DW Distinctions panel (#171). Catalogue resolution is compendium-driven;
- *  without a live catalogue lookup the orchestrator-built context surfaces
- *  the persisted id lists and a stub merged-grant readout the engine
- *  produces from an empty MarkOfDistinction set. */
-type DwDistinctionPanelContext = {
-    distinctions: Array<{
-        id: string;
-        name: string;
-        renownReward: number;
-        renownRequired: string;
-        earned: boolean;
-        rankTooLow: boolean;
-    }>;
-    marks: Array<{
-        id: string;
-        name: string;
-        description: string;
-        borne: boolean;
-    }>;
-    merged: {
-        characteristicDelta: Array<{ key: string; value: number; displayValue: string }>;
-        traits: string[];
-    };
-};
-
-/** DW Special-Issue Ammo panel (#172). */
-type DwAmmoPanelContext = {
-    selected: DwSelectedAmmoId;
-    selectedLabel: string;
-    options: Array<{
-        id: DwSelectedAmmoId;
-        label: string;
-        selected: boolean;
-        summary: string;
-    }>;
-    effect: AmmoEffect | null;
-};
-
-/** DW Mission Oath panel (#168). */
-type DwOathPanelContext = {
-    isLeader: boolean;
-    active: boolean;
-    activeOathId: string | null;
-    activeLabel: string | null;
-    canSwear: boolean;
-    canRelease: boolean;
-};
-
-/** DW Mission framework panel (#169). */
-type DwMissionPanelContext = {
-    hasMission: boolean;
-    mission: {
-        id: string;
-        name: string;
-        rating: 'standard' | 'extended' | 'priority' | 'critical';
-        ratingLabel: string;
-        objectives: Array<{
-            id: string;
-            description: string;
-            renownReward: number;
-            xpReward: number;
-            status: 'pending' | 'complete' | 'failed';
-            statusLabel: string;
-        }>;
-        complications: Array<{
-            id: string;
-            description: string;
-            renownPenalty: number;
-            triggered: boolean;
-        }>;
-    } | null;
-};
-
-/** DW Vehicle Critical Hit / Repair panel (#170). */
-type DwVehiclePanelContext = {
-    integrity: number;
-    overIntegrity: number;
-    canRollCrit: boolean;
-    canRepair: boolean;
-};
 
 /** OW Mission Assignment Gear panel (#155). */
 type OwMissionGearPanelContext = {
@@ -636,26 +340,6 @@ function owSystemRecord(sheet: CharacterSheet): Record<string, unknown> {
 }
 
 const PANEL_BUILDERS: Partial<Record<GameSystemId, readonly PanelBuilder[]>> = {
-    bc: [
-        { key: 'alignmentPanel', build: (s) => s._prepareBcAlignmentPanel() },
-        { key: 'psychicPanel', build: (s) => s._prepareBcPsychicPanel() },
-        { key: 'ritualPanel', build: (s) => s._prepareBcRitualPanel() },
-        { key: 'giftsPanel', build: (s) => s._prepareBcGiftsPanel() },
-        { key: 'supplementsPanel', build: (s) => s._prepareBcSupplementsPanel() },
-        { key: 'daemonPrincePanel', build: (s) => s._prepareBcDaemonPrincePanel() },
-    ],
-    dw: [
-        { key: 'cohesionPanel', build: (s) => s._prepareDwCohesionPanel() },
-        { key: 'modePanel', build: (s) => s._prepareDwModePanel() },
-        { key: 'renownPanel', build: (s) => s._prepareDwRenownPanel() },
-        { key: 'requisitionPanel', build: (s) => s._prepareDwRequisitionPanel() },
-        { key: 'astartesPanel', build: (s) => s._prepareDwAstartesPanel() },
-        { key: 'oathPanel', build: (s) => s._prepareDwOathPanel() },
-        { key: 'missionPanel', build: (s) => s._prepareDwMissionPanel() },
-        { key: 'vehiclePanel', build: (s) => s._prepareDwVehiclePanel() },
-        { key: 'distinctionPanel', build: (s) => s._prepareDwDistinctionPanel() },
-        { key: 'ammoPanel', build: (s) => s._prepareDwAmmoPanel() },
-    ],
     ow: [
         { key: 'regimentPanel', build: (s) => s._prepareOwRegimentPanel() },
         { key: 'comradePanel', build: (s) => s._prepareOwComradePanel() },
@@ -723,13 +407,6 @@ export default class CharacterSheet extends BaseActorSheet {
     // eslint-disable-next-line no-restricted-syntax -- boundary: holds a slice of Foundry's untyped sheet-context payload
     #combatDataCache: Record<string, unknown> | null = null;
     _powersFilter: { discipline: string; orderCategory: string } = { discipline: '', orderCategory: '' };
-    /**
-     * Ephemeral BC Psychic Strength selections (#178). Mode and push
-     * level are render-only UI state — they are not persisted on the
-     * actor. The panel reads these via `psychicPanel` each render.
-     */
-    _bcPsyMode: PsyMode = 'unfettered';
-    _bcPsyPushLevel = 0;
     declare _equipmentFilter: { search: string; type: string; status: string };
     declare _skillsFilter: { search: string; characteristic: string; training: string; [key: string]: string };
     /* eslint-enable no-restricted-syntax */
@@ -796,12 +473,6 @@ export default class CharacterSheet extends BaseActorSheet {
             'restoreFate': StatActions.restoreFate,
             'spendFate': StatActions.spendFate,
 
-            // Possession track (#82 — beyond.md p.69)
-            'unleashDaemon': CharacterSheet.#unleashDaemon,
-            'resetPossessionSession': CharacterSheet.#resetPossessionSession,
-            'possessionFrenzyTest': CharacterSheet.#possessionFrenzyTest,
-            'possessionMismanifest': CharacterSheet.#possessionMismanifest,
-
             // Shock / Snap-Out-Of-It (#66 — core.md §"Shock And Snapping Out Of It")
             'snapOutOfShock': CharacterSheet.#snapOutOfShock,
 
@@ -810,18 +481,9 @@ export default class CharacterSheet extends BaseActorSheet {
             'rollPinningTest': CharacterSheet.#rollPinningTest,
             'escapePinning': CharacterSheet.#escapePinning,
 
-            // Fanatic role: Death to All Who Oppose Me (#93 — within.md p.34)
-            'deathToAllWhoOpposeMe': CharacterSheet.#deathToAllWhoOpposeMe,
-
-            // Crusader role: Smite the Unholy (#141 — beyond.md p.34)
-            'smiteTheUnholy': CharacterSheet.#smiteTheUnholy,
-
             // Manacles condition (#105 — errata p.176)
             'applyManacles': CharacterSheet.#applyManacles,
             'liftManacles': CharacterSheet.#liftManacles,
-
-            // Ace role: Right Stuff Fate-spend (#100 — without.md p.39)
-            'openRightStuff': CharacterSheet.#openRightStuff,
 
             // Grapple controller actions (#120 — core.md L10155-10180)
             'grappleDamageOpponent': CharacterSheet.#grappleDamageOpponent,
@@ -829,30 +491,6 @@ export default class CharacterSheet extends BaseActorSheet {
             'grappleBreakFree': CharacterSheet.#grappleBreakFree,
             'grappleStandUp': CharacterSheet.#grappleStandUp,
             'grappleMove': CharacterSheet.#grappleMove,
-
-            // Subtlety panel (#87) — DH2 warband-subtlety stepper + breakdown popout.
-            'adjustSubtletyManually': CharacterSheet.#adjustSubtletyManually,
-            'viewSubtletyBreakdown': CharacterSheet.#viewSubtletyBreakdown,
-
-            // BC Alignment / Infamy advancement panel (#173).
-            'recheckBcAlignment': CharacterSheet.#recheckBcAlignment,
-            'buyBcInfamyAdvance': CharacterSheet.#buyBcInfamyAdvance,
-
-            // BC Psychic Strength panel (#178).
-            'bcPsychicTest': bcPsychicTest,
-
-            // DW engines: Cohesion (#162), Squad Mode (#163), Renown (#164),
-            // Requisition (#165), Astartes implants (#167).
-            'dwCohesionRally': dwCohesionRally,
-            'dwCohesionRecoverObjective': dwCohesionRecoverObjective,
-            'dwCohesionChallenge': dwCohesionChallenge,
-            'dwEnterSquadMode': dwEnterSquadMode,
-            'dwLeaveSquadMode': dwLeaveSquadMode,
-            'dwRenownAward': dwRenownAward,
-            'dwRenownLoss': dwRenownLoss,
-            'dwRequisitionItem': dwRequisitionItem,
-            'dwRequisitionPool': dwRequisitionPool,
-            'dwAstartesToggleImplant': dwAstartesToggleImplant,
 
             // OW engines: Regiment (#151), Comrade (#152), Orders (#153),
             // Logistics (#154).
@@ -865,24 +503,7 @@ export default class CharacterSheet extends BaseActorSheet {
             'owToggleMunitorum': owToggleMunitorum,
             'owAdjustSituational': owAdjustSituational,
 
-            // Batch-2 engines:
-            //   BC Ritual (#179), Supplements (#181), Daemon Prince (#182).
-            //   (BC Gifts #180 is a passive readout — no action.)
-            //   DW Special Ammo (#172), Distinctions (#171), Oath (#168),
-            //   Mission (#169), Vehicle Crit (#170).
-            //   OW Mission Gear (#155).
-            'bcPerformRitual': bcPerformRitual,
-            'bcAscend': bcAscend,
-            'dwSelectAmmo': dwSelectAmmo,
-            'dwToggleDistinction': dwToggleDistinction,
-            'dwToggleMark': dwToggleMark,
-            'dwSwearOath': dwSwearOath,
-            'dwReleaseOath': dwReleaseOath,
-            'dwToggleObjective': dwToggleObjective,
-            'dwToggleComplication': dwToggleComplication,
-            'dwCompleteMission': dwCompleteMission,
-            'dwVehicleRollCrit': dwVehicleRollCrit,
-            'dwVehicleRepair': dwVehicleRepair,
+            // OW Mission Gear (#155).
             'owRequestGear': owRequestGear,
             // Batch-3 actions
             'owVehicleAction': owVehicleAction,
@@ -939,24 +560,6 @@ export default class CharacterSheet extends BaseActorSheet {
             'rollPerils': CharacterSheet.#rollPerils,
             'filterPowers': CharacterSheet.#filterPowers,
             'filterOrders': CharacterSheet.#filterOrders,
-
-            // Acquisition actions
-            'addAcquisition': CharacterSheet.#addAcquisition,
-            'openAcquisition': CharacterSheet.#openAcquisition,
-            'removeAcquisition': CharacterSheet.#removeAcquisition,
-            'openAcquisitionDialog': CharacterSheet.#openAcquisitionDialog,
-
-            // Dark Pact actions (Enemies Beyond p. 72, #84)
-            'adjustPactDisposition': CharacterSheet.#adjustPactDisposition,
-            'togglePactDiscovered': CharacterSheet.#togglePactDiscovered,
-            'togglePactPayment': CharacterSheet.#togglePactPayment,
-
-            // Endeavour actions (Rogue Trader)
-            'completeObjective': CharacterSheet.#completeObjective,
-            'completeEndeavour': CharacterSheet.#completeEndeavour,
-
-            // Colony actions (Rogue Trader, Stars of Inequity #195)
-            'openColonyGrowthDialog': CharacterSheet.#openColonyGrowthDialog,
 
             // Experience actions
             'customXP': CharacterSheet.#customXP,
@@ -1177,25 +780,13 @@ export default class CharacterSheet extends BaseActorSheet {
         // isGM / dh / inEditMode come from BaseActorSheet._prepareCommonContext (called by super).
         // Ruleset state is character-specific.
 
-        // Ruleset state (DH2e only) — controls Throne Gelt visibility
         const activeGameSystem = this._resolveGameSystemId();
-        const isDH2 = activeGameSystem === 'dh2';
-        const isBC = activeGameSystem === 'bc';
         const isOW = activeGameSystem === 'ow';
-        const isDW = activeGameSystem === 'dw';
-        const isIM = activeGameSystem === 'im';
-        const ruleset = WH40KSettings.getRuleset();
-        context.ruleset = ruleset;
-        context.isDH2 = isDH2;
-        context.isBC = isBC;
         context.isOW = isOW;
-        context.isDW = isDW;
-        context.isIM = isIM;
 
         // Per-system overview panels — table-driven (#282). Each system's entries
         // (see PANEL_BUILDERS above) are written into the context under their exact
-        // partial-facing keys; non-listed systems (DH2/DH1/RT/IM) build no panels,
-        // and the `{{#if isBC}}`/etc. tab gates keep their include sites no-op.
+        // partial-facing keys.
         if (activeGameSystem !== null) {
             for (const { key, build } of PANEL_BUILDERS[activeGameSystem] ?? []) {
                 // eslint-disable-next-line no-restricted-syntax -- boundary: dynamic panel-context key written into the free-form CharacterSheetContext
@@ -1203,33 +794,13 @@ export default class CharacterSheet extends BaseActorSheet {
             }
         }
 
-        // Subtlety adjusters (#87) — surfaced for the DH2 Subtlety panel template
-        // (`src/templates/actor/panel/subtlety-panel.hbs`). Collected on the
-        // active actor via `WH40KBaseActor.collectSubtletyAdjusters()`; safe to
-        // compute on every render because it's a thin tree-walk of owned items.
-        if (isDH2) {
-            // eslint-disable-next-line no-restricted-syntax -- boundary: sheet→template payload; the typed `CollectedAdjuster[]` is widened to fit the free-form CharacterSheetContext shape.
-            (context as Record<string, unknown>)['subtletyAdjusters'] = this.actor.collectSubtletyAdjusters();
-        }
-        context.isHomebrew = isDH2 && ruleset === 'homebrew';
-        const isRaw = isDH2 && ruleset === 'raw';
-        context.isRaw = isRaw;
-        context.hideThroneGelt = isRaw;
-        // Non-DH2 lines show their own acquisition currency + the gelt baseline
-        // (DH2 keeps its ruleset-gated Influence/Requisition/Gelt trio in the template).
-        if (!isDH2 && activeGameSystem !== null) {
+        // Each line shows its own acquisition currency + the gelt baseline.
+        if (activeGameSystem !== null) {
             context.resourceRows = lineResourceRows(activeGameSystem, CONFIG.wh40k.currencies, RESOURCE_WALLETS_EDITED_ELSEWHERE).map((row) => ({
                 ...row,
                 // eslint-disable-next-line no-restricted-syntax -- boundary: foundry.utils.getProperty returns unknown for a dynamic wallet path
                 value: foundry.utils.getProperty(this.actor, row.field) as number | undefined,
             }));
-        }
-
-        // In DH2 RAW mode Influence is a percentile characteristic (testable for Requisition,
-        // social, and Investigation rolls). Surface it on the characteristics map so the
-        // Statistics panel iterates it alongside WS/BS/etc. without schema duplication.
-        if (isRaw) {
-            this._injectInfluenceAsCharacteristic(context);
         }
 
         // Prepare characteristic HUD data
@@ -1239,10 +810,7 @@ export default class CharacterSheet extends BaseActorSheet {
         context.originPathSteps = this._prepareOriginPathSteps();
         context.originPathSummary = this._getOriginPathSummary();
 
-        // Prepare navigator powers and ship roles (compute fresh)
         const categorized = this._getCategorizedItems();
-        context.navigatorPowers = this.actor.items.filter((item) => (item.type as string) === 'navigatorPower' || (item as WH40KItem).isNavigatorPower);
-        context.shipRoles = this.actor.items.filter((item) => (item.type as string) === 'shipRole' || (item as WH40KItem).isShipRole);
 
         // Prepare item counts for panel headers
         context.talentsCount = this.actor.items.filter((item) => (item as WH40KItem).isTalent).length;
@@ -1254,30 +822,8 @@ export default class CharacterSheet extends BaseActorSheet {
         // Prepare combat station data (uses cached categorized items)
         this._prepareCombatData(context, categorized);
 
-        // Prepare WH40K RPG specific fields
-        if (context.system) {
-            // eslint-disable-next-line no-restricted-syntax -- rogueTrader is an untyped sub-object on the sheet context; ?? {} is necessary to ensure a defined object is passed
-            context.system.rogueTrader = this._prepareWH40KFields(context.system.rogueTrader ?? {});
-        }
-
-        // Prepare dynasty tab data
-        context.dynastyData = this._prepareDynastyData();
-
-        // Prepare Endeavours (Rogue Trader) — embedded `endeavour` items the
-        // Dynasty is currently pursuing. The panel partial reads this hash.
-        // eslint-disable-next-line no-restricted-syntax -- boundary: context is the Foundry render payload, a free-form record under fvtt-types
-        (context as Record<string, unknown>)['endeavours'] = this.actor.items.filter((item) => (item.type as string) === 'endeavour');
-
         // Prepare active modifiers panel (Phase 5 Integration)
         context.activeModifiers = this.prepareActiveModifiers();
-
-        // Fanatic role detection (#93 — DH2 Enemies Within p.34): the actor
-        // owns the role whose `system.identifier` is `fanatic`.
-        context.hasFanatic = hasFanaticRole(this.actor.items);
-
-        // Crusader role detection (#141 — beyond.md p.34); matches "Crusader"
-        // or "Smite the Unholy".
-        context.hasCrusader = hasCrusaderRole(Array.from(this.actor.items));
 
         // Grapple state (#120 — core.md L10155-10180). The flag is set by
         // combat tooling (Charge / Standard Attack workflow) and read by
@@ -1320,7 +866,7 @@ export default class CharacterSheet extends BaseActorSheet {
         if (partId === 'tabs') return this._prepareTabsContext(partContext, options);
         if (partId === 'biography') return this._prepareBiographyContext(partContext, options);
         if (partId === 'overview') return this._prepareOverviewDashboardContext(partContext, options);
-        if (partId === 'combat' || partId === 'skills' || partId === 'equipment' || partId === 'powers' || partId === 'dynasty') {
+        if (partId === 'combat' || partId === 'skills' || partId === 'equipment' || partId === 'powers') {
             // Provide tab object for the template
             return this._prepareTabPartContext(partId, partContext, options);
         }
@@ -1580,233 +1126,6 @@ export default class CharacterSheet extends BaseActorSheet {
     /* -------------------------------------------- */
 
     /**
-     * Prepare characteristic HUD data and tooltip data.
-     * @param {object} context  Context being prepared.
-     * @protected
-     */
-    /**
-     * Synthesize an `influence` entry on the characteristics map for DH2 RAW mode.
-     * Mirrors the CharacteristicField shape so the panel template and HUD prep treat
-     * it identically to WS/BS/etc. Influence has no `advance`/`unnatural`/`base`
-     * mechanics in the data model — it's a flat 0-100 value — so the derived fields
-     * are filled with zero/identity values that the template renders harmlessly.
-     */
-    _injectInfluenceAsCharacteristic(context: CharacterSheetContext): void {
-        const actor = context.actor;
-        if (!actor) return;
-        const value = Number(this.actor.system.influence);
-        const entry = {
-            label: game.i18n.localize('WH40K.Characteristic.Influence'),
-            short: game.i18n.localize('WH40K.Characteristic.Abbr.Influence'),
-            base: value,
-            advance: 0,
-            modifier: 0,
-            unnatural: 0,
-            bonus: Math.floor(value / 10),
-            total: value,
-        };
-        const characteristics = actor.characteristics ?? {};
-        characteristics['influence'] = entry;
-        actor.characteristics = characteristics;
-    }
-
-    /* -------------------------------------------- */
-
-    /**
-     * Build the BC Alignment / Infamy panel context (#173).
-     *
-     * Tally + derived-alignment + recheck-due + psyker-lock all come from
-     * `bc-alignment-derivation.ts`; the Infamy cost / cap / increment come
-     * from `bc-advancement-config.ts`. The partial reads the returned
-     * object as `alignmentPanel.*`.
-     */
-    _prepareBcAlignmentPanel(): BcAlignmentPanelContext {
-        const system = this.actor.system;
-        const advances: ReadonlyArray<ChaosAdvanceEntry> = system.chaosAdvancements;
-        const tally = tallyAdvancesByAlignment(advances);
-        const derived = deriveAlignmentFromTally(tally);
-        const current = system.chaosAlignment;
-        const checkpoint = system.alignmentCheckpoint;
-        const corruption = system.corruption;
-        const infamy = system.infamy;
-        return {
-            current,
-            derived,
-            tally,
-            pendingFlip: current !== derived,
-            checkpoint,
-            corruption,
-            nextCheckpoint: nextAlignmentCheckpoint(corruption),
-            recheckDue: shouldRecheckAlignment(corruption, checkpoint),
-            psykerLocked: psykerLockedByAlignment(current),
-            infamy,
-            infamyCost: infamyAdvanceCost(infamy),
-            infamyCap: BC_INFAMY_ADVANCE_CAP,
-            infamyIncrement: BC_INFAMY_INCREMENT,
-        };
-    }
-
-    /* -------------------------------------------- */
-
-    /**
-     * BC Psychic Strength panel (#178). Resolver inputs come from the
-     * persisted DataModel fields (psykerClass / psyRating / sustainedPowerCount);
-     * the panel's mode + push level are ephemeral UI state owned by the
-     * sheet instance (_bcPsyMode / _bcPsyPushLevel).
-     */
-    _prepareBcPsychicPanel(): BcPsychicPanelContext {
-        const sys = this.actor.system;
-        const psykerClass = sys.psykerClass;
-        const psyRating = sys.psyRating;
-        const sustainedPowerCount = sys.sustainedPowerCount;
-        const mode = this._bcPsyMode;
-        const pushLevel = this._bcPsyPushLevel;
-        const resolved = resolvePsychicTest({ psykerClass, basePR: psyRating, mode, pushLevel, sustainedPowerCount });
-        return {
-            psykerClass,
-            psyRating,
-            sustainedPowerCount,
-            mode,
-            pushLevel,
-            maxPushLevel: maxPushLevel(psykerClass),
-            effectivePR: resolved.effectivePR,
-            sustainPenalty: resolved.sustainPenalty,
-            phenomenaRolls: resolved.phenomenaRolls,
-        };
-    }
-
-    /* -------------------------------------------- */
-
-    /**
-     * DW Astartes implants panel (#167). Iterates the canonical implant
-     * inventory and reports per-id presence + the derived Unnatural
-     * Strength/Toughness bonuses and Black-Carapace flag.
-     */
-    _prepareDwAstartesPanel(): DwAstartesPanelContext {
-        const sys = this.actor.system;
-        const implants = sys.implants;
-        const sb = sys.characteristics.strength.bonus;
-        const tb = sys.characteristics.toughness.bonus;
-        const implantSet = new Set<AstartesImplantId>(implants);
-        return {
-            implants: ASTARTES_IMPLANTS.map((id) => {
-                // The implant's `mechanic` (kebab-case) maps directly onto the
-                // `WH40K.DW.Astartes.Category.*` langpack keys (PascalCase).
-                // Implants with no discrete mechanic (Ossmodula, Biscopea,
-                // Haemastamen) feed the Unnatural Str/Tgh baselines → Baseline.
-                const mechanic = IMPLANT_EFFECTS[id].mechanic;
-                return {
-                    id,
-                    // The langpack name lives at `…Implant.<Id>.Name` — the
-                    // trailing `.Name` segment is required or `localize` falls
-                    // back to the raw key (the overflowing-text regression).
-                    nameKey: `WH40K.DW.Astartes.Implant.${titleCase(id)}.Name`,
-                    categoryKey: mechanic === undefined ? `WH40K.DW.Astartes.Category.Baseline` : `WH40K.DW.Astartes.Category.${titleCase(mechanic)}`,
-                    has: implantSet.has(id),
-                };
-            }),
-            strengthBonus: astartesStrengthBonus(sb),
-            toughnessBonus: astartesToughnessBonus(tb),
-            hasBlackCarapace: hasBlackCarapace(implants),
-        };
-    }
-
-    /* -------------------------------------------- */
-
-    /**
-     * DW Kill-team Cohesion panel (#162). Reads the four schema slots
-     * (`cohesionCurrent`, `cohesionMax`, `cohesionLostThisTurn`,
-     * `rallied`) and computes the action-availability gates.
-     */
-    _prepareDwCohesionPanel(): DwCohesionPanelContext {
-        const sys = this.actor.system;
-        const current = sys.cohesionCurrent;
-        const max = sys.cohesionMax;
-        const rallied = sys.rallied;
-        return {
-            current,
-            max,
-            lostThisTurn: sys.cohesionLostThisTurn,
-            rallied,
-            canRally: !rallied,
-            canRecover: current < max && max > 0,
-        };
-    }
-
-    /* -------------------------------------------- */
-
-    /**
-     * DW Squad Mode panel (#163). Surfaces the current combat mode,
-     * Renown-derived support range, and the labels of any
-     * currently-sustained Squad-mode abilities.
-     */
-    _prepareDwModePanel(): DwModePanelContext {
-        const sys = this.actor.system;
-        const mode = sys.combatMode;
-        const renownRank = getRenownRank(sys.renown);
-        const renownRankKey = capitalize(renownRank);
-        const supportRange = getSupportRange(renownRank);
-        const sustainedAbilities = sys.sustainedAbilities.map((id) => ({ id, label: id }));
-        return {
-            mode,
-            renownRank,
-            renownRankKey,
-            supportRange,
-            sustainedAbilities,
-        };
-    }
-
-    /* -------------------------------------------- */
-
-    /**
-     * DW Renown panel (#164). Computes the current rank, the next rank's
-     * threshold (if any), and a 0-100% progress percentage.
-     */
-    _prepareDwRenownPanel(): DwRenownPanelContext {
-        const sys = this.actor.system;
-        const value = sys.renown;
-        const rank = getRenownRank(value);
-        const rankRange = RENOWN_THRESHOLDS[rank];
-        const rankIdx = RENOWN_RANK_ORDER.indexOf(rank);
-        const nextRank: RenownRank | null = RENOWN_RANK_ORDER[rankIdx + 1] ?? null;
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- tsconfig.test parser narrows nextRank to RenownRank by missing the union; strict tsconfig retains the | null branch
-        const nextRankMin = nextRank != null ? RENOWN_THRESHOLDS[nextRank].min : null;
-        const rankLabel = game.i18n.localize(renownRankLabelKey(rank));
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- tsconfig.test parser narrows nextRank to RenownRank by missing the union; strict tsconfig retains the | null branch
-        const nextRankLabel = nextRank != null ? game.i18n.localize(renownRankLabelKey(nextRank)) : null;
-        const progressPercent =
-            nextRankMin === null ? 100 : Math.max(0, Math.min(100, Math.round(((value - rankRange.min) / (nextRankMin - rankRange.min)) * 100)));
-        return {
-            value,
-            rank,
-            rankLabel,
-            nextRank,
-            nextRankLabel,
-            rankMin: rankRange.min,
-            nextRankMin,
-            progressPercent,
-        };
-    }
-
-    /* -------------------------------------------- */
-
-    /**
-     * DW Requisition panel (#165). Surfaces the RP balance, the current
-     * mission rating, and the Renown-derived rank gate the requisition
-     * dialog will enforce.
-     */
-    _prepareDwRequisitionPanel(): DwRequisitionPanelContext {
-        const sys = this.actor.system;
-        return {
-            rp: sys.requisitionPoints,
-            missionRating: sys.missionRating,
-            renownRank: getRenownRank(sys.renown),
-        };
-    }
-
-    /* -------------------------------------------- */
-
-    /**
      * OW Regiment Creation panel (#151). Surfaces the persisted regiment
      * selection + kit budget for the panel partial.
      */
@@ -1884,244 +1203,6 @@ export default class CharacterSheet extends BaseActorSheet {
             rating: sys.logisticsRating === 0 ? OW_DEFAULT_LOGISTICS_RATING : sys.logisticsRating,
             munitorum: sys.munitorum,
             situational: sys.situational,
-        };
-    }
-
-    /* -------------------------------------------- */
-
-    /**
-     * BC Chaos Ritual panel (#179). The only persisted slot is the
-     * ritualist's Daemonic Mastery rating; per-ritual selections are
-     * dialog-scoped state and never leak to the panel.
-     */
-    _prepareBcRitualPanel(): BcRitualPanelContext {
-        return { ritualMastery: this.actor.system.ritualMastery };
-    }
-
-    /* -------------------------------------------- */
-
-    /**
-     * BC Gifts of the Gods panel (#180). The catalogue + per-alignment
-     * riders live in compendium content (Direction #7); without a live
-     * lookup at sheet render time we surface the persisted ids and the
-     * actor's current alignment so the panel's empty-state path renders
-     * cleanly. A future enhancement will resolve gift catalogue entries
-     * via `uuidNameCache` and apply `resolveGiftForAlignment` +
-     * `mergeGiftDeltas` here.
-     */
-    _prepareBcGiftsPanel(): BcGiftsPanelContext {
-        const sys = this.actor.system;
-        return {
-            currentAlignment: sys.chaosAlignment,
-            gifts: sys.gifts.map((id) => ({
-                id,
-                name: id,
-                baseDescription: '',
-                riderDescription: '',
-                appliedAlignment: sys.chaosAlignment,
-                subTableLabel: '',
-                characteristicDelta: [],
-                traits: [],
-                activeEffects: [],
-            })),
-            mergedDelta: [],
-        };
-    }
-
-    /* -------------------------------------------- */
-
-    /**
-     * BC Supplement Mechanics panel (#181). Surfaces the Daemon Engine
-     * rage bonus (computed against a conservative `turnsSinceLastDamage`
-     * baseline of 0 — the actual delta is dialog-scoped per encounter).
-     */
-    _prepareBcSupplementsPanel(): BcSupplementsPanelContext {
-        const rating = this.actor.system.daemonEngineRating;
-        const daemonEngineActive = rating > 0;
-        const turnsSinceLastDamage = 0;
-        const rageBonus = daemonEngineActive ? daemonEngineRageBonus({ rating, turnsSinceLastDamage }) : 0;
-        return {
-            daemonEngineRating: rating,
-            daemonEngineActive,
-            turnsSinceLastDamage,
-            daemonEngineRageBonus: rageBonus,
-        };
-    }
-
-    /* -------------------------------------------- */
-
-    /**
-     * BC apotheosis panel (#182 — BC Core p267). Reads the persisted record off
-     * `system.daemonPrinceAscension` and reports the eligibility readout: the
-     * claim at 100 Corruption, the GM's Infamy threshold, and the fate (Daemon
-     * Prince or Chaos Spawn) met — or faced, before the claim.
-     */
-    _prepareBcDaemonPrincePanel(): BcDaemonPrincePanelContext {
-        const sys = this.actor.system;
-        const record = sys.daemonPrinceAscension;
-        const ascendedAt = record.ascendedAt;
-        const ascension = ascendedAt === null ? null : { ascendedAt, alignmentAtAscension: record.alignmentAtAscension, outcome: record.outcome };
-        const ascended = isAscended(ascension);
-        const infamy = sys.infamy;
-        const corruption = sys.corruption;
-        const infamyThreshold = WH40KSettings.getApotheosisInfamyThreshold();
-        const readout = resolveApotheosis({ corruption, infamy, infamyThreshold });
-        const outcome = ascension === null ? readout.outcome : ascension.outcome;
-        return {
-            ascended,
-            ascendedAt,
-            alignmentAtAscension: record.alignmentAtAscension,
-            infamy,
-            corruption,
-            infamyThreshold,
-            corruptionThreshold: APOTHEOSIS_CORRUPTION,
-            canAscend: !ascended && readout.claimed,
-            isDaemonPrince: outcome === 'daemonPrince',
-        };
-    }
-
-    /* -------------------------------------------- */
-
-    /**
-     * DW Distinctions panel (#171). The catalogue itself is compendium
-     * content; without a runtime catalogue lookup we surface the
-     * persisted id arrays and let `mergeMarkGrants(empty)` produce the
-     * stub merged-grant readout. The panel's empty-state paths handle
-     * missing catalogue entries cleanly.
-     */
-    _prepareDwDistinctionPanel(): DwDistinctionPanelContext {
-        const sys = this.actor.system;
-        const earned = new Set(sys.distinctions);
-        const borne = new Set(sys.marksOfDistinction);
-        return {
-            distinctions: sys.distinctions.map((id) => ({
-                id,
-                name: id,
-                renownReward: 0,
-                renownRequired: '',
-                earned: earned.has(id),
-                rankTooLow: false,
-            })),
-            marks: sys.marksOfDistinction.map((id) => ({
-                id,
-                name: id,
-                description: '',
-                borne: borne.has(id),
-            })),
-            merged: {
-                characteristicDelta: [],
-                traits: [],
-            },
-        };
-    }
-
-    /* -------------------------------------------- */
-
-    /**
-     * DW Special-Issue Ammunition panel (#172). Reads the actor-level
-     * selected ammo id and builds the option list against the canonical
-     * `DW_SELECTED_AMMO_CHOICES`. The detail readout consumes
-     * `DW_SPECIAL_AMMO_EFFECTS` directly; `'standard'` yields `null`.
-     */
-    _prepareDwAmmoPanel(): DwAmmoPanelContext {
-        const sys = this.actor.system;
-        const selected: DwSelectedAmmoId = sys.selectedAmmo;
-        const labelFor = (id: DwSelectedAmmoId): string => game.i18n.localize(`WH40K.DW.SpecialAmmo.Ammo.${titleCase(id)}`);
-        const effect = selected === 'standard' ? null : DW_SPECIAL_AMMO_EFFECTS[selected];
-        return {
-            selected,
-            selectedLabel: labelFor(selected),
-            options: DW_SELECTED_AMMO_CHOICES.map((id) => ({
-                id,
-                label: labelFor(id),
-                selected: id === selected,
-                // Only Standard carries a one-line note; a special round's effects are
-                // read out in the panel's detail block once it is loaded.
-                summary: id === 'standard' ? game.i18n.localize('WH40K.DW.SpecialAmmo.NoSelection') : '',
-            })),
-            effect,
-        };
-    }
-
-    /* -------------------------------------------- */
-
-    /**
-     * DW Mission Oath panel (#168). Surfaces the leader marker, the
-     * active oath id (or null), and the swear/release gates. The active
-     * oath display label resolves from the compendium UUID cache at
-     * panel render time; without a sync lookup we fall back to the id
-     * string so the panel still renders a meaningful readout.
-     */
-    _prepareDwOathPanel(): DwOathPanelContext {
-        const sys = this.actor.system;
-        const activeOathId = sys.activeOathId;
-        const active = isOathActive(activeOathId);
-        return {
-            isLeader: sys.isLeader,
-            active,
-            activeOathId,
-            activeLabel: active && activeOathId !== null ? activeOathId : null,
-            canSwear: sys.isLeader && !active,
-            canRelease: active,
-        };
-    }
-
-    /* -------------------------------------------- */
-
-    /**
-     * DW Mission framework panel (#169). When `activeMission === null`
-     * the panel renders the empty-state placeholder; otherwise we map
-     * the persisted record into the localized labels the template
-     * consumes.
-     */
-    _prepareDwMissionPanel(): DwMissionPanelContext {
-        const sys = this.actor.system;
-        const active = sys.activeMission;
-        if (active === null) {
-            return { hasMission: false, mission: null };
-        }
-        return {
-            hasMission: true,
-            mission: {
-                id: active.id,
-                name: active.name,
-                rating: active.rating,
-                ratingLabel: game.i18n.localize(`WH40K.DW.Mission.Rating.${titleCase(active.rating)}`),
-                objectives: active.objectives.map((o) => ({
-                    id: o.id,
-                    description: o.description,
-                    renownReward: o.renownReward,
-                    xpReward: o.xpReward,
-                    status: o.status,
-                    statusLabel: game.i18n.localize(`WH40K.DW.Mission.Objective.Status.${titleCase(o.status)}`),
-                })),
-                complications: active.complications.map((c) => ({
-                    id: c.id,
-                    description: c.description,
-                    renownPenalty: c.renownPenalty,
-                    triggered: c.triggered,
-                })),
-            },
-        };
-    }
-
-    /* -------------------------------------------- */
-
-    /**
-     * DW Vehicle Critical Hit / Repair panel (#170). The crit-roll
-     * button unlocks when over-Integrity has accumulated OR the vehicle
-     * has just been pushed to zero Integrity (its first crit roll); the
-     * repair button requires accumulated over-Integrity to act on.
-     */
-    _prepareDwVehiclePanel(): DwVehiclePanelContext {
-        const sys = this.actor.system;
-        const integrity = sys.vehicleIntegrity;
-        const overIntegrity = sys.overIntegrity;
-        return {
-            integrity,
-            overIntegrity,
-            canRollCrit: overIntegrity > 0 || integrity <= 0,
-            canRepair: overIntegrity > 0,
         };
     }
 
@@ -2650,9 +1731,7 @@ export default class CharacterSheet extends BaseActorSheet {
         // Rogue Trader is the halving outlier and lives on its own sheet class.
         // See wh40k-tooltip.ts for the same gate around the untrained-target
         // display.
-        const systemId = this._resolveGameSystemId();
-        const isAptitudeSystem = systemId === 'dh2' || systemId === 'dh1' || systemId === 'bc' || systemId === 'dw' || systemId === 'ow' || systemId === 'im';
-        const adjustUntrained = (base: number): number => (isAptitudeSystem ? base - 20 : Math.floor(base / 2));
+        const adjustUntrained = (base: number): number => base - 20;
 
         // eslint-disable-next-line no-restricted-syntax -- boundary: actor.skills is indexed by string; double-cast to SkillBits to access computed fields not on the schema
         const dodgeSkill = skills['dodge'] as unknown as SkillBits | undefined;
@@ -3001,113 +2080,6 @@ export default class CharacterSheet extends BaseActorSheet {
     /* -------------------------------------------- */
 
     /**
-     * Prepare WH40K RPG specific fields.
-     * @param {object} rogueTraderData  The rogueTrader data object.
-     * @returns {object}
-     * @protected
-     */
-    // eslint-disable-next-line no-restricted-syntax -- boundary: rogueTraderData is an untyped sub-object from the sheet context; fields vary by system
-    _prepareWH40KFields(rogueTraderData: Record<string, unknown>): Record<string, unknown> {
-        /* eslint-disable no-restricted-syntax -- boundary: prepared sub-fields are heterogeneous system data passed to Handlebars */
-        const prepared = rogueTraderData as Record<string, unknown> & {
-            armour?: unknown;
-            weight?: unknown;
-            acquisitions?: unknown;
-            wounds?: unknown;
-            fate?: unknown;
-        };
-        /* eslint-enable no-restricted-syntax */
-        prepared.armour = prepared.armour ?? {
-            head: 0,
-            rightArm: 0,
-            leftArm: 0,
-            body: 0,
-            rightLeg: 0,
-            leftLeg: 0,
-        };
-        prepared.weight = prepared.weight ?? { total: 0, current: 0 };
-
-        const acquisitions = Array.isArray(prepared.acquisitions)
-            ? prepared.acquisitions
-            : prepared.acquisitions !== null && prepared.acquisitions !== undefined
-            ? [{ name: '', availability: '', modifier: 0, notes: prepared.acquisitions, acquired: false, uuid: '' }]
-            : [];
-        prepared.acquisitions = acquisitions;
-
-        // Wounds/fatigue/fate live on Acolyte-shaped actors; NPCs (which
-        // share this sheet's prepare pipeline) don't define those getters.
-        // Skip the rollup for them rather than crashing the render.
-        if ('wounds' in this.actor && 'fate' in this.actor && 'fatigue' in this.actor) {
-            const a = this.actor as {
-                wounds: { max: number; value: number; critical: number };
-                fate: { max: number; value: number; threshold: number };
-                fatigue: { value: number };
-            };
-            prepared.wounds = {
-                total: a.wounds.max,
-                current: a.wounds.value,
-                critical: a.wounds.critical,
-                fatigue: a.fatigue.value,
-            };
-            prepared.fate = {
-                total: a.fate.max,
-                current: a.fate.value,
-                threshold: a.fate.threshold,
-            };
-        }
-
-        return prepared;
-    }
-
-    /* -------------------------------------------- */
-
-    /**
-     * Prepare dynasty tab data including wealth tiers and gauge positioning.
-     * @returns {object} Dynasty display data
-     * @protected
-     */
-    // eslint-disable-next-line no-restricted-syntax -- boundary: dynasty data is a heterogeneous display object passed to Handlebars; no concrete exported type
-    _prepareDynastyData(): Record<string, unknown> {
-        const pf = (this.actor.system.rogueTrader?.profitFactor ?? {}) as {
-            current?: number;
-            starting?: number;
-            modifier?: number;
-        };
-        const currentPF = pf.current ?? 0;
-        const startingPF = pf.starting ?? 0;
-        const modifier = pf.modifier ?? 0;
-        const effectivePF = currentPF + modifier;
-
-        // Determine wealth tier (WH40K RPG wealth categories)
-        let wealthTier: { key: string; label: string; min: number };
-        if (effectivePF >= 100) {
-            wealthTier = { key: 'legendary', label: game.i18n.localize('WH40K.Dynasty.WealthTier.Legendary'), min: 100 };
-        } else if (effectivePF >= 75) {
-            wealthTier = { key: 'mighty', label: game.i18n.localize('WH40K.Dynasty.WealthTier.Mighty'), min: 75 };
-        } else if (effectivePF >= 50) {
-            wealthTier = { key: 'notable', label: game.i18n.localize('WH40K.Dynasty.WealthTier.Notable'), min: 50 };
-        } else if (effectivePF >= 25) {
-            wealthTier = { key: 'modest', label: game.i18n.localize('WH40K.Dynasty.WealthTier.Modest'), min: 25 };
-        } else {
-            wealthTier = { key: 'poor', label: game.i18n.localize('WH40K.Dynasty.WealthTier.Poor'), min: 0 };
-        }
-
-        // Calculate percentage for gauge (cap at 100 for display, but allow >100 PF)
-        const pfPercentage = Math.min(Math.max((effectivePF / 100) * 100, 0), 100);
-
-        return {
-            currentPF,
-            startingPF,
-            modifier,
-            effectivePF,
-            wealthTier,
-            pfPercentage,
-        };
-    }
-
-    /* -------------------------------------------- */
-
-    /**
      * Prepare overview tab context.
      * @param {object} context  Context being prepared.
      * @param {object} options  Render options.
@@ -3208,7 +2180,7 @@ export default class CharacterSheet extends BaseActorSheet {
         // config so the literal lives in one place (the aptitude RAW tables).
         const gameSystem = this._resolveGameSystemId();
         const sysConfig = gameSystem !== null ? SystemConfigRegistry.get(gameSystem) : null;
-        const universal = sysConfig instanceof AptitudeBasedSystemConfig ? [...sysConfig.universalAptitudes] : [];
+        const universal = sysConfig instanceof OWSystemConfig ? [...sysConfig.universalAptitudes] : [];
 
         const aptitudes = [...new Set([...granted, ...universal])];
         if (aptitudes.length === 0) return [];
@@ -3552,7 +2524,7 @@ export default class CharacterSheet extends BaseActorSheet {
 
     /**
      * Prepare powers tab context.
-     * Prepares psychic powers, navigator powers, rituals, and orders.
+     * Prepares psychic powers and orders.
      * @returns {object} Powers context data
      * @protected
      */
@@ -3560,8 +2532,6 @@ export default class CharacterSheet extends BaseActorSheet {
     _preparePowersContext(): Record<string, unknown> {
         // Get all power items
         const psychicPowers = this.actor.items.filter((i) => (i.type as string) === 'psychicPower');
-        const navigatorPowers = this.actor.items.filter((i) => (i.type as string) === 'navigatorPower');
-        const rituals = this.actor.items.filter((i) => (i.type as string) === 'ritual');
         const orders = this.actor.items.filter((i) => (i.type as string) === 'order');
 
         // Extract unique disciplines for filtering
@@ -3611,14 +2581,10 @@ export default class CharacterSheet extends BaseActorSheet {
         return {
             // Item arrays
             psychicPowers: filteredPsychicPowers,
-            navigatorPowers,
-            rituals,
             orders: filteredOrders,
 
             // Counts
             psychicPowersCount: psychicPowers.length,
-            navigatorPowersCount: navigatorPowers.length,
-            ritualsCount: rituals.length,
             ordersCount: orders.length,
 
             // Filter data
@@ -4527,268 +3493,9 @@ export default class CharacterSheet extends BaseActorSheet {
     /*  Event Handlers - Acquisitions               */
     /* -------------------------------------------- */
 
-    /**
-     * Handle adding an acquisition.
-     * @this {CharacterSheet}
-     * @param {Event} event         Triggering click event.
-     * @param {HTMLElement} target  Button that was clicked.
-     */
-    static async #addAcquisition(this: CharacterSheet, _event: Event, _target: HTMLElement): Promise<void> {
-        const acquisitions = this.actor.system.rogueTrader?.acquisitions;
-        const acquisitionList = Array.isArray(acquisitions) ? acquisitions : [];
-        const updatedAcquisitions = structuredClone(acquisitionList);
-        // Blank `uuid`: a hand-added row is a note, not a record of a real
-        // acquisition. Rows written by an actual acquisition test carry the item
-        // that changed hands and render as a link instead (#496).
-        updatedAcquisitions.push({ name: '', availability: '', modifier: 0, notes: '', acquired: false, uuid: '' });
-        await this.actor.update({ 'system.rogueTrader.acquisitions': updatedAcquisitions });
-    }
-
-    /* -------------------------------------------- */
-
-    /**
-     * Open the item an acquisition row records (#496).
-     * @this {CharacterSheet}
-     * @param {Event} _event  Triggering click.
-     * @param {HTMLElement} target  The row's link, carrying the item uuid.
-     */
-    static async #openAcquisition(this: CharacterSheet, _event: Event, target: HTMLElement): Promise<void> {
-        const uuid = target.dataset['uuid'];
-        if (uuid === undefined || uuid === '') return;
-        // eslint-disable-next-line no-restricted-syntax -- boundary: `fromUuid` is a Foundry global resolving to an untyped Document union
-        const item = (await fromUuid(uuid)) as { sheet?: { render: (force: boolean) => unknown } } | null;
-        item?.sheet?.render(true);
-    }
-
-    /* -------------------------------------------- */
-
-    /**
-     * Handle removing an acquisition.
-     * @this {CharacterSheet}
-     * @param {Event} event         Triggering click event.
-     * @param {HTMLElement} target  Button that was clicked.
-     */
-    static async #removeAcquisition(this: CharacterSheet, _event: Event, target: HTMLElement): Promise<void> {
-        const index = parseInt(target.dataset['index'] ?? '-1', 10);
-        if (Number.isNaN(index) || index < 0) return;
-
-        const acquisitions = this.actor.system.rogueTrader?.acquisitions;
-        if (!Array.isArray(acquisitions)) {
-            await this.actor.update({ 'system.rogueTrader.acquisitions': [] });
-            return;
-        }
-
-        const updatedAcquisitions = structuredClone(acquisitions);
-        updatedAcquisitions.splice(index, 1);
-        await this.actor.update({ 'system.rogueTrader.acquisitions': updatedAcquisitions });
-    }
-
-    /* -------------------------------------------- */
     /*  Event Handlers - Dark Pacts (#84)           */
     /* -------------------------------------------- */
 
-    /**
-     * Shift the per-pact disposition by ±n, clamped to [-3..+3] via the
-     * canonical helper in `src/module/rules/dark-pact.ts`. The target button
-     * carries `data-pact-index` (numeric index into `system.pacts`) and
-     * `data-delta` (signed integer).
-     */
-    static async #adjustPactDisposition(this: CharacterSheet, _event: Event, target: HTMLElement): Promise<void> {
-        const index = parseInt(target.dataset['pactIndex'] ?? '-1', 10);
-        const delta = parseInt(target.dataset['delta'] ?? '0', 10);
-        if (Number.isNaN(index) || index < 0 || Number.isNaN(delta) || delta === 0) return;
-
-        const pacts = this.actor.system.pacts;
-        if (!Array.isArray(pacts) || index >= pacts.length) return;
-
-        const updated = structuredClone(pacts);
-        const entry = updated[index];
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- tsconfig.test parser lacks noUncheckedIndexedAccess; strict tsconfig sees indexed access as possibly undefined
-        if (entry === undefined) return;
-        const current = entry.disposition as PactDisposition;
-        entry.disposition = adjustPactDisposition(current, delta);
-        await this.actor.update({ 'system.pacts': updated });
-    }
-
-    /* -------------------------------------------- */
-
-    /**
-     * Toggle the `discovered` flag for a pact. When flipping from
-     * `false → true`, fire the canonical Subtlety hit through the actor's
-     * `applySubtletyFromSource(pactUuid)` — this is the same path used by
-     * compendium-driven Subtlety adjusters and ensures the
-     * `lastSubtletySource` flag and discovery audit trail are populated
-     * consistently.
-     */
-    static async #togglePactDiscovered(this: CharacterSheet, _event: Event, target: HTMLElement): Promise<void> {
-        const index = parseInt(target.dataset['pactIndex'] ?? '-1', 10);
-        if (Number.isNaN(index) || index < 0) return;
-
-        const pacts = this.actor.system.pacts;
-        if (!Array.isArray(pacts) || index >= pacts.length) return;
-
-        const updated = structuredClone(pacts);
-        const entry = updated[index];
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- tsconfig.test parser lacks noUncheckedIndexedAccess; strict tsconfig sees indexed access as possibly undefined
-        if (entry === undefined) return;
-        const wasDiscovered = entry.discovered;
-        entry.discovered = !wasDiscovered;
-        await this.actor.update({ 'system.pacts': updated });
-
-        // Apply the canonical Subtlety hit only on the false → true edge.
-        if (!wasDiscovered && entry.pactUuid) {
-            await this.actor.applySubtletyFromSource(entry.pactUuid);
-        }
-    }
-
-    /* -------------------------------------------- */
-
-    /**
-     * Toggle the `paymentCurrent` flag for a pact. Disposition consequences
-     * of missed payments are GM-driven via the disposition stepper; this
-     * handler only flips the bookkeeping flag.
-     */
-    static async #togglePactPayment(this: CharacterSheet, _event: Event, target: HTMLElement): Promise<void> {
-        const index = parseInt(target.dataset['pactIndex'] ?? '-1', 10);
-        if (Number.isNaN(index) || index < 0) return;
-
-        const pacts = this.actor.system.pacts;
-        if (!Array.isArray(pacts) || index >= pacts.length) return;
-
-        const updated = structuredClone(pacts);
-        const entry = updated[index];
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- tsconfig.test parser lacks noUncheckedIndexedAccess; strict tsconfig sees indexed access as possibly undefined
-        if (entry === undefined) return;
-        entry.paymentCurrent = !entry.paymentCurrent;
-        await this.actor.update({ 'system.pacts': updated });
-    }
-
-    /* -------------------------------------------- */
-
-    /**
-     * Toggle the `complete` flag on an Endeavour's Objective. Updates the
-     * parent Endeavour item's `apEarned` total in lockstep — when an
-     * objective is checked, its AP contribution is added; when unchecked, it
-     * is reversed. Once `apEarned >= apRequired`, the actor sheet renders a
-     * "grant reward" button which calls `completeEndeavour`.
-     *
-     * The action's button carries:
-     *   - data-endeavour-id  → the parent Endeavour item id on the actor
-     *   - data-objective-index → numeric index into `system.objectives`
-     */
-    static async #completeObjective(this: CharacterSheet, _event: Event, target: HTMLElement): Promise<void> {
-        const endeavourId = target.dataset['endeavourId'];
-        const idxStr = target.dataset['objectiveIndex'];
-        if (endeavourId === undefined || idxStr === undefined) return;
-        const idx = Number.parseInt(idxStr, 10);
-        if (!Number.isFinite(idx)) return;
-        const item = this.actor.items.get(endeavourId);
-        if (item?.type !== 'endeavour') return;
-        // eslint-disable-next-line no-restricted-syntax -- boundary: ItemDataModel index signature widens; narrow to endeavour-specific surface via unknown
-        const sys = item.system as unknown as {
-            apEarned: number;
-            apRequired: number;
-            objectives: Array<{ name: string; description: string; complete: boolean; ap: number }>;
-        };
-        if (idx < 0 || idx >= sys.objectives.length) return;
-        const objective = sys.objectives[idx];
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- tsconfig.test parser lacks noUncheckedIndexedAccess; strict tsconfig sees indexed access as possibly undefined
-        if (objective === undefined) return;
-        const nextObjectives = sys.objectives.map((o, i) => (i === idx ? { ...o, complete: !o.complete } : o));
-        const delta = objective.complete ? -objective.ap : objective.ap;
-        const nextApEarned = Math.max(0, sys.apEarned + delta);
-        await item.update({
-            'system.objectives': nextObjectives,
-            'system.apEarned': nextApEarned,
-        });
-    }
-
-    /* -------------------------------------------- */
-
-    /**
-     * Grant the reward for a completed Endeavour: add the Endeavour's
-     * `reward.profitFactor` to `actor.system.rogueTrader.profitFactor.current`
-     * and post a chat card summarising the reward. The Endeavour item is
-     * left in place (with `apEarned >= apRequired`) so the GM still sees
-     * the historical record on the sheet.
-     *
-     * Guarded against double-spending: refuses to act unless
-     * `system.isComplete` evaluates to true on the embedded Endeavour.
-     */
-    static async #completeEndeavour(this: CharacterSheet, _event: Event, target: HTMLElement): Promise<void> {
-        const endeavourId = target.dataset['endeavourId'];
-        if (endeavourId === undefined) return;
-        const item = this.actor.items.get(endeavourId);
-        if (item?.type !== 'endeavour') return;
-        // eslint-disable-next-line no-restricted-syntax -- boundary: ItemDataModel index signature widens; narrow to endeavour-specific surface via unknown
-        const sys = item.system as unknown as {
-            apEarned: number;
-            apRequired: number;
-            isComplete: boolean;
-            reward: { profitFactor: number; narrative: string };
-        };
-        if (!sys.isComplete) return;
-        const award = Math.max(0, sys.reward.profitFactor);
-        // eslint-disable-next-line no-restricted-syntax -- boundary: rogueTrader.profitFactor.current is a per-system actor schema field not exposed on the abstract WH40KBaseActor system surface
-        const currentPF = (this.actor.system as { rogueTrader?: { profitFactor?: { current?: number } } }).rogueTrader?.profitFactor?.current ?? 0;
-        if (award > 0) {
-            await this.actor.update({ 'system.rogueTrader.profitFactor.current': currentPF + award });
-        }
-        const headerLabel = game.i18n.localize('WH40K.Endeavours.RewardGrantedHeader');
-        const apLabel = game.i18n.localize('WH40K.Endeavours.APShort');
-        const pfLabel = game.i18n.localize('WH40K.Endeavours.RewardProfitFactor');
-        const narrative = sys.reward.narrative === '' ? '' : `<p>${foundry.utils.escapeHTML(sys.reward.narrative)}</p>`;
-        const content = `
-            <div class="endeavour-chat-card">
-                <h3>${headerLabel}: ${foundry.utils.escapeHTML(item.name)}</h3>
-                <p><strong>${apLabel}:</strong> ${sys.apEarned}/${sys.apRequired}</p>
-                ${award > 0 ? `<p><strong>${pfLabel}:</strong> +${award}</p>` : ''}
-                ${narrative}
-            </div>
-        `;
-        await ChatMessage.create({
-            speaker: ChatMessage.getSpeaker({ actor: this.actor }),
-            content,
-            flags: {
-                'wh40k-rpg': {
-                    type: 'endeavour-reward',
-                    endeavourId,
-                },
-            },
-        });
-    }
-
-    /* -------------------------------------------- */
-
-    /**
-     * Open the Acquisition Dialog for rolling acquisition tests.
-     * @this {CharacterSheet}
-     * @param {Event} event         Triggering click event.
-     * @param {HTMLElement} target  Button that was clicked.
-     */
-    static async #openAcquisitionDialog(this: CharacterSheet, event: Event, _target: HTMLElement): Promise<void> {
-        event.preventDefault();
-        await AcquisitionDialog.show(this.actor);
-    }
-
-    /**
-     * Open the Colony Growth Dialog for resolving a 90-day Colony growth
-     * cycle (Stars of Inequity, #195). RT-gated — the Dynasty tab where
-     * this button lives is only rendered for RT characters, so the
-     * runtime guard is defensive against accidental invocation on other
-     * systems.
-     * @this {CharacterSheet}
-     * @param {Event} event Triggering click event.
-     * @param {HTMLElement} target Button that was clicked.
-     */
-    // eslint-disable-next-line @typescript-eslint/require-await -- ApplicationV2 action handlers expect Promise<void>; concrete impl is synchronous
-    static async #openColonyGrowthDialog(this: CharacterSheet, event: Event, _target: HTMLElement): Promise<void> {
-        event.preventDefault();
-        if (this._resolveGameSystemId() !== 'rt') return;
-        ColonyGrowthDialog.show(this.actor);
-    }
-
-    /* -------------------------------------------- */
     /*  Event Handlers - Experience                 */
     /* -------------------------------------------- */
 
@@ -4814,10 +3521,7 @@ export default class CharacterSheet extends BaseActorSheet {
      */
     static #openAdvancement(this: CharacterSheet, event: Event, _target: HTMLElement): void {
         event.preventDefault();
-        // Default to rogueTrader career for now
-        // TODO: Get career from actor.system.originPath.career or rogueTrader.careerPath
-        const careerKey = this.actor.originPath['career'];
-        AdvancementDialog.open(this.actor, { careerKey });
+        AdvancementDialog.open(this.actor);
     }
 
     /* -------------------------------------------- */
@@ -4859,271 +3563,6 @@ export default class CharacterSheet extends BaseActorSheet {
     /*  Event Handlers - Possession Track (#82)     */
     /* -------------------------------------------- */
 
-    /**
-     * Read the actor's possession slot, defaulting any missing field so the
-     * pure helpers in `module/rules/possession.ts` always see a complete
-     * shape. Centralized so both action methods stay tight.
-     * @returns {PossessionSlot}
-     * @private
-     */
-    _readPossessionSlot(): PossessionSlot {
-        const raw = (this.actor.system as { possession?: Partial<PossessionSlot> } | undefined)?.possession;
-        const state = raw?.state ?? 'none';
-        const unleashUsed = typeof raw?.unleashUsed === 'number' ? raw.unleashUsed : 0;
-        const unleashMax = typeof raw?.unleashMax === 'number' ? raw.unleashMax : 0;
-        return { state, unleashUsed, unleashMax };
-    }
-
-    /**
-     * Spend one Unleash Daemon charge for the current session. Routes
-     * through the pure `spendUnleashDaemon` helper to keep parity with the
-     * engine; no-ops with a warning when the actor is in the `none` state
-     * or has exhausted their per-session uses.
-     * @this {CharacterSheet}
-     * @param {Event} event         Triggering click event.
-     * @param {HTMLElement} target  Button that was clicked.
-     */
-    static async #unleashDaemon(this: CharacterSheet, _event: Event, _target: HTMLElement): Promise<void> {
-        try {
-            const slot = this._readPossessionSlot();
-            if (!canUnleashDaemon(slot)) {
-                this._notify('warning', game.i18n.localize('WH40K.Possession.UnleashUnavailable'), { duration: 3000 });
-                return;
-            }
-            const next = spendUnleashDaemon(slot);
-            await this._updateSystemField('system.possession.unleashUsed', next.unleashUsed);
-            this._notify('info', game.i18n.localize('WH40K.Possession.UnleashSpent'), { duration: 2500 });
-        } catch (error) {
-            this._notify('error', game.i18n.format('WH40K.Notify.CharacterSheet.UnleashDaemonFailed', { error: errorMessage(error) }), { duration: 5000 });
-            console.error('Unleash daemon error:', error);
-        }
-    }
-
-    /**
-     * Reset the per-session Unleash Daemon counter to zero. GM-only — the
-     * button only renders for GM users in the template, but we still gate
-     * server-side in case the action is dispatched via console.
-     * @this {CharacterSheet}
-     * @param {Event} event         Triggering click event.
-     * @param {HTMLElement} target  Button that was clicked.
-     */
-    static async #resetPossessionSession(this: CharacterSheet, _event: Event, _target: HTMLElement): Promise<void> {
-        try {
-            if (!game.user.isGM) {
-                this._notify('warning', game.i18n.localize('WH40K.Possession.ResetGmOnly'), { duration: 3000 });
-                return;
-            }
-            const slot = this._readPossessionSlot();
-            const next = resetSessionUnleash(slot);
-            await this._updateSystemField('system.possession.unleashUsed', next.unleashUsed);
-            this._notify('info', game.i18n.localize('WH40K.Possession.ResetDone'), { duration: 2500 });
-        } catch (error) {
-            this._notify('error', game.i18n.format('WH40K.Notify.CharacterSheet.PossessionResetFailed', { error: errorMessage(error) }), { duration: 5000 });
-            console.error('Reset possession session error:', error);
-        }
-    }
-
-    /**
-     * Post a possession Frenzy/Mismanifest chat card. Mirrors the
-     * disorder-roll-dialog render+create pattern (chat templates render
-     * outside the sheet root; the renderChatMessageHTML hook supplies the
-     * `.wh40k-rpg` ancestor).
-     */
-    // eslint-disable-next-line no-restricted-syntax -- boundary: data is passed straight into foundry.applications.handlebars.renderTemplate which accepts an arbitrary template context
-    async _postPossessionChat(data: Record<string, unknown>): Promise<void> {
-        data['_gameSystemId'] = firstSystemId(this.actor);
-        const html = await foundry.applications.handlebars.renderTemplate('systems/wh40k-rpg/templates/chat/possession-frenzy-chat.hbs', data);
-        // eslint-disable-next-line no-restricted-syntax -- boundary: ChatMessage.create payload shape lives outside our shipped types
-        const payload = { user: game.user.id, content: html, speaker: { alias: this.actor.name } } as unknown as Parameters<typeof ChatMessage.create>[0];
-        await ChatMessage.create(payload);
-    }
-
-    /**
-     * Per-round Challenging (+0) Willpower test while the Possession power
-     * is sustained (#132 — beyond.md L2095-2116). Failure inflicts Frenzy
-     * this round; the power must still be sustained.
-     * @this {CharacterSheet}
-     */
-    static async #possessionFrenzyTest(this: CharacterSheet, _event: Event, _target: HTMLElement): Promise<void> {
-        try {
-            const slot = this._readPossessionSlot();
-            if (slot.state !== 'latent') {
-                this._notify('warning', game.i18n.localize('WH40K.Possession.FrenzyLoopUnavailable'), { duration: 3000 });
-                return;
-            }
-            const wp = Math.trunc(Number(this.actor.system.characteristics.willpower.total));
-            const rollResult = await new Roll('1d100').evaluate();
-            const roll = Number(rollResult.total);
-            const result = resolveFrenzyTest(roll, wp);
-            await this._postPossessionChat({
-                mode: 'frenzy',
-                actorName: this.actor.name,
-                roll,
-                target: result.target,
-                success: result.passed,
-                stateBefore: 'latent',
-                stateAfter: 'latent',
-            });
-            this._notify(
-                result.passed ? 'info' : 'warning',
-                game.i18n.localize(result.passed ? 'WH40K.Possession.FrenzyResistedNotify' : 'WH40K.Possession.FrenzyEnteredNotify'),
-                { duration: 3000 },
-            );
-        } catch (error) {
-            this._notify('error', game.i18n.format('WH40K.Notify.CharacterSheet.FrenzyFailed', { error: errorMessage(error) }), { duration: 5000 });
-            console.error('Possession frenzy test error:', error);
-        }
-    }
-
-    /**
-     * Opposed-Willpower Mismanifest contest following a Psychic Phenomena
-     * result on Possession (#132). A loss escalates to full possession.
-     * The daemon's Willpower mirrors the actor's until combat targeting is
-     * wired (same placeholder convention as the grapple opposed roller).
-     * @this {CharacterSheet}
-     */
-    static async #possessionMismanifest(this: CharacterSheet, _event: Event, _target: HTMLElement): Promise<void> {
-        try {
-            const slot = this._readPossessionSlot();
-            if (slot.state !== 'latent') {
-                this._notify('warning', game.i18n.localize('WH40K.Possession.FrenzyLoopUnavailable'), { duration: 3000 });
-                return;
-            }
-            const wp = Math.trunc(Number(this.actor.system.characteristics.willpower.total));
-            const psykerRollResult = await new Roll('1d100').evaluate();
-            const daemonRollResult = await new Roll('1d100').evaluate();
-            const psykerRoll = Number(psykerRollResult.total);
-            const daemonRoll = Number(daemonRollResult.total);
-            const resolution = resolveMismanifestPossession(psykerRoll, wp, daemonRoll, wp, slot.state);
-            const next = applyMismanifest(slot, resolution);
-            await this._updateSystemField('system.possession.state', next.state);
-            await this._postPossessionChat({
-                mode: 'mismanifest',
-                actorName: this.actor.name,
-                roll: psykerRoll,
-                target: wp,
-                daemonRoll,
-                daemonTarget: wp,
-                psykerDoS: resolution.psykerDoS,
-                daemonDoS: resolution.daemonDoS,
-                success: resolution.psykerWon,
-                stateBefore: slot.state,
-                stateAfter: next.state,
-            });
-            this._notify(
-                resolution.psykerWon ? 'info' : 'error',
-                game.i18n.localize(resolution.psykerWon ? 'WH40K.Possession.MismanifestHeldNotify' : 'WH40K.Possession.MismanifestEscalated'),
-                { duration: 3500 },
-            );
-        } catch (error) {
-            this._notify('error', game.i18n.format('WH40K.Notify.CharacterSheet.MismanifestFailed', { error: errorMessage(error) }), { duration: 5000 });
-            console.error('Possession mismanifest error:', error);
-        }
-    }
-
-    /**
-     * Fanatic role — Death to All Who Oppose Me! (#93, DH2 Enemies Within p.34).
-     *
-     * Spending 1 Fate grants Hatred toward the chosen foe until the encounter ends.
-     *
-     * Pipeline:
-     *   - refuse without exactly one targeted foe, or with 0 Fate
-     *   - find this line's Hatred talent document by `system.identifier`
-     *   - decrement `system.fate.value` by 1
-     *   - grant an encounter-scoped copy of that Hatred talent whose
-     *     `vsSpecialization` hooks are re-aimed at the foe (`vsActor`), so the
-     *     bonus is Hatred's own data; it is removed when the Combat is deleted
-     *   - emit a chat card naming the foe (and the 1 Insanity for leaving combat
-     *     against it, which is GM-adjudicated)
-     *
-     * Errors surface as in-sheet notifications.
-     * @this {CharacterSheet}
-     */
-    static async #deathToAllWhoOpposeMe(this: CharacterSheet, _event: Event, _target: HTMLElement): Promise<void> {
-        try {
-            const targets = Array.from(game.user.targets);
-            const foe = targets.length === 1 ? targets[0]?.actor ?? null : null;
-            const foeUuid = foe?.uuid ?? null;
-            if (foe === null || foeUuid === null) {
-                this._notify('warning', game.i18n.localize('WH40K.Fanatic.NoTarget'), { duration: 3000 });
-                return;
-            }
-
-            const fateValue = this.actor.system.fate.value;
-            if (fateValue <= 0) {
-                this._notify('warning', game.i18n.localize('WH40K.Fanatic.NoFatePoints'), { duration: 3000 });
-                return;
-            }
-
-            const hatredUuid = await findItemUuidByIdentifier('talent', HATRED_IDENTIFIER, gameSystemPackPrefix(this._resolveGameSystemId() ?? undefined));
-            const hatred = hatredUuid === null ? null : await fromUuid(hatredUuid);
-            if (!(hatred instanceof Item)) {
-                this._notify('warning', game.i18n.localize('WH40K.Fanatic.NoHatred'), { duration: 3000 });
-                return;
-            }
-
-            await this._updateSystemField('system.fate.value', fateValue - 1);
-
-            const source = hatred.toObject();
-            const hatredHooks = (hatred as DynamicModifierItemLike).system.modifiers?.dynamicModifiers ?? [];
-            const grant = foundry.utils.mergeObject(source, {
-                'system.specialization': foe.name,
-                'system.modifiers.dynamicModifiers': hatredAgainstFoe(hatredHooks, foeUuid),
-                [`flags.${SYSTEM_ID}.${ENCOUNTER_GRANT_FLAG}`]: true,
-            });
-            await this.actor.createEmbeddedDocuments('Item', [grant]);
-
-            const gameSystem = this._resolveGameSystemId() ?? '';
-            const content = await foundry.applications.handlebars.renderTemplate('systems/wh40k-rpg/templates/chat/fanatic-chat.hbs', {
-                _gameSystemId: firstSystemId(this.actor),
-                actorName: this.actor.name,
-                foeName: foe.name,
-                hatredName: hatred.name,
-                gameSystem,
-            });
-            await ChatMessage.create({
-                user: game.user.id,
-                speaker: ChatMessage.getSpeaker({ actor: this.actor }),
-                content,
-            });
-        } catch (error) {
-            this._notify('error', game.i18n.format('WH40K.Notify.CharacterSheet.DeathToAllFailed', { error: errorMessage(error) }), { duration: 5000 });
-            console.error('Death to All Who Oppose Me error:', error);
-        }
-    }
-
-    /**
-     * Crusader role — Smite the Unholy (#141, beyond.md p.34).
-     * Spend 1 Fate to auto-pass a Fear test with DoS = WPB.
-     */
-    static async #smiteTheUnholy(this: CharacterSheet, _event: Event, _target: HTMLElement): Promise<void> {
-        try {
-            const fateValue = this.actor.system.fate.value;
-            if (fateValue < SMITE_THE_UNHOLY_FATE_COST) {
-                this._notify('warning', game.i18n.localize('WH40K.Crusader.NoFatePoints'), { duration: 3000 });
-                return;
-            }
-            await this._updateSystemField('system.fate.value', fateValue - SMITE_THE_UNHOLY_FATE_COST);
-            const wp = this.actor.system.characteristics.willpower.total;
-            const dos = resolveSmiteTheUnholyDoS(wp);
-            const gameSystem = this._resolveGameSystemId() ?? '';
-            const content = await foundry.applications.handlebars.renderTemplate('systems/wh40k-rpg/templates/chat/crusader-chat.hbs', {
-                _gameSystemId: firstSystemId(this.actor),
-                actorName: this.actor.name,
-                willpowerBonus: dos,
-                gameSystem,
-            });
-            await ChatMessage.create({
-                user: game.user.id,
-                speaker: ChatMessage.getSpeaker({ actor: this.actor }),
-                content,
-            });
-        } catch (error) {
-            this._notify('error', game.i18n.format('WH40K.Notify.CharacterSheet.SmiteFailed', { error: errorMessage(error) }), { duration: 5000 });
-            console.error('Smite the Unholy error:', error);
-        }
-    }
-
     /** Manacles condition — apply (#105, errata p.176). */
     static async #applyManacles(this: CharacterSheet, _event: Event, _target: HTMLElement): Promise<void> {
         try {
@@ -5145,16 +3584,6 @@ export default class CharacterSheet extends BaseActorSheet {
         } catch (error) {
             this._notify('error', game.i18n.format('WH40K.Notify.CharacterSheet.ManacledLiftFailed', { error: errorMessage(error) }), { duration: 5000 });
             console.error('liftManacles error:', error);
-        }
-    }
-
-    /** Ace role — Right Stuff Fate-spend (#100, without.md p.39). */
-    static #openRightStuff(this: CharacterSheet, _event: Event, _target: HTMLElement): void {
-        try {
-            openRightStuffDialog({ actor: this.actor });
-        } catch (error) {
-            this._notify('error', game.i18n.format('WH40K.Notify.CharacterSheet.RightStuffFailed', { error: errorMessage(error) }), { duration: 5000 });
-            console.error('openRightStuff error:', error);
         }
     }
 
@@ -5523,170 +3952,6 @@ export default class CharacterSheet extends BaseActorSheet {
     }
 
     /**
-     * GM-only manual stepper for the Warband Subtlety pool (#87).
-     * Reads `data-delta` (±1) from the clicked button and routes the
-     * adjustment through `WH40KBaseActor.applySubtlety(delta, 'manual')`
-     * so the loss-clamp adjusters discovered by
-     * `collectSubtletyAdjusters()` are honoured uniformly.
-     */
-    static async #adjustSubtletyManually(this: CharacterSheet, _event: Event, target: HTMLElement): Promise<void> {
-        if (!game.user.isGM) return;
-        const deltaAttr = target.dataset['delta'];
-        if (deltaAttr === undefined || deltaAttr === '') return;
-        const delta = Number.parseInt(deltaAttr, 10);
-        if (!Number.isFinite(delta) || delta === 0) return;
-        await this.actor.applySubtlety(delta, 'manual');
-    }
-
-    /**
-     * Open a read-only popout listing every Subtlety adjuster currently
-     * collected on this actor (#87). Uses Foundry's DialogV2 directly to
-     * keep the surface minimal — the list is computed inline from
-     * `collectSubtletyAdjusters()`.
-     */
-    static #viewSubtletyBreakdown(this: CharacterSheet, _event: Event, _target: HTMLElement): void {
-        const adjusters = this.actor.collectSubtletyAdjusters();
-        const rows = adjusters.length
-            ? adjusters
-                  .map((adj) => {
-                      const right =
-                          adj.kind === 'clamp'
-                              ? game.i18n.format('WH40K.SubtletyPanel.Clamped', { value: String(adj.minAbsoluteDelta) })
-                              : `${adj.delta > 0 ? '+' : ''}${adj.delta}`;
-                      return `<li><strong>${foundry.utils.escapeHTML(adj.label)}</strong> — <span>${foundry.utils.escapeHTML(right)}</span></li>`;
-                  })
-                  .join('')
-            : `<li><em>${game.i18n.localize('WH40K.SubtletyPanel.EmptyAdjusters')}</em></li>`;
-        const content = `<ul class="wh40k-subtlety-breakdown-list">${rows}</ul>`;
-        void dialogV2.prompt({
-            window: { title: game.i18n.localize('WH40K.SubtletyPanel.BreakdownTitle') },
-            content,
-            ok: { label: 'OK' },
-        });
-    }
-
-    /**
-     * Re-evaluate the BC Alignment at the next 10-CP threshold (#173).
-     *
-     * Walks the actor's chaos-advance log via `tallyAdvancesByAlignment`
-     * and `deriveAlignmentFromTally`, persists the new `chaosAlignment`
-     * and `alignmentCheckpoint` in a single update, then posts a chat
-     * card reporting the outcome. The button is only rendered by the
-     * panel when `recheckDue` is true, but we still guard against a
-     * stale click here by no-op-ing if `shouldRecheckAlignment` returns
-     * false. Naming matches the partial's `data-action="recheckBcAlignment"`
-     * — the BC-prefixed name disambiguates it from a generic re-check
-     * that may exist for other systems in the future.
-     */
-    static async #recheckBcAlignment(this: CharacterSheet, _event: Event, _target: HTMLElement): Promise<void> {
-        if (this._resolveGameSystemId() !== 'bc') return;
-        const system = this.actor.system;
-        const corruption = system.corruption;
-        const previousCheckpoint = system.alignmentCheckpoint;
-        if (!shouldRecheckAlignment(corruption, previousCheckpoint)) return;
-        const previous = system.chaosAlignment;
-        const tally = tallyAdvancesByAlignment(system.chaosAdvancements);
-        const next = deriveAlignmentFromTally(tally);
-        const newCheckpoint = nextAlignmentCheckpoint(corruption);
-        try {
-            await this.actor.update({
-                'system.chaosAlignment': next,
-                'system.alignmentCheckpoint': newCheckpoint,
-            });
-            const flipped = previous !== next;
-            const messageKey = flipped ? 'WH40K.BC.Advancement.RecheckFlippedTo' : 'WH40K.BC.Advancement.RecheckUnchanged';
-            const formatted = flipped
-                ? game.i18n.format(messageKey, {
-                      previous: game.i18n.localize(`WH40K.BC.Advancement.Alignment.${this.#capitalizeAlignment(previous)}`),
-                      next: game.i18n.localize(`WH40K.BC.Advancement.Alignment.${this.#capitalizeAlignment(next)}`),
-                  })
-                : game.i18n.localize(messageKey);
-            await ChatMessage.create({
-                user: game.user.id,
-                speaker: ChatMessage.getSpeaker({ actor: this.actor }),
-                content: `<p><strong>${game.i18n.localize('WH40K.BC.Advancement.RecheckChatTitle')}</strong></p><p>${formatted}</p>`,
-            });
-        } catch (error) {
-            this._notify('error', game.i18n.format('WH40K.Notify.CharacterSheet.AlignmentRecheckFailed', { error: errorMessage(error) }), { duration: 5000 });
-            console.error('BC alignment recheck error:', error);
-        }
-    }
-
-    /**
-     * Purchase an Infamy advance for a BC actor per Table 2-9 (#173).
-     *
-     * Pulls cost and increment from `bc-advancement-config.ts`, confirms
-     * the spend via DialogV2.prompt (matching the prompt-driven XP-spend
-     * style used elsewhere in the sheet), and writes the new
-     * `experience.used` + `infamy` value in a single update. The cap is
-     * enforced in two places defensively: `infamyAdvanceCost` returns
-     * null when at/over the cap, and the partial collapses the button to
-     * the "InfamyCapped" notice.
-     */
-    static async #buyBcInfamyAdvance(this: CharacterSheet, _event: Event, _target: HTMLElement): Promise<void> {
-        if (this._resolveGameSystemId() !== 'bc') return;
-        const system = this.actor.system;
-        const currentInfamy = system.infamy;
-        const cost = infamyAdvanceCost(currentInfamy);
-        if (cost === null) {
-            this._notify('warning', game.i18n.format('WH40K.BC.Advancement.BuyInfamyCapped', { cap: String(BC_INFAMY_ADVANCE_CAP) }), {
-                duration: 4000,
-            });
-            return;
-        }
-        const available = system.experience.available;
-        if (available < cost) {
-            this._notify(
-                'warning',
-                game.i18n.format('WH40K.BC.Advancement.BuyInfamyInsufficientXP', {
-                    cost: String(cost),
-                    available: String(available),
-                }),
-                { duration: 4000 },
-            );
-            return;
-        }
-        const nextInfamy = Math.min(currentInfamy + BC_INFAMY_INCREMENT, BC_INFAMY_ADVANCE_CAP);
-        const confirmContent = `<p>${game.i18n.format('WH40K.BC.Advancement.BuyInfamyConfirmBody', {
-            xp: String(cost),
-            step: String(BC_INFAMY_INCREMENT),
-            next: String(nextInfamy),
-        })}</p>`;
-        const confirmed = await dialogV2.confirm({
-            window: { title: game.i18n.localize('WH40K.BC.Advancement.BuyInfamyConfirmTitle') },
-            content: confirmContent,
-            rejectClose: false,
-        });
-        if (!confirmed) return;
-        try {
-            await this.actor.update({
-                'system.infamy': nextInfamy,
-                // No `experience.used` write: it is derived from the
-                // `chaosAdvancements` ledger below, and the derive is its only
-                // writer (#509).
-                'system.chaosAdvancements': [
-                    ...system.chaosAdvancements,
-                    {
-                        category: 'infamy',
-                        key: `infamy:${nextInfamy}`,
-                        xpCost: cost,
-                        alignment: 'unaligned',
-                        fromArchetype: false,
-                    },
-                ],
-            });
-        } catch (error) {
-            this._notify('error', game.i18n.format('WH40K.Notify.CharacterSheet.InfamyPurchaseFailed', { error: errorMessage(error) }), { duration: 5000 });
-            console.error('BC infamy advance purchase error:', error);
-        }
-    }
-
-    /** Capitalize a ChaosAlignment string for use in the langpack key suffix. */
-    #capitalizeAlignment(alignment: ChaosAlignment): string {
-        return capitalize(alignment);
-    }
-
-    /**
      * Open the characteristic setup dialog.
      * @this {CharacterSheet}
      * @param {Event} event         Triggering event.
@@ -5993,8 +4258,7 @@ export default class CharacterSheet extends BaseActorSheet {
         // than the free SpecialistSkillDialog, which added them untrained at no cost (#387).
         // The free dialog is retained for NPC sheets, where the GM edits skills directly
         // and there is no XP economy.
-        const careerKey = this.actor.originPath['career'];
-        AdvancementDialog.open(this.actor, { careerKey });
+        AdvancementDialog.open(this.actor);
     }
 
     /* -------------------------------------------- */
@@ -6575,8 +4839,7 @@ export default class CharacterSheet extends BaseActorSheet {
         // (NPCs) opt out, so the talent lands on them like any other item.
         const isUnknownTalent = item.type === 'talent' && this.actor.items.get(item.id ?? '') === undefined && this._buysTalentsWithXp();
         if (isUnknownTalent) {
-            const careerKey = (this.actor.system as { originPath?: { career?: string } }).originPath?.career ?? 'rogueTrader';
-            AdvancementDialog.open(this.actor, { careerKey });
+            AdvancementDialog.open(this.actor);
             this._notify('info', game.i18n.format('WH40K.Advancement.PurchaseTalentViaAdvancement', { name: item.name }), {
                 duration: 5000,
             });

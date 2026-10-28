@@ -173,13 +173,7 @@ describe('WH40KSettings.registerSettings — structural-shape guard (#299)', () 
             },
             {
               "choices": [
-                "rt",
-                "dh1",
-                "dh2",
-                "bc",
                 "ow",
-                "dw",
-                "im",
               ],
               "config": true,
               "default": ""dh2"",
@@ -801,20 +795,19 @@ describe('WH40KSettings — system-parameter value spaces (parameterized)', () =
         });
     });
 
-    // --- Primary game line: every one of the 7 systems + invalid → dh2 ---
-    describe('getPrimaryGameSystem (per game line)', () => {
-        const lines: ReadonlyArray<readonly [string]> = [['dh2'], ['dh1'], ['rt'], ['bc'], ['ow'], ['dw'], ['im']];
-        it.each(lines)('stored %p resolves to itself', (id) => {
-            stubSetting(id);
-            expect(WH40KSettings.getPrimaryGameSystem()).toBe(id);
+    // --- Primary game line: Only War is the single system; anything else → ow ---
+    describe('getPrimaryGameSystem', () => {
+        it('stored ow resolves to itself', () => {
+            stubSetting('ow');
+            expect(WH40KSettings.getPrimaryGameSystem()).toBe('ow');
         });
-        const invalid: ReadonlyArray<readonly [string]> = [['nonsense'], ['']];
-        it.each(invalid)('invalid %p → dh2', (id) => {
+        const invalid: ReadonlyArray<readonly [string]> = [['nonsense'], [''], ['dh2']];
+        it.each(invalid)('invalid %p → ow', (id) => {
             stubSetting(id);
-            expect(WH40KSettings.getPrimaryGameSystem()).toBe('dh2');
+            expect(WH40KSettings.getPrimaryGameSystem()).toBe('ow');
         });
-        it('pre-registration → dh2', () => {
-            expect(WH40KSettings.getPrimaryGameSystem()).toBe('dh2');
+        it('pre-registration → ow', () => {
+            expect(WH40KSettings.getPrimaryGameSystem()).toBe('ow');
         });
     });
 });

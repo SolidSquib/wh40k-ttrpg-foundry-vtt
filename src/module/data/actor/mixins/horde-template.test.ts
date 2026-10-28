@@ -15,7 +15,7 @@
  * (`tests/e2e/dw-horde-magnitude.spec.ts`).
  */
 import { describe, expect, it } from 'vitest';
-import { bonusDamageDiceForMagnitude, getHordeTier, toHitBonusForMagnitude } from '../../../rules/dw-horde-magnitude';
+import { bonusDamageDiceForMagnitude, getHordeTier, toHitBonusForMagnitude } from '../../../rules/horde-magnitude';
 
 interface HordePrepShape {
     enabled: boolean;

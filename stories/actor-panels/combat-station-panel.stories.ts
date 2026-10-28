@@ -51,9 +51,9 @@ const meta: Meta = {
 export default meta;
 type Story = StoryObj;
 
-/** A DH2 player character — the canonical case. */
-export const PlayerDH2: Story = {
-    args: combatContext(mockPlayerSheetContext({ systemId: 'dh2', activeTab: 'combat' })),
+/** An Only War player character — the canonical case. */
+export const PlayerOW: Story = {
+    args: combatContext(mockPlayerSheetContext({ systemId: 'ow', activeTab: 'combat' })),
     play: async ({ canvasElement }) => {
         const view = within(canvasElement);
         // #494's load-bearing assertion: the shared Vitals partial carries its
@@ -68,8 +68,8 @@ export const PlayerDH2: Story = {
  * `minmax(0,2fr) minmax(320px,1fr)`, so this is where the right column would
  * crowd the left if the change had broken the layout.
  */
-export const PlayerDH2Compact: Story = {
-    args: combatContext(mockPlayerSheetContext({ systemId: 'dh2', activeTab: 'combat' })),
+export const PlayerOWCompact: Story = {
+    args: combatContext(mockPlayerSheetContext({ systemId: 'ow', activeTab: 'combat' })),
     parameters: { viewport: { defaultViewport: 'combatCompact' } },
     globals: { viewport: { value: 'combatCompact' } },
     render: (args: object) => {
@@ -86,7 +86,7 @@ export const PlayerDH2Compact: Story = {
  * control going missing again, which is exactly what the first #494 pass did.
  */
 export const NpcWithFate: Story = {
-    args: combatContext(mockNpcSheetContext({ systemId: 'dh2' }), { isNPC: true, npcFateHidden: false }),
+    args: combatContext(mockNpcSheetContext({ systemId: 'ow' }), { isNPC: true, npcFateHidden: false }),
     play: async ({ canvasElement }) => {
         const view = within(canvasElement);
         await expect(view.getAllByText(/^Vitals$/i)).toHaveLength(1);
@@ -97,7 +97,7 @@ export const NpcWithFate: Story = {
 
 /** An NPC below elite tier: `npcFateHidden` suppresses the Fate control. */
 export const NpcFateHidden: Story = {
-    args: combatContext(mockNpcSheetContext({ systemId: 'dh2' }), { isNPC: true, npcFateHidden: true }),
+    args: combatContext(mockNpcSheetContext({ systemId: 'ow' }), { isNPC: true, npcFateHidden: true }),
     play: async ({ canvasElement }) => {
         await expect(canvasElement.querySelector('[data-field="system.fate.value"]')).toBeNull();
     },
