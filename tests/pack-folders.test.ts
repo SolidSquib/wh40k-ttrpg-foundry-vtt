@@ -44,9 +44,8 @@ describe.skipIf(!HAS_PRIVATE_CONTENT)('system.json packFolders ↔ packs sync (#
         expect([...new Set(dupes)]).toEqual([]);
     });
 
-    it('gives every supported game line a top-level folder (incl. IM)', () => {
+    it('gives the supported game line a top-level folder', () => {
         const tops = system.packFolders.map((f) => f.name);
-        expect(tops).toContain('Imperium Maledictum');
-        expect(tops).toContain('Dark Heresy 2e');
+        expect(tops).toContain('Only War');
     });
 });

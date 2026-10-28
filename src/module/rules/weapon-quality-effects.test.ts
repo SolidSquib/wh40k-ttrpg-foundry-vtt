@@ -18,7 +18,6 @@ import {
     collectWeaponQualityDieOps,
     type DieTermLike,
     resolveCripplingTickDamage,
-    resolveGravitonBonusDamage,
     resolveHaywireRadius,
     resolveHitEffectSaveTarget,
     resolveIndirectPenalty,
@@ -28,7 +27,6 @@ import {
     resolvePrimitiveDamageAdjust,
     resolveProvenDamageAdjust,
     resolveDieOpDamageAdjust,
-    resolveScatterRangeBand,
     resolveStunDuration,
     resolveTemplateRadius,
     weaponQualityIdentifierFromName,
@@ -43,7 +41,7 @@ function weaponWith(qualities: ReadonlyArray<string>): QualityWeapon {
 
 // Read the real weaponQuality pack `_source` and build the by-identifier mechanics
 // map the boot index would build, then seed the resolver index from it.
-const PACK_DIR = resolve(__dirname, '../../packs-private/rogue-trader/rt-core-items-weapon-qualities/_source');
+const PACK_DIR = resolve(__dirname, '../../packs-private/only-war/ow-core-items-weapon-qualities/_source');
 const mechanicsById = new Map<string, WeaponQualityMechanics>();
 if (existsSync(PACK_DIR)) {
     for (const file of readdirSync(PACK_DIR).filter((f) => f.endsWith('.json'))) {
@@ -69,32 +67,20 @@ describe.skipIf(!HAS_PRIVATE_CONTENT)('weaponQuality pack is populated with mech
         expect(mechanicsById.size).toBeGreaterThan(0);
     });
 
-    it('pins the RAW Righteous-Fury thresholds (Gauss=9, Vengeful=8)', () => {
-        // The resolver-side lookup is covered in righteous-fury.test.ts; this guards
-        // the pack content the boot index reads.
-        expect(mech('gauss').rfThreshold).toBe(9);
-        expect(mech('vengeful').rfThreshold).toBe(8);
+    it('holds exactly the qualities printed on core rulebook pp. 169–173', () => {
+        expect(mechanicsById.size).toBe(39);
     });
 
-    it('pins the Category-B parry/attack scalars', () => {
+    it('pins the parry/attack scalars the book prints', () => {
         expect(mech('accurate').aimBonus).toBe(10);
         expect(mech('balanced').parryBonus).toBe(10);
         expect(mech('defensive').parryBonus).toBe(15);
-        expect(mech('fast').enemyParryPenalty).toBe(-20);
         expect(mech('unbalanced').parryPenalty).toBe(-10);
+        expect(mech('twin-linked').attackBonus).toBe(20);
     });
 });
 
-describe.skipIf(!HAS_PRIVATE_CONTENT)('Scavenged — destroyOnCriticalFail', () => {
-    it('pins the RAW destroy-on-crit-fail mechanic on the canonical Scavenged doc', () => {
-        // The RT-core Scavenged doc is the #303 canonical; the six line stubs mirror it by ref.
-        expect(mech('scavenged').destroyOnCriticalFail).toBe(true);
-    });
-
-    it('reports a Scavenged weapon as destroy-on-crit-fail (data-driven, no name-match)', () => {
-        expect(weaponDestroysOnCriticalFail(weaponWith(['scavenged']))).toBe(true);
-    });
-
+describe('weaponDestroysOnCriticalFail', () => {
     it('reports a plain weapon (or one with unrelated qualities) as not destroy-on-crit-fail', () => {
         expect(weaponDestroysOnCriticalFail(weaponWith([]))).toBe(false);
         expect(weaponDestroysOnCriticalFail(weaponWith(['tearing', 'balanced']))).toBe(false);
@@ -103,9 +89,9 @@ describe.skipIf(!HAS_PRIVATE_CONTENT)('Scavenged — destroyOnCriticalFail', () 
 });
 
 describe.skipIf(!HAS_PRIVATE_CONTENT)('Blast (X) — template payload', () => {
-    it('exposes a sphere template with variable radius', () => {
+    it('exposes a burst template with variable radius', () => {
         const tpl = mech('blast').template;
-        expect(tpl.shape).toBe('sphere');
+        expect(tpl.shape).toBe('burst');
         expect(tpl.radiusVariable).toBe(true);
     });
 
@@ -134,16 +120,15 @@ describe.skipIf(!HAS_PRIVATE_CONTENT)('Concussive (X) — Toughness test + DoF-s
     });
 
     it('stun rounds = DoF per RAW', () => {
-        expect(resolveStunDuration({ dof: 3, key: 'concussive' })).toBe(3);
-        expect(resolveStunDuration({ dof: 0, key: 'concussive' })).toBe(0);
+        expect(resolveStunDuration({ dof: 3 })).toBe(3);
+        expect(resolveStunDuration({ dof: 0 })).toBe(0);
     });
 });
 
-describe.skipIf(!HAS_PRIVATE_CONTENT)('Corrosive — armour-melt save', () => {
-    it('promotes to hit-effect type with an armour-melt fail effect', () => {
+describe.skipIf(!HAS_PRIVATE_CONTENT)('Corrosive — armour is reduced by 1d10', () => {
+    it('is a damage quality that melts 1d10 Armour Points', () => {
         const entry = mech('corrosive');
-        expect(entry.type).toBe('hit-effect');
-        expect(entry.hitEffect.failEffect).toBe('armour-melt');
+        expect(entry.type).toBe('damage');
         expect(entry.corrosiveArmourDice).toBe('1d10');
     });
 });
@@ -155,16 +140,18 @@ describe.skipIf(!HAS_PRIVATE_CONTENT)('Crippling (X)', () => {
         expect(resolveCripplingTickDamage(-1)).toBe(0);
     });
 
-    it('hit-effect tag is `crippled`', () => {
-        expect(mech('crippling').hitEffect.failEffect).toBe('crippled');
+    it('is a hit-effect whose per-action penalty scales with X', () => {
+        const entry = mech('crippling');
+        expect(entry.type).toBe('hit-effect');
+        expect(entry.cripplingPenaltyPerActionVariable).toBe(true);
     });
 });
 
-describe.skipIf(!HAS_PRIVATE_CONTENT)('Flame — Agility test or burning', () => {
-    it('promotes to a hit-effect that grants Burning on a failed Agility save', () => {
+describe.skipIf(!HAS_PRIVATE_CONTENT)('Flame — Agility test or on fire', () => {
+    it('is a hit-effect that sets the target On Fire on a failed Agility save', () => {
         const hit = mech('flame').hitEffect;
         expect(hit.requiresSave).toBe('agility');
-        expect(hit.failEffect).toBe('burning');
+        expect(hit.failEffect).toBe('on-fire');
     });
 });
 
@@ -176,20 +163,6 @@ describe.skipIf(!HAS_PRIVATE_CONTENT)('Flexible — already parry-typed (regress
     });
 });
 
-describe.skipIf(!HAS_PRIVATE_CONTENT)('Graviton — Strength test, bonus armour damage', () => {
-    it('exposes a Strength save with prone fail-effect', () => {
-        const hit = mech('graviton').hitEffect;
-        expect(hit.requiresSave).toBe('strength');
-        expect(hit.failEffect).toBe('prone');
-    });
-
-    it('adds the struck-location armour points to damage', () => {
-        expect(resolveGravitonBonusDamage(4)).toBe(4);
-        expect(resolveGravitonBonusDamage(0)).toBe(0);
-        expect(resolveGravitonBonusDamage(undefined)).toBe(0);
-    });
-});
-
 describe.skipIf(!HAS_PRIVATE_CONTENT)('Hallucinogenic (X) — Toughness penalty scales with X', () => {
     it('penalises Toughness test by X×10', () => {
         expect(resolveHitEffectSaveTarget({ characteristicTotal: 40, key: 'hallucinogenic', level: 2 })).toBe(20);
@@ -197,10 +170,10 @@ describe.skipIf(!HAS_PRIVATE_CONTENT)('Hallucinogenic (X) — Toughness penalty 
     });
 });
 
-describe('Haywire (X) — radius is X × 10 metres', () => {
+describe.skipIf(!HAS_PRIVATE_CONTENT)('Haywire (X) — radius is X metres', () => {
     it('scales the field radius linearly with X', () => {
-        expect(resolveHaywireRadius(1)).toBe(10);
-        expect(resolveHaywireRadius(3)).toBe(30);
+        expect(resolveHaywireRadius(1)).toBe(1);
+        expect(resolveHaywireRadius(3)).toBe(3);
         expect(resolveHaywireRadius(0)).toBe(0);
     });
 });
@@ -331,57 +304,41 @@ describe.skipIf(!HAS_PRIVATE_CONTENT)('Reliable — registry flag (jam logic liv
     });
 });
 
-describe.skipIf(!HAS_PRIVATE_CONTENT)('Sanctified — registry flag (Daemons cannot ignore damage)', () => {
-    it('keeps the ignoresDaemonResistance flag', () => {
-        expect(mech('sanctified').ignoresDaemonResistance).toBe(true);
+describe.skipIf(!HAS_PRIVATE_CONTENT)('Sanctified — Holy Damage only', () => {
+    it('is a plain damage quality (Holy Damage has no integral effect)', () => {
+        const entry = mech('sanctified');
+        expect(entry.type).toBe('damage');
+        expect(entry.ignoresDaemonResistance).toBe(false);
     });
 });
 
-describe.skipIf(!HAS_PRIVATE_CONTENT)('Scatter — range-banded damage', () => {
-    it('exposes the canonical RAW bands', () => {
+describe.skipIf(!HAS_PRIVATE_CONTENT)('Scatter — multiple hits and doubled armour, not a damage delta', () => {
+    it('declares no range-banded damage deltas (the book doubles Armour Points at Long and Extreme Range)', () => {
         const bands = mech('scatter').rangeBands;
-        expect(bands.pointBlank).toBe(3);
-        expect(bands.shortRange).toBe(0);
-        expect(bands.standardRange).toBe(-3);
-        expect(bands.longRange).toBe(-3);
-        expect(bands.extremeRange).toBe(-3);
-    });
-
-    it('resolveScatterRangeBand picks the right delta', () => {
-        expect(resolveScatterRangeBand('Point Blank')).toBe(3);
-        expect(resolveScatterRangeBand('Short Range')).toBe(0);
-        expect(resolveScatterRangeBand('Standard Range')).toBe(-3);
-        expect(resolveScatterRangeBand('Long Range')).toBe(-3);
-        expect(resolveScatterRangeBand('Extreme Range')).toBe(-3);
-    });
-
-    it('falls back to 0 for unknown / undefined range names', () => {
-        expect(resolveScatterRangeBand(undefined)).toBe(0);
-        expect(resolveScatterRangeBand('Out Of Range')).toBe(0);
+        expect(Object.values(bands).every((band) => band === null)).toBe(true);
     });
 });
 
-describe.skipIf(!HAS_PRIVATE_CONTENT)('Shocking — Toughness or 1 round stun, half DoF rule', () => {
-    it('exposes the 1-round Stun and Fatigue rider', () => {
+describe.skipIf(!HAS_PRIVATE_CONTENT)('Shocking — Toughness Test, stunned for Degrees of Failure rounds', () => {
+    it('requires a Toughness save and a DoF-scaled stun', () => {
         const entry = mech('shocking');
         expect(entry.hitEffect.requiresSave).toBe('toughness');
-        expect(entry.hitEffect.stunRounds).toBe(1);
-        expect(entry.shockingAppliesFatigue).toBe(1);
+        expect(entry.hitEffect.failEffect).toBe('stunned');
+        expect(entry.hitEffect.stunRoundsVariable).toBe(true);
+        expect(entry.shockingAppliesFatigue).toBeNull();
     });
 
-    it('stun rounds = ceil(DoF / 2) per RAW', () => {
-        expect(resolveStunDuration({ dof: 1, key: 'shocking' })).toBe(1);
-        expect(resolveStunDuration({ dof: 2, key: 'shocking' })).toBe(1);
-        expect(resolveStunDuration({ dof: 3, key: 'shocking' })).toBe(2);
-        expect(resolveStunDuration({ dof: 4, key: 'shocking' })).toBe(2);
-        expect(resolveStunDuration({ dof: 0, key: 'shocking' })).toBe(0);
+    it('stun rounds = DoF per RAW', () => {
+        expect(resolveStunDuration({ dof: 1 })).toBe(1);
+        expect(resolveStunDuration({ dof: 3 })).toBe(3);
+        expect(resolveStunDuration({ dof: 0 })).toBe(0);
     });
 });
 
-describe.skipIf(!HAS_PRIVATE_CONTENT)('Smoke (X) — concealment cloud', () => {
-    it('exposes a concealment-cloud template with variable radius', () => {
+describe.skipIf(!HAS_PRIVATE_CONTENT)('Smoke (X) — smokescreen', () => {
+    it('exposes a burst template with variable radius', () => {
         const tpl = mech('smoke').template;
-        expect(tpl.shape).toBe('concealment-cloud');
+        expect(tpl.shape).toBe('burst');
         expect(tpl.radiusVariable).toBe(true);
     });
 });
@@ -439,26 +396,22 @@ describe.skipIf(!HAS_PRIVATE_CONTENT)('dieOps content is authored on the canonic
         ]);
     });
 
-    it('Proven declares a levelled post-evaluation floor, on both the bare and (X) docs', () => {
-        for (const id of ['proven', 'proven-x']) {
-            const ops = mech(id).dieOps;
-            expect(ops).toHaveLength(1);
-            expect(ops[0]?.op).toBe('floor');
-            expect(ops[0]?.phase).toBe('postEvaluate');
-            expect(ops[0]?.usesLevel).toBe(true);
-            expect(ops[0]?.modifierKey).toBe('proven');
-        }
+    it('Proven declares a levelled post-evaluation floor', () => {
+        const ops = mech('proven').dieOps;
+        expect(ops).toHaveLength(1);
+        expect(ops[0]?.op).toBe('floor');
+        expect(ops[0]?.phase).toBe('postEvaluate');
+        expect(ops[0]?.usesLevel).toBe(true);
+        expect(ops[0]?.modifierKey).toBe('proven');
     });
 
-    it('Primitive declares a levelled post-evaluation cap, on both the bare and (X) docs', () => {
-        for (const id of ['primitive', 'primitive-x']) {
-            const ops = mech(id).dieOps;
-            expect(ops).toHaveLength(1);
-            expect(ops[0]?.op).toBe('cap');
-            expect(ops[0]?.phase).toBe('postEvaluate');
-            expect(ops[0]?.usesLevel).toBe(true);
-            expect(ops[0]?.modifierKey).toBe('primitive');
-        }
+    it('Primitive declares a levelled post-evaluation cap', () => {
+        const ops = mech('primitive').dieOps;
+        expect(ops).toHaveLength(1);
+        expect(ops[0]?.op).toBe('cap');
+        expect(ops[0]?.phase).toBe('postEvaluate');
+        expect(ops[0]?.usesLevel).toBe(true);
+        expect(ops[0]?.modifierKey).toBe('primitive');
     });
 
     it('leaves every other quality with an empty dieOps list', () => {

@@ -13,7 +13,7 @@ import { weaponQualityMechanicsFromRaw } from './weapon-quality-payloads.ts';
  * default-merge) instead of the former in-`src/` WEAPON_QUALITY_EFFECTS registry.
  */
 
-const PACK_DIR = resolve(__dirname, '../../packs-private/rogue-trader/rt-core-items-weapon-qualities/_source');
+const PACK_DIR = resolve(__dirname, '../../packs-private/only-war/ow-core-items-weapon-qualities/_source');
 const mechanicsById = new Map<string, WeaponQualityMechanics>();
 if (existsSync(PACK_DIR)) {
     for (const file of readdirSync(PACK_DIR).filter((f) => f.endsWith('.json'))) {
@@ -51,7 +51,6 @@ describe.skipIf(!HAS_PRIVATE_CONTENT)('Weapon-quality registry coverage', () => 
             'crippling',
             'flame',
             'flexible',
-            'graviton',
             'hallucinogenic',
             'haywire',
             'indirect',
@@ -152,9 +151,9 @@ describe.skipIf(!HAS_PRIVATE_CONTENT)('Phase 5 registry promotions (#57 partial)
         shocking: 'hit-effect',
         concussive: 'hit-effect',
         snare: 'hit-effect',
-        smoke: 'template',
-        blast: 'template',
-        indirect: 'attack',
+        smoke: 'area',
+        blast: 'area',
+        indirect: 'fire',
     };
 
     for (const [key, expectedType] of Object.entries(expectedTypes)) {
@@ -167,7 +166,7 @@ describe.skipIf(!HAS_PRIVATE_CONTENT)('Phase 5 registry promotions (#57 partial)
         const hit = mech('shocking').hitEffect;
         expect(hit.requiresSave).toBe('toughness');
         expect(hit.failEffect).toBe('stunned');
-        expect(hit.stunRounds).toBe(1);
+        expect(hit.stunRoundsVariable).toBe(true);
     });
 
     it('exposes a hit-effect.requiresSave on Concussive (toughness, variable rounds)', () => {
@@ -180,6 +179,6 @@ describe.skipIf(!HAS_PRIVATE_CONTENT)('Phase 5 registry promotions (#57 partial)
     it('exposes a hit-effect.requiresSave on Snare (agility)', () => {
         const hit = mech('snare').hitEffect;
         expect(hit.requiresSave).toBe('agility');
-        expect(hit.failEffect).toBe('snared');
+        expect(hit.failEffect).toBe('immobilised');
     });
 });

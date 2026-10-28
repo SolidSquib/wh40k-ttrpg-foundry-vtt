@@ -1,12 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/html-vite';
 import { expect } from 'storybook/test';
 import {
-    resolveGravitonBonusDamage,
     resolveHitEffectSaveTarget,
     resolveLanceBonus,
     resolveMaximalEffect,
     resolvePowerFieldParryDestroys,
-    resolveScatterRangeBand,
     resolveStunDuration,
     resolveTemplateRadius,
 } from '../../src/module/rules/weapon-quality-effects.ts';
@@ -34,12 +32,10 @@ import { renderSheet } from '../test-helpers';
 
 initializeStoryHandlebars();
 
-// Seed the #303 boot index with the rt-core weaponQuality pack values the
-// index-backed resolvers below read (Scatter range bands, Maximal package,
-// Concussive hit-effect save penalty). Pure resolvers (Lance, Graviton, Stun,
-// Template radius) do not consult the index.
+// Seed the boot index with the Only War weaponQuality pack values the
+// index-backed resolvers below read (Maximal package, Concussive hit-effect
+// save penalty). Pure resolvers (Lance, Stun, Template radius) do not consult the index.
 setWeaponQualityPayloadsForTesting({
-    scatter: { type: 'damage', rangeBands: { pointBlank: 3, shortRange: 0, standardRange: -3, longRange: -3, extremeRange: -3 } },
     maximal: { type: 'damage', maximalDamageDice: '1d10', maximalPenetrationBonus: 2, triggersRecharge: true },
     concussive: {
         type: 'hit-effect',
@@ -157,25 +153,6 @@ export const FlameBurning: Story = {
     },
 };
 
-export const GravitonKnockdown: Story = {
-    name: 'Graviton — Strength test or Prone (+armour as damage)',
-    render: () =>
-        renderSheet(
-            qualityChatSrc,
-            ctx({
-                qualityKey: 'graviton',
-                accentClass: 'tw-text-violet-300',
-                iconClass: 'fa-arrow-down',
-                payload: {
-                    saveCharacteristic: 'strength',
-                    saveTarget: 40,
-                    bonusDamage: resolveGravitonBonusDamage(5),
-                    failEffectKey: 'WH40K.Quality.FailEffect.prone',
-                },
-            }),
-        ),
-};
-
 export const LancePenByDoS: Story = {
     name: 'Lance — Pen × DoS (4 base × 3 DoS → +8 delta)',
     render: () =>
@@ -239,46 +216,8 @@ export const PowerFieldParryDestroy: Story = {
     },
 };
 
-export const ScatterPointBlank: Story = {
-    name: 'Scatter — Point Blank (+3 damage)',
-    render: () =>
-        renderSheet(
-            qualityChatSrc,
-            ctx({
-                qualityKey: 'scatter',
-                accentClass: 'tw-text-amber-200',
-                iconClass: 'fa-burst',
-                payload: {
-                    rangeBand: 'Point Blank',
-                    rangeBandDelta: resolveScatterRangeBand('Point Blank'),
-                },
-            }),
-        ),
-};
-
-export const ScatterLongRange: Story = {
-    name: 'Scatter — Long Range (−3 damage)',
-    render: () =>
-        renderSheet(
-            qualityChatSrc,
-            ctx({
-                qualityKey: 'scatter',
-                accentClass: 'tw-text-amber-200',
-                iconClass: 'fa-burst',
-                payload: {
-                    rangeBand: 'Long Range',
-                    rangeBandDelta: resolveScatterRangeBand('Long Range'),
-                },
-            }),
-        ),
-    play: async ({ canvasElement }) => {
-        const row = canvasElement.querySelector('[data-row="range-band"]');
-        await expect(row?.textContent).toContain('-3');
-    },
-};
-
 export const ShockingStun: Story = {
-    name: 'Shocking — Toughness or 1-round Stun + Fatigue',
+    name: 'Shocking — Toughness or Stunned for DoF rounds',
     render: () =>
         renderSheet(
             qualityChatSrc,
@@ -289,16 +228,15 @@ export const ShockingStun: Story = {
                 payload: {
                     saveCharacteristic: 'toughness',
                     saveTarget: 40,
-                    stunRounds: resolveStunDuration({ dof: 3, key: 'shocking' }),
-                    fatigue: 1,
+                    stunRounds: resolveStunDuration({ dof: 3 }),
                     failEffectKey: 'WH40K.Quality.FailEffect.stunned',
                 },
             }),
         ),
     play: async ({ canvasElement }) => {
         const stun = canvasElement.querySelector('[data-row="stun-rounds"]');
-        await expect(stun?.textContent).toMatch(/2/); // ceil(3/2) = 2
-        await expect(canvasElement.querySelector('[data-row="fatigue"]')?.textContent).toContain('+1');
+        await expect(stun?.textContent).toMatch(/3/); // one round per Degree of Failure
+        await expect(canvasElement.querySelector('[data-row="fatigue"]')).toBeNull();
     },
 };
 

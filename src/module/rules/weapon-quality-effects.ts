@@ -477,27 +477,6 @@ export function applyQualityModifiersToRollData(rollData: WeaponRollData): void 
 /*  Phase 6 pure resolvers (#57 completion)     */
 /* -------------------------------------------- */
 
-/** Range-band keys used by `resolveScatterRangeBand`. */
-type ScatterRangeBand = 'Point Blank' | 'Short Range' | 'Standard Range' | 'Long Range' | 'Extreme Range';
-
-/**
- * Resolve the Scatter quality's signed damage delta for the current range.
- * Replaces the inline `damage-data.ts:333-341` block with a pure table lookup
- * so the per-band values can be unit-tested without standing up an actor.
- */
-export function resolveScatterRangeBand(rangeName: string | undefined): number {
-    if (rangeName === undefined) return 0;
-    const bands = getWeaponQualityMechanics('scatter')?.rangeBands;
-    const SCATTER_BAND_MAP: Record<ScatterRangeBand, number> = {
-        'Point Blank': bands?.pointBlank ?? 0,
-        'Short Range': bands?.shortRange ?? 0,
-        'Standard Range': bands?.standardRange ?? 0,
-        'Long Range': bands?.longRange ?? 0,
-        'Extreme Range': bands?.extremeRange ?? 0,
-    };
-    return rangeName in SCATTER_BAND_MAP ? SCATTER_BAND_MAP[rangeName as ScatterRangeBand] : 0;
-}
-
 /**
  * Resolve the save target value for a quality whose hit-effect imposes a
  * per-level penalty on the defender's characteristic test. Used by
@@ -515,13 +494,11 @@ export function resolveHitEffectSaveTarget(opts: { characteristicTotal: number; 
 }
 
 /**
- * Stun-duration payload from Shocking (RAW: half DoF, round up) or
- * Concussive (RAW: 1 round per DoF). Pure: caller passes the DoF and key.
+ * Stun duration from Shocking and Concussive (core rulebook pp. 169–173): one
+ * Round per Degree of Failure on the Toughness Test. Pure: caller passes the DoF.
  */
-export function resolveStunDuration(opts: { dof: number; key: 'shocking' | 'concussive' }): number {
-    const dof = nonNegInt(opts.dof);
-    if (opts.key === 'shocking') return Math.ceil(dof / 2);
-    return dof;
+export function resolveStunDuration(opts: { dof: number }): number {
+    return nonNegInt(opts.dof);
 }
 
 /**
@@ -674,22 +651,12 @@ export function resolveDieOpDamageAdjust(dieResult: number, dieOp: ResolvedDieOp
 }
 
 /**
- * Graviton bonus damage equal to the struck location's Armour Points.
- * Pure: takes the armour-point reading and returns the additive delta.
- * Returns 0 when armour is missing or non-positive.
- */
-export function resolveGravitonBonusDamage(armourPoints: number | undefined): number {
-    if (armourPoints === undefined) return 0;
-    const ap = Math.trunc(armourPoints);
-    return ap > 0 ? ap : 0;
-}
-
-/**
- * Haywire field radius (metres) for a given X level: X × 10 metres.
+ * Haywire field radius (metres) for a given X level: the pack declares the metres per level
+ * (`haywireRadiusPerLevel`; the book's Haywire (3) is a three metre radius).
  */
 export function resolveHaywireRadius(level: number): number {
-    const safeLevel = nonNegInt(level);
-    return safeLevel * 10;
+    const perLevel = getWeaponQualityMechanics('haywire')?.haywireRadiusPerLevel ?? 0;
+    return nonNegInt(level) * perLevel;
 }
 
 /**
@@ -786,13 +753,11 @@ export const WeaponQualityEffects = {
     checkRighteousFury,
 
     // Phase 6 pure resolvers (#57 completion)
-    resolveScatterRangeBand,
     resolveHitEffectSaveTarget,
     resolveStunDuration,
     resolveLanceBonus,
     resolvePrimitiveDamageAdjust,
     resolveProvenDamageAdjust,
-    resolveGravitonBonusDamage,
     resolveHaywireRadius,
     resolveTemplateRadius,
     resolveMaximalEffect,
