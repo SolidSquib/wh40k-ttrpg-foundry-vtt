@@ -1,7 +1,4 @@
 {
     "description": "Vehicle/craft actors still on Foundry placeholder art (content#26). Every entry here is a DECLARED gap with a reason, not an oversight — tests/pack-actor-placeholder-art.test.ts fails on any placeholder actor that is not listed, and on any listed actor that has since gained art. Shrinking this list is the ongoing work; growing it needs a reviewed edit.",
-    "skips": {
-        "Basilisk": "Fandom candidate found (Basilisk2.png) but NOT visually reviewed — do not apply unreviewed",
-        "Leman Russ Vanquisher": "Fandom candidate found (LemanRussVanquisher01.png) but NOT visually reviewed — do not apply unreviewed"
-    }
+    "skips": {}
 }
