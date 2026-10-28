@@ -4795,8 +4795,10 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
             const resourceUpdate: Record<string, unknown> = {};
             if (this._divination !== '') resourceUpdate['system.originPath.divination'] = this._divination;
             // The replacement aptitudes the player chose for duplicate grants. The actor derives its aptitude
-            // set from its origins plus these electives, so they must be stored or the swap is lost.
-            resourceUpdate['system.electiveAptitudes'] = [...this.aptitudeOverrides.values()].filter((apt) => apt !== '');
+            // set from its origins plus these electives, so they must be stored or the swap is lost. A rebuild
+            // that picked none (the builder does not see a duplicate it resolved last time) keeps what is stored.
+            const chosenElectives = [...this.aptitudeOverrides.values()].filter((apt) => apt !== '');
+            if (chosenElectives.length > 0) resourceUpdate['system.electiveAptitudes'] = chosenElectives;
             if (this._influenceRolled !== 0) resourceUpdate['system.influence'] = this._influenceRolled;
 
             // Sum rolled wounds + rolled fate across every committed origin so
