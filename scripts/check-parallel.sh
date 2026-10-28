@@ -51,7 +51,6 @@ CMDS[biome]="${PNPM} biome:ratchet"
 CMDS[css]="${PNPM} css:ratchet"
 CMDS[plugin-audit]="${PNPM} css:plugin-audit"
 CMDS[animation]="${PNPM} animation:ratchet"
-CMDS[theme]="${PNPM} theme:ratchet"
 CMDS[important]="${PNPM} important:ratchet"
 CMDS[ts]="${PNPM} ts:ratchet"
 CMDS[strict]="${PNPM} strict:ratchet"
@@ -65,7 +64,7 @@ CMDS[symmetry]="${PNPM} symmetry:ratchet"
 CMDS[preload]="${PNPM} preload:drift"
 CMDS[dry-todo]="${PNPM} dry-todo:ratchet"
 CMDS[vitest]="${PNPM} test"
-ORDER=(typecheck typecheck-tests lint biome css plugin-audit animation theme important ts strict test-typecheck type-coverage knip deps lockfile i18n symmetry preload dry-todo vitest)
+ORDER=(typecheck typecheck-tests lint biome css plugin-audit animation important ts strict test-typecheck type-coverage knip deps lockfile i18n symmetry preload dry-todo vitest)
 
 # Browser poles (opt-out via flags).
 if [[ "${WITH_STORYBOOK}" == "1" ]]; then CMDS[storybook]="${PNPM} test:storybook:integration"; ORDER+=(storybook); fi

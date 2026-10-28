@@ -31,8 +31,6 @@
     "animation:ratchet": "node scripts/animation-ratchet.mjs",
     "animation:ratchet:update": "node scripts/animation-ratchet-update.mjs",
     "theme:coverage": "node scripts/theme-coverage.mjs",
-    "theme:ratchet": "node scripts/theme-ratchet.mjs",
-    "theme:ratchet:update": "node scripts/theme-ratchet-update.mjs",
     "important:coverage": "node scripts/important-coverage.mjs",
     "important:ratchet": "node scripts/important-ratchet.mjs",
     "important:ratchet:update": "node scripts/important-ratchet-update.mjs",
@@ -120,7 +118,7 @@
     "foundry:setup-test-world": "bash scripts/setup-foundry-test-world.sh",
     "check": "pnpm validate:json && pnpm lint && pnpm lint:biome && pnpm format && pnpm stylelint && pnpm typecheck && pnpm typecheck:tests && pnpm test",
     "check:parallel": "bash scripts/check-parallel.sh",
-    "ci:ratchets": "pnpm i18n:check && pnpm lint:ratchet && pnpm biome:ratchet && pnpm ts:ratchet && pnpm strict:ratchet && pnpm test:typecheck:ratchet && pnpm type-coverage:ratchet && pnpm knip:ratchet && pnpm deps:ratchet && pnpm css:ratchet && pnpm important:ratchet && pnpm animation:ratchet && pnpm theme:ratchet && pnpm symmetry:ratchet && pnpm preload:drift && pnpm css:plugin-audit && pnpm lockfile:validate && pnpm actors:ratchet && pnpm images:ratchet",
+    "ci:ratchets": "pnpm i18n:check && pnpm lint:ratchet && pnpm biome:ratchet && pnpm ts:ratchet && pnpm strict:ratchet && pnpm test:typecheck:ratchet && pnpm type-coverage:ratchet && pnpm knip:ratchet && pnpm deps:ratchet && pnpm css:ratchet && pnpm important:ratchet && pnpm animation:ratchet && pnpm symmetry:ratchet && pnpm preload:drift && pnpm css:plugin-audit && pnpm lockfile:validate && pnpm actors:ratchet && pnpm images:ratchet",
     "prepare": "husky"
   },
   "browserslist": [

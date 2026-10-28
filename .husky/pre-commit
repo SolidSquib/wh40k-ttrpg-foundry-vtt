@@ -112,7 +112,6 @@ run_bg "css"            pnpm -s css:ratchet
 run_bg "important"      pnpm -s important:ratchet
 run_bg "plugin-audit"   pnpm -s css:plugin-audit
 run_bg "animation"      pnpm -s animation:ratchet
-run_bg "theme"          pnpm -s theme:ratchet
 
 # Source-tree counters.
 run_bg "ts-coverage"    pnpm -s ts:ratchet

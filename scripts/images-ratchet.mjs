@@ -4,7 +4,7 @@
  *
  * src/packs/validate-images.cjs is warn-only; this gates REGRESSION of art
  * coverage. Unlike the defect ratchets (a per-rule count may only FALL), this is
- * an ADOPTION ratchet like `theme:ratchet`: the count of documents with real art,
+ * an ADOPTION ratchet: the count of documents with real art,
  * PER Foundry document class (Actor / Item / JournalEntry / RollTable / Adventure
  * / …), may only RISE — never fall. This is the correct shape for coverage:
  * authoring new, legitimately un-arted content never trips it; only losing art —

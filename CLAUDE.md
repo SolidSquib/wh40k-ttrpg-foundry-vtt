@@ -1,20 +1,20 @@
 # Claude Code Instructions — wh40k-rpg
 
-This is the **Warhammer 40K RPG** Foundry VTT system. It implements six d100-family FFG-era 40K tabletop RPGs — Black Crusade [BC], Dark Heresy 1e [DH1], Dark Heresy 2e [DH2], Deathwatch [DW], Only War [OW], Rogue Trader [RT] — on Foundry **V14**, in TypeScript.
+This is the **Warhammer 40K RPG** Foundry VTT system. It implements the FFG-era d100 **Only War** tabletop RPG on Foundry **V14**, in TypeScript. The fork originally carried six FFG lines (BC, DH1, DH2, DW, OW, RT); every line except Only War has been removed and upstream merges are no longer a goal.
 
-DH2 is the canonical default of the FFG family (the bare `header-dh.hbs`); DH1 is a separate variant (`header-dh1.hbs`). Actor types follow `<system>-<role>` (e.g., `dh2-character`, `dh1-npc`, `rt-starship`).
+The shared FFG core rules still carry "DH2" in some headers because DH2 was the engine's reference implementation; they are the rules Only War uses and stay. Actor types keep the `ow-<role>` ids (`ow-character`, `ow-npc`, `ow-vehicle`, `ow-terracraft`, `ow-aircraft`) plus `watercraft` and `loot`; they are hidden from players, so the ids stay as they are.
 
 ---
 
 ## Direction (every change must advance these)
 
-These are not optional polish items. Every PR, refactor, and new component must move the codebase in these directions, or it does not land. A change that is neutral on all six is suspicious — ask whether it's worth doing.
+These are not optional polish items. Every PR, refactor, and new component must move the codebase in these directions, or it does not land. A change that is neutral on all of these is suspicious — ask whether it's worth doing.
 
 1. **Full strong TypeScript coverage.** No new `any`. No new `@ts-ignore` / `@ts-expect-error` (existing suppressions may stay until the underlying issue is fixed, but every PR should reduce, not grow, that count). Migrate any `.js` / `.mjs` you touch to `.ts`. New code is fully typed at signatures and return values; prefer narrow types over `unknown`. **Never resort to `any`** for convenience, even for complex hook signatures; use generics (`<T extends Function>`) or precise interfaces. **Fix the root cause, not the symptom**: if the compiler complains about a 'possibly undefined' property, do not sprinkle null coalescers (`??`) or optional chaining (`?.`) throughout the logic. Instead, tighten the underlying DataModel or interface definitions so the compiler can safely infer property existence. Inference is always preferred over casting.
 
 2. **Full migration from CSS/SCSS to Tailwind.** New styling uses `tw-` utility classes inline on templates and PARTS classes — no new rules in `src/css/`, no new SCSS files. When you edit a `.hbs` template, opportunistically port its existing CSS rules to inline Tailwind and remove the now-unused selectors. The CSS pipeline is being phased out.
 
-3. **Full homologated support of all 6 game systems.** BC, DH1, DH2, DW, OW, RT all share data structure, behavior, and visual treatment. Per-system divergence is opt-in via explicit per-system templates (e.g., `header-bc.hbs`, `header-rt.hbs`) or explicit branching — never accidental. A change that improves one system must improve, or at minimum not regress, the other five. When you add a feature, verify it works across all six before considering the work done.
+3. **One game, done well.** Only War is the single supported system. Do not reintroduce per-line branching, per-line variant containers or `<system>:` plumbing; the per-line machinery that remains (`GameSystemId`, the config class hierarchy, `item-variant-utils`, per-line `system.cost.*` blocks) is migration debt to collapse into plain values, not a pattern to extend.
 
 4. **Full DRY.** No copy-paste between sheets, mixins, templates, helpers, or DataModels. Extract partials, mixins, and utility functions. If you write similar logic twice, the third time you extract — and prefer extracting on the second instance when the abstraction is obvious.
 
@@ -61,7 +61,6 @@ Every direction in the previous section is backed by a coverage script and a rat
 | --- | --- | --- | --- |
 | Tailwind migration | `pnpm css:coverage` | `pnpm css:ratchet` | `.css-coverage-baseline` |
 | Animation migration (`animation:` rule → `tw-animate-<name>`) | `pnpm animation:coverage` | `pnpm animation:ratchet` | `.animation-baseline` |
-| Per-system theme adoption (`<system>:tw-*` variants) — count must NOT FALL | `pnpm theme:coverage` | `pnpm theme:ratchet` | `.theme-baseline` |
 | Strong TS suppression markers (per-rule, per-dir, **auto-flips to strict at 0**) | `pnpm ts:coverage` | `pnpm ts:ratchet` | `.ts-coverage-baseline` |
 | `tsc --noEmit` total errors against main tsconfig | (hard gate — must be zero) | `pnpm typecheck` | — |
 | `tsc --noEmit` against `tsconfig.strict.json` (noImplicitOverride, noUncheckedIndexedAccess, noPropertyAccessFromIndexSignature, exactOptionalPropertyTypes, etc.) — **per-TS-code, auto-flips to strict at 0** | `pnpm strict:coverage` | `pnpm strict:ratchet` | `.strict-coverage-baseline` |
@@ -81,7 +80,7 @@ Every direction in the previous section is backed by a coverage script and a rat
 | `pnpm-lock.yaml` resolution host allow-list | `pnpm lockfile:validate` | hard gate (no ratchet) | — |
 | Tier B e2e: `passed` count + per-dimension % + source coverage (lines / statements / functions / branches). Per-dimension **auto-flips to strict at 100%**. Not in pre-commit; runs in the licensed CI lane only. | `pnpm e2e:coverage` | `pnpm e2e:ratchet` | `.e2e-baseline` |
 | Pack actor-completeness — hard defects (dangling inventory refs, inline-only weapons, un-migrated prose skills, missing stats) per rule, **auto-flips to strict at 0**. Runs only when `src/packs/` changed. | `pnpm packs:validate:actors` | `pnpm actors:ratchet` | `.actors-baseline` |
-| Pack image coverage — real-art count (curated `…/images/**` asset or `https://` hotlink) per Foundry document class (Actor / Item / JournalEntry / Adventure; RollTables are art-exempt — a `d20` icon is the final state, not a placeholder), **count must NOT FALL** (adoption ratchet like theme; bounded by source-art availability, so it never graduates). Runs only when `src/packs/` changed. | `pnpm packs:validate:images` | `pnpm images:ratchet` | `.images-baseline` |
+| Pack image coverage — real-art count (curated `…/images/**` asset or `https://` hotlink) per Foundry document class (Actor / Item / JournalEntry / Adventure; RollTables are art-exempt — a `d20` icon is the final state, not a placeholder), **count must NOT FALL** (adoption ratchet; bounded by source-art availability, so it never graduates). Runs only when `src/packs/` changed. | `pnpm packs:validate:images` | `pnpm images:ratchet` | `.images-baseline` |
 
 The hard gates (preload-drift, hook-orphan-audit, plugin-audit, i18n, lockfile-validate) cannot be ratcheted because regression is a real bug, not a velocity tradeoff. Fix the underlying issue. The plugin-audit gate specifically guards against the addBase dedup trap: a rule that's "dead by class" is invisible at the source level but a rule that's "dead by cascade" silently shadows live rules — extending the audit to walk nested selectors keeps the lights-on selector inventory honest.
 
@@ -211,22 +210,9 @@ Some legacy gothic-theme components in `tailwind/*.js` still carry `animation: <
 - **Pseudo-element animations are refactored, not preserved.** When the source rule's selector is a pseudo (`::before`, `::after`, `::marker`, etc.), do **not** leave it in the plugin file and do **not** count it as exempt. Instead, replace the pseudo-element in the consuming Handlebars template with a real DOM child (`<span>` / `<div>` / `<i>` with a descriptive `wh40k-…__<role>` class), then apply `tw-animate-<name>` to that new element. Add `tw-pointer-events-none` and `tw-absolute` (or whatever positioning the pseudo had) so the new element behaves like the old pseudo. Stacked pseudos (e.g. `::before` + `::after` on the same parent) become two sibling elements. The terminal state for every legacy animation rule is: invoked from a template via `tw-animate-*` on a real element.
 - **Animation timing in `tailwind.config.js` must match the source.** The `theme.extend.animation` map defines the duration / timing-function / iteration / fill-mode for each utility. Entries use real values copied from the legacy plugin files (e.g., `'burst-pulse 0.6s ease'`, `'pulse-warn-intense 1.5s ease-in-out infinite'`, `'fade-spend 0.5s ease-out forwards'`), not placeholder `'1s ease'`. When the same keyframe name is invoked at multiple call sites with different timings, the config holds the most common tuple and outliers are expressed as arbitrary-value utilities on the consuming template (`tw-animate-[slide-in-up_0.4s_ease-out_backwards]`). A port that uses the wrong duration is a regression even when the ratchet count drops.
 
-### Per-system theme tooling — the ultimate target
+### Theme tooling
 
-The 6 game systems (`bc`, `dh1`, `dh2`, `dw`, `ow`, `rt`, matching `src/module/config/game-systems/types.ts` `GameSystemId`) each get a Tailwind variant in `tailwind.config.js`. Use the variant in templates to gate utilities by system:
-
-```hbs
-<div class="tw-bg-gold dh2:tw-bg-bronze rt:tw-bg-amber-700">…</div>
-```
-
-Each variant maps to `[data-wh40k-system="<id>"] &`. The data attribute lives on the sheet root or any ancestor of the styled element — surface it from `_gameSystemId` on the sheet (`element.dataset.wh40kSystem = this._gameSystemId`) when wiring up the first system-aware template. **Visual divergence between systems is the long-term goal of the Tailwind migration; the animation and CSS-coverage ratchets are stepping stones.**
-
-- `pnpm theme:coverage` — counts templates using at least one `<system>:tw-*` variant. Output at `.theme-coverage.json`, plus per-system hit counts.
-- `pnpm theme:ratchet` — pre-commit gate; baseline at `.theme-baseline`. **Direction is opposite to other ratchets**: count of per-system-aware templates cannot FALL. Update via `pnpm theme:ratchet:update` after adding variants.
-- Adoption recipe: pick a template, identify the elements that should differ visually per system, add `<system>:tw-*` variants alongside the base class, run `pnpm theme:ratchet:update`, commit.
-- **Per-system color tokens live in the game-system configs**, not in templates. Each `src/module/config/game-systems/<id>-config.ts` declares a `theme: { primary, accent, border, … }` block whose values are named refs into the Tailwind palette (`'bronze'`, `'gold-raw'`, `'crimson'`, etc.) — not raw hex. The `themeClassFor(role)` helper exported from `src/module/config/game-systems/index.ts` reads the active system's `theme` and emits the matching utility class (e.g. `themeClassFor('border')` → `'tw-border-bronze'` for DH2e, `'tw-border-amber-700'` for RT). Templates call the helper rather than inlining `dh2:tw-border-bronze rt:tw-border-amber-700 …` chains, so palette changes happen in one place. New systems MUST declare a `theme` block; the type system enforces this via the `GameSystemConfig` shape in `types.ts`. Inlining a `<id>:tw-*` variant chain is acceptable only when the divergence is one-off and not reusable (e.g., a single decorative flourish on one template).
-- **Helper-emitted classes must be safelisted; inline-variant classes don't need to be.** `themeClassFor(systemId, role)` produces bare class names (`tw-border-bronze`, `tw-bg-accent-dynasty`) at render time, which Tailwind's static template scan can't see — those classes go in `tailwind.config.js` `safelist`. By contrast, `<id>:tw-*` variant chains written inline on a template ARE visible to Tailwind's scan and emit correctly without safelisting. Choose the path per template: helper for surfaces where the system varies and you don't want every variant chain; inline variants for one-shot dressings where the chain is short and stays put.
-- **Chat templates are NOT inside a sheet root.** Templates rendered into the Foundry chat log (`src/templates/chat/**/*.hbs`) have no `data-wh40k-system` ancestor — `<id>:tw-*` variants on them won't fire at runtime unless the chat card itself carries the attribute. The pattern is: accept an optional `gameSystem` hash param on the partial, and emit `data-wh40k-system="{{gameSystem}}"` on the card root when present. Call sites pass `gameSystem: actor.system.gameSystem` (or the active system's id) when rendering the chat message. The variants then cascade onto the card's children.
+Only War is the single game system, so per-system theming is no longer a goal and `theme:ratchet` is retired. `tailwind.config.js` still defines the `<id>:` variants and `themeClassFor(role)` still resolves the active system's `theme` block (`ow-config.ts`); those are migration debt to collapse into plain tokens. `pnpm theme:coverage` remains as an informational report. Do not add new `<id>:tw-*` variant chains.
 
 ### Adaptation procedure when the canonical recipe doesn't apply
 
@@ -331,7 +317,6 @@ Tasks that suit cheap-model grinders (each map to a ratchet that gates regressio
 | --- | --- |
 | Port one `.hbs` template's classes to `tw-*` per `docs/tailwind-migration.md` | `pnpm css:coverage` (`css-only` ↓, `tailwind-only` ↑) |
 | Move one `animation: <name>` declaration from a `tailwind/*.js` plugin file onto its consuming template as `tw-animate-<name>` | `pnpm animation:coverage` (count ↓) |
-| Add per-system theme variants (`dh2:tw-bg-bronze rt:tw-bg-amber-700`) to one template's elements | `pnpm theme:coverage` (count ↑) |
 | Replace one ` as any` cast in a sheet with a narrow type | `pnpm ts:coverage` (per-dir `asAny` ↓) |
 | Add a `*.stories.ts` for one Sheet/Dialog using `pnpm scaffold:story` and `stories/test-helpers.ts` | `pnpm symmetry` (sheet missing-pair count ↓) |
 | Add a `*.test.ts` for one DataModel using `pnpm scaffold:test` | `pnpm symmetry` (data missing-pair count ↓) |
@@ -404,7 +389,7 @@ Per-file logs land in `.auto-fix/file-logs/<sanitized-path>.attempt<N>.<runner>-
 8. `important:ratchet` — count of `!important` declarations across `tailwind/*.js` cannot rise.
 9. `css:plugin-audit` — every `tailwind/*.js` rule must reference at least one `wh40k-*` class that appears in templates/modules/tests/stories (walks nested selectors). Hard gate.
 10. `animation:ratchet` — count of `animation:` / `animation-name:` declarations across `src/css/**/*.css` cannot rise.
-11. `theme:ratchet` — count of templates using per-system `<system>:tw-*` variants cannot fall (adoption ratchet — opposite direction; rises as templates gain per-system theming).
+11. *(retired)* `theme:ratchet` was removed when the other game lines were deleted.
 12. `ts:ratchet` — per-rule per-directory suppression counts cannot rise; auto-flips to strict at 0.
 13. `strict:ratchet` — `tsc --noEmit -p tsconfig.strict.json` per-TS-code counts cannot rise; auto-flips to strict at 0. Enforces the next-tier strictness flags.
 14. `test:typecheck:ratchet` — `tsc --noEmit -p tsconfig.test.json` per-TS-code counts cannot rise; auto-flips to strict at 0. Brings tests + stories into the typecheck surface.
@@ -533,7 +518,7 @@ be carried through to the card, never summed away at commit
 provenance-loss site). `modifiersToRollData()` already builds a formula string
 today and throws it away — surface it. New roll surfaces are incomplete until the
 card renders full target + result formulas with hoverable per-component
-provenance; homologate across all six systems.
+provenance.
 
 ### 2. All calculation-modifying content routes through the central path — no monkey-patching the roll
 
