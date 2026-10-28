@@ -38,7 +38,6 @@ export interface EquipmentEntry {
     availability?: string;
     availabilityLabel?: string;
     availabilityOrder?: number;
-    requisition?: number | null;
     throneGelt?: number | null;
 }
 
@@ -116,7 +115,7 @@ interface ItemSystemLike {
     selectedChoices?: Record<string, string[] | string>;
     rollResults?: Record<string, { rolled?: number; breakdown?: string } | undefined>;
     grants?: GrantsSlice;
-    cost?: { dh2?: { homebrew?: { requisition?: number; throneGelt?: number } } };
+    cost?: { throneGelt?: number };
 }
 
 /**

@@ -31,32 +31,8 @@ export default class PhysicalItemTemplate extends SystemDataModel {
         };
     };
     declare cost: {
-        dh1: {
-            throneGelt: number | null;
-        };
-        dh2: {
-            influence: number | null;
-            homebrew: {
-                requisition: number | null;
-                throneGelt: number | null;
-            };
-        };
-        rt: {
-            profitFactor: number | null;
-            homebrew: { throneGelt: number | null };
-        };
-        dw: {
-            requisition: number | null;
-            homebrew: { throneGelt: number | null };
-        };
-        bc: {
-            infamy: number | null;
-            homebrew: { throneGelt: number | null };
-        };
-        ow: {
-            logistics: number | null;
-            homebrew: { throneGelt: number | null };
-        };
+        logistics: number | null;
+        throneGelt: number | null;
     };
 
     /** @inheritdoc */
@@ -133,40 +109,8 @@ export default class PhysicalItemTemplate extends SystemDataModel {
                 }),
             }),
             cost: new fields.SchemaField({
-                dh1: new fields.SchemaField({
-                    throneGelt: new fields.NumberField({ required: false, nullable: true, initial: null, min: 0 }),
-                }),
-                dh2: new fields.SchemaField({
-                    influence: new fields.NumberField({ required: false, nullable: true, initial: null, min: 0 }),
-                    homebrew: new fields.SchemaField({
-                        requisition: new fields.NumberField({ required: false, nullable: true, initial: null, min: 0 }),
-                        throneGelt: new fields.NumberField({ required: false, nullable: true, initial: null, min: 0 }),
-                    }),
-                }),
-                rt: new fields.SchemaField({
-                    profitFactor: new fields.NumberField({ required: false, nullable: true, initial: null, min: 0 }),
-                    homebrew: new fields.SchemaField({
-                        throneGelt: new fields.NumberField({ required: false, nullable: true, initial: null, min: 0 }),
-                    }),
-                }),
-                dw: new fields.SchemaField({
-                    requisition: new fields.NumberField({ required: false, nullable: true, initial: null, min: 0 }),
-                    homebrew: new fields.SchemaField({
-                        throneGelt: new fields.NumberField({ required: false, nullable: true, initial: null, min: 0 }),
-                    }),
-                }),
-                bc: new fields.SchemaField({
-                    infamy: new fields.NumberField({ required: false, nullable: true, initial: null, min: 0 }),
-                    homebrew: new fields.SchemaField({
-                        throneGelt: new fields.NumberField({ required: false, nullable: true, initial: null, min: 0 }),
-                    }),
-                }),
-                ow: new fields.SchemaField({
-                    logistics: new fields.NumberField({ required: false, nullable: true, initial: null, min: 0 }),
-                    homebrew: new fields.SchemaField({
-                        throneGelt: new fields.NumberField({ required: false, nullable: true, initial: null, min: 0 }),
-                    }),
-                }),
+                logistics: new fields.NumberField({ required: false, nullable: true, initial: null, min: 0 }),
+                throneGelt: new fields.NumberField({ required: false, nullable: true, initial: null, min: 0 }),
             }),
         };
     }
@@ -219,12 +163,16 @@ export default class PhysicalItemTemplate extends SystemDataModel {
     }
 
     /**
-     * Normalize cost field shape.
+     * Normalize the cost block to `{ logistics, throneGelt }`.
+     *
+     * Older data carried a per-line block (`cost.ow.logistics`,
+     * `cost.ow.homebrew.throneGelt`, plus other lines'). Those are read here and
+     * discarded: Only War's branch wins, then the Dark Heresy 2e homebrew gelt
+     * (what the item sheets used to edit), then an already-flat value.
      * @param {object} source  The source data
      */
     // eslint-disable-next-line no-restricted-syntax -- boundary: migration helper receives raw source from _migrateData
     static #migrateCost(source: Record<string, unknown>): void {
-        const emptyCost = PhysicalItemTemplate.#emptyCost();
         // eslint-disable-next-line no-restricted-syntax -- boundary: normalizeNullableNumber receives raw field values from pre-migration source data
         const normalizeNullableNumber = (value: unknown): number | null => {
             if (value === null || value === undefined || value === '') return null;
@@ -232,86 +180,28 @@ export default class PhysicalItemTemplate extends SystemDataModel {
             if (!Number.isFinite(numericValue)) return null;
             return numericValue;
         };
+        const first = (...values: Array<number | null>): number | null => values.find((v) => v !== null) ?? null;
 
         if (source['cost'] === null || source['cost'] === undefined || typeof source['cost'] !== 'object') {
-            source['cost'] = emptyCost;
+            source['cost'] = { logistics: null, throneGelt: null };
             return;
         }
 
-        interface CostShape {
-            dh1?: { throneGelt?: unknown; homebrew?: { throneGelt?: unknown } }; // eslint-disable-line no-restricted-syntax -- boundary: pre-migration numeric field value may be any type
-            dh2?: { influence?: unknown; homebrew?: { requisition?: unknown; throneGelt?: unknown } }; // eslint-disable-line no-restricted-syntax -- boundary: pre-migration numeric field values may be any type
-            rt?: { profitFactor?: unknown; homebrew?: { throneGelt?: unknown } }; // eslint-disable-line no-restricted-syntax -- boundary: pre-migration numeric field value may be any type
-            dw?: { requisition?: unknown; homebrew?: { throneGelt?: unknown } }; // eslint-disable-line no-restricted-syntax -- boundary: pre-migration numeric field value may be any type
-            bc?: { infamy?: unknown; homebrew?: { throneGelt?: unknown } }; // eslint-disable-line no-restricted-syntax -- boundary: pre-migration numeric field value may be any type
-            ow?: { logistics?: unknown; homebrew?: { throneGelt?: unknown } }; // eslint-disable-line no-restricted-syntax -- boundary: pre-migration numeric field value may be any type
+        interface LegacyCost {
+            logistics?: unknown; // eslint-disable-line no-restricted-syntax -- boundary: pre-migration numeric field value may be any type
+            throneGelt?: unknown; // eslint-disable-line no-restricted-syntax -- boundary: pre-migration numeric field value may be any type
+            ow?: { logistics?: unknown; homebrew?: { throneGelt?: unknown } }; // eslint-disable-line no-restricted-syntax -- boundary: pre-migration numeric field values may be any type
+            dh2?: { homebrew?: { throneGelt?: unknown } }; // eslint-disable-line no-restricted-syntax -- boundary: pre-migration numeric field value may be any type
         }
-        const cost = source['cost'] as CostShape;
+        const cost = source['cost'] as LegacyCost;
 
-        // Asymmetric homebrew shape (see docs/pack-authoring.md "Standard Cost
-        // Shape"): dh1 carries no homebrew block; homebrew.requisition is
-        // dh2-only; homebrew.throneGelt exists on every line except dh1.
-        // Legacy uniform-homebrew sources are tolerated — extra keys are
-        // simply not carried forward.
         source['cost'] = {
-            dh1: {
-                throneGelt: normalizeNullableNumber(cost.dh1?.throneGelt),
-            },
-            dh2: {
-                influence: normalizeNullableNumber(cost.dh2?.influence),
-                homebrew: {
-                    requisition: normalizeNullableNumber(cost.dh2?.homebrew?.requisition),
-                    throneGelt: normalizeNullableNumber(cost.dh2?.homebrew?.throneGelt),
-                },
-            },
-            rt: {
-                profitFactor: normalizeNullableNumber(cost.rt?.profitFactor),
-                homebrew: { throneGelt: normalizeNullableNumber(cost.rt?.homebrew?.throneGelt) },
-            },
-            dw: {
-                requisition: normalizeNullableNumber(cost.dw?.requisition),
-                homebrew: { throneGelt: normalizeNullableNumber(cost.dw?.homebrew?.throneGelt) },
-            },
-            bc: {
-                infamy: normalizeNullableNumber(cost.bc?.infamy),
-                homebrew: { throneGelt: normalizeNullableNumber(cost.bc?.homebrew?.throneGelt) },
-            },
-            ow: {
-                logistics: normalizeNullableNumber(cost.ow?.logistics),
-                homebrew: { throneGelt: normalizeNullableNumber(cost.ow?.homebrew?.throneGelt) },
-            },
-        };
-    }
-
-    // eslint-disable-next-line no-restricted-syntax -- boundary: emptyCost returns a raw object assigned to source data before schema validation
-    static #emptyCost(): Record<string, unknown> {
-        return {
-            dh1: {
-                throneGelt: null,
-            },
-            dh2: {
-                influence: null,
-                homebrew: {
-                    requisition: null,
-                    throneGelt: null,
-                },
-            },
-            rt: {
-                profitFactor: null,
-                homebrew: { throneGelt: null },
-            },
-            dw: {
-                requisition: null,
-                homebrew: { throneGelt: null },
-            },
-            bc: {
-                infamy: null,
-                homebrew: { throneGelt: null },
-            },
-            ow: {
-                logistics: null,
-                homebrew: { throneGelt: null },
-            },
+            logistics: first(normalizeNullableNumber(cost.ow?.logistics), normalizeNullableNumber(cost.logistics)),
+            throneGelt: first(
+                normalizeNullableNumber(cost.ow?.homebrew?.throneGelt),
+                normalizeNullableNumber(cost.dh2?.homebrew?.throneGelt),
+                normalizeNullableNumber(cost.throneGelt),
+            ),
         };
     }
 
@@ -399,7 +289,7 @@ export default class PhysicalItemTemplate extends SystemDataModel {
      * @type {{ value: number | null; denomination: string }}
      */
     get price(): { value: number | null; denomination: string } {
-        const gelt = this.cost.ow.homebrew.throneGelt;
+        const gelt = this.cost.throneGelt;
         return { value: WH40KSettings.isHomebrew() ? gelt : null, denomination: 'throne' };
     }
 }

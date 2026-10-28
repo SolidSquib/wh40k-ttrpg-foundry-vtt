@@ -90,6 +90,18 @@ function materialize(source, fallback, stats, path) {
     return source;
 }
 
+/**
+ * Collapse the per-line cost block (`cost.ow.logistics`, `cost.ow.homebrew.throneGelt`, plus the
+ * other lines') to the flat Only War shape `{ logistics, throneGelt }`. A cost that is already flat is left alone.
+ */
+function flattenCost(system) {
+    const cost = system.cost;
+    if (!isObj(cost) || !('ow' in cost || 'dh2' in cost || 'dh1' in cost)) return;
+    const ow = isObj(cost.ow) ? cost.ow : {};
+    const gelt = ow.homebrew?.throneGelt ?? cost.dh2?.homebrew?.throneGelt ?? null;
+    system.cost = { logistics: ow.logistics ?? null, throneGelt: gelt };
+}
+
 function* sourceFiles(dir) {
     for (const name of readdirSync(dir)) {
         const full = join(dir, name);
@@ -111,6 +123,7 @@ for (const file of sourceFiles(root)) {
     if (!isObj(doc.system)) continue;
     const stats = { containers: 0, unresolved: [] };
     const before = JSON.stringify(doc.system);
+    flattenCost(doc.system);
     materialize(doc.system, rawLines(doc.system), stats, 'system');
     containers += stats.containers;
     for (const u of stats.unresolved) unresolved.push(`${relative(root, file)} ${u}`);

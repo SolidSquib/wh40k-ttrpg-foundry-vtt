@@ -106,7 +106,7 @@ interface OriginPathSystemData {
     skills?: Record<string, SkillSlice>;
     characterGeneration?: CharacterGenerationSlice;
     // Compendium index-entry shape (also read via `entry.system as OriginPathSystemData`)
-    cost?: { dh2?: { homebrew?: { requisition?: number; throneGelt?: number } } };
+    cost?: { throneGelt?: number };
 }
 
 /**
@@ -292,7 +292,6 @@ interface EquipmentItemEntry {
     availability: string;
     availabilityLabel: string;
     availabilityOrder: number;
-    requisition: number | null;
     throneGelt: number | null;
 }
 
@@ -2116,15 +2115,7 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
                 if (!pack) return [];
 
                 const index = await pack.getIndex({
-                    fields: [
-                        'system.availability',
-                        'system.identifier',
-                        'system.clip.max',
-                        'system.weaponTypes',
-                        'system.cost.dh2.homebrew.requisition',
-                        'system.cost.dh2.homebrew.throneGelt',
-                        'type',
-                    ],
+                    fields: ['system.availability', 'system.identifier', 'system.clip.max', 'system.weaponTypes', 'system.cost.throneGelt', 'type'],
                 });
                 const fromPack: EquipmentEntry[] = [];
                 for (const rawEntry of index) {
@@ -2140,7 +2131,6 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
                     const modifier = availabilityEntry.modifier;
                     if (modifier === null || modifier < scarceModifier) continue;
                     if (entry.name?.startsWith('! Default') === true) continue;
-                    const homebrewCost = entrySys?.cost?.dh2?.homebrew;
                     const equipEntry: EquipmentEntry = {
                         uuid: `Compendium.${pack.metadata.id}.${entry._id}`,
                         id: entry._id,
@@ -2150,8 +2140,7 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
                         availability,
                         availabilityLabel: game.i18n.localize(availabilityEntry.label),
                         availabilityOrder: modifier,
-                        requisition: homebrewCost?.requisition ?? null,
-                        throneGelt: homebrewCost?.throneGelt ?? null,
+                        throneGelt: entrySys?.cost?.throneGelt ?? null,
                     };
                     if (entry.name !== undefined) equipEntry.name = entry.name;
                     if (entry.img !== undefined) equipEntry.img = entry.img;
@@ -4227,7 +4216,6 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
             uuid: item.uuid,
             availability: item.availability,
             availabilityLabel: item.availabilityLabel,
-            requisition: item.requisition ?? null,
             throneGelt: item.throneGelt ?? null,
             identifier: item.identifier ?? null,
             clipMax: item.clipMax ?? null,

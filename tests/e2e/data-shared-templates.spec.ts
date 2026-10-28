@@ -903,24 +903,19 @@ async function probeSharedTemplates(page: Page): Promise<{ results: FlowResult[]
                 if (!instance.homebrew.inventory.profiles.has('vendor-a')) return 'inventory.profiles missing vendor-a';
                 if (instance.cost.dh2.influence !== 1) return `cost.dh2.influence ${instance.cost.dh2.influence}`;
 
-                // _migrateData branches for cost normalisation: empty / non-object / string-number.
+                // _migrateData branches for cost normalisation: empty / legacy per-line / string-number.
                 const empty: SchemaMap = {};
                 PhysicalItemTemplate._migrateData?.(empty);
-                const emptyCost = empty.cost as { dh1: { throneGelt: number | null } };
-                if (emptyCost.dh1.throneGelt !== null) return 'empty cost normalisation failed';
+                const emptyCost = empty.cost as { logistics: number | null; throneGelt: number | null };
+                if (emptyCost.throneGelt !== null || emptyCost.logistics !== null) return 'empty cost normalisation failed';
 
                 const stringy: SchemaMap = {
-                    cost: { dh1: { throneGelt: '50' }, dh2: { influence: '', homebrew: { requisition: 'nope', throneGelt: '7' } } },
+                    cost: { ow: { logistics: '3', homebrew: { throneGelt: '7' } }, dh2: { influence: '', homebrew: { requisition: 'nope', throneGelt: '9' } } },
                 };
                 PhysicalItemTemplate._migrateData?.(stringy);
-                const sc = stringy.cost as {
-                    dh1: { throneGelt: number | null };
-                    dh2: { influence: number | null; homebrew: { requisition: number | null; throneGelt: number | null } };
-                };
-                if (sc.dh1.throneGelt !== 50) return `string-number throneGelt ${String(sc.dh1.throneGelt)}`;
-                if (sc.dh2.influence !== null) return `empty-string influence ${String(sc.dh2.influence)}`;
-                if (sc.dh2.homebrew.requisition !== null) return `non-numeric requisition ${String(sc.dh2.homebrew.requisition)}`;
-                if (sc.dh2.homebrew.throneGelt !== 7) return `coerced throneGelt ${String(sc.dh2.homebrew.throneGelt)}`;
+                const sc = stringy.cost as { logistics: number | null; throneGelt: number | null };
+                if (sc.logistics !== 3) return `string-number logistics ${String(sc.logistics)}`;
+                if (sc.throneGelt !== 7) return `coerced throneGelt ${String(sc.throneGelt)}`;
 
                 // _migrateData branches for homebrew inventory normalisation.
                 const hbLegacy: SchemaMap = { homebrew: { inventory: { profiles: ['ok', '  ', '', 12, 'x'], weight: '4' } } };

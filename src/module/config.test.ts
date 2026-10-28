@@ -71,7 +71,7 @@ describe('WH40K.currencies — acquisition currency registry', () => {
         expect(currency.abbreviation).toBeTruthy();
         expect(ALL_SYSTEM_IDS).toContain(currency.line);
         // The cost path addresses this currency's own line's cost block.
-        expect(currency.costPath.startsWith(`system.cost.${currency.line}.`)).toBe(true);
+        expect(currency.costPath.startsWith('system.cost.')).toBe(true);
         expect(currency.walletPath.startsWith('system.')).toBe(true);
     });
 

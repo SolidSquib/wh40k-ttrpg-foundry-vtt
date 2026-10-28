@@ -3299,7 +3299,6 @@ export type I18nKey =
     | 'WH40K.OriginPath.EquipmentClearAll'
     | 'WH40K.OriginPath.EquipmentColAvailability'
     | 'WH40K.OriginPath.EquipmentColName'
-    | 'WH40K.OriginPath.EquipmentColRequisition'
     | 'WH40K.OriginPath.EquipmentColThroneGelt'
     | 'WH40K.OriginPath.EquipmentColType'
     | 'WH40K.OriginPath.EquipmentDesc'

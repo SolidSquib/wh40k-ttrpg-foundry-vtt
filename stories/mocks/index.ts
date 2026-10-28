@@ -805,7 +805,7 @@ export function mockGearSheetContext(overrides?: DeepPartial<MockObjectMap>): Mo
             effectiveTotalWeight: 3.5,
             availability: 'very-rare',
             availabilityLabel: 'Very Rare',
-            cost: { dh2: { homebrew: { throneGelt: 350 } } },
+            cost: { throneGelt: 350 },
             equipped: true,
             inBackpack: false,
             consumable: true,

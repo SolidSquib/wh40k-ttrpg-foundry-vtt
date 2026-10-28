@@ -29,7 +29,7 @@ interface ProfaneGearArgs {
             availability: string;
             availabilityLabel: string;
             effectiveTotalWeight: number;
-            cost: { dh2: { homebrew: { throneGelt: number } } };
+            cost: { throneGelt: number };
             description: { value: string };
             effect: string;
             profaneObjectId: string;
@@ -60,7 +60,7 @@ const baseSystem = (overrides: Partial<ProfaneGearArgs['item']['system']> = {}):
     availability: 'unique',
     availabilityLabel: 'Unique',
     effectiveTotalWeight: 2,
-    cost: { dh2: { homebrew: { throneGelt: 0 } } },
+    cost: { throneGelt: 0 },
     description: { value: 'Recovered from the ruined chapel beneath Hab District 9.' },
     effect: 'Bound by chains of saint-iron. Do not open in the presence of psykers.',
     profaneObjectId: 'eye-of-tzeentch',

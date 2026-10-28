@@ -166,7 +166,6 @@
  <th class="tw-text-left tw-px-2 tw-py-1 tw-w-32">{{localize "WH40K.OriginPath.EquipmentColType"}}</th>
  <th class="tw-text-left tw-px-2 tw-py-1 tw-w-28">{{localize "WH40K.OriginPath.EquipmentColAvailability"}}</th>
  {{#if equipment.isHomebrew}}
- <th class="tw-text-right tw-px-2 tw-py-1 tw-w-16">{{localize "WH40K.OriginPath.EquipmentColRequisition"}}</th>
  <th class="tw-text-right tw-px-2 tw-py-1 tw-w-24">{{localize "WH40K.OriginPath.EquipmentColThroneGelt"}}</th>
  {{/if}}
  </tr>
@@ -189,7 +188,6 @@
  <td class="tw-px-2 tw-py-1 tw-capitalize tw-opacity-85">{{item.type}}</td>
  <td class="tw-px-2 tw-py-1 tw-opacity-85">{{item.availabilityLabel}}</td>
  {{#if ../equipment.isHomebrew}}
- <td class="tw-px-2 tw-py-1 tw-text-right tw-tabular-nums tw-opacity-90">{{#if item.requisition}}{{item.requisition}}{{else}}—{{/if}}</td>
  <td class="tw-px-2 tw-py-1 tw-text-right tw-tabular-nums tw-opacity-90">{{#if item.throneGelt}}{{item.throneGelt}}₮{{else}}—{{/if}}</td>
  {{/if}}
  </tr>

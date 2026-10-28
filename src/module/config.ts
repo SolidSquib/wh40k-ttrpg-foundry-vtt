@@ -142,7 +142,7 @@ export interface CurrencyConfig {
     abbreviation: string;
     /** Owning game line id. */
     line: string;
-    /** Item-cost path this currency reads, e.g. 'system.cost.dh2.influence'. */
+    /** Item-cost path this currency reads, e.g. 'system.cost.throneGelt'. */
     costPath: string;
     /** Actor field holding a character's amount of this currency (the wallet). */
     walletPath: string;
@@ -285,7 +285,7 @@ WH40K.currencies = {
         label: 'WH40K.Currency.ThroneGelt',
         abbreviation: 'tg',
         line: 'ow',
-        costPath: 'system.cost.ow.homebrew.throneGelt',
+        costPath: 'system.cost.throneGelt',
         walletPath: 'system.throneGelt',
         primary: true,
     },
@@ -293,7 +293,7 @@ WH40K.currencies = {
         label: 'WH40K.Currency.Logistics',
         abbreviation: 'Log',
         line: 'ow',
-        costPath: 'system.cost.ow.logistics',
+        costPath: 'system.cost.logistics',
         walletPath: 'system.logisticsRating',
     },
 };
