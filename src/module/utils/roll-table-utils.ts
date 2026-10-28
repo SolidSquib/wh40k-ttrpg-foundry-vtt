@@ -27,7 +27,7 @@ type RollTableRollOptions = {
  * Provides integration with Foundry VTT's RollTable system for:
  * - Psychic Phenomena
  * - Perils of the Warp
- * - Fear Effects
+ * - Shock and Mental Traumas
  * - Mutations
  * - Malignancies
  * - Navigator Mutations
@@ -192,20 +192,37 @@ export class RollTableUtils {
     }
 
     /**
-     * Roll on the Fear Effects table.
-     * @param {number} fearRating - The Fear rating (1-4)
-     * @param {number} degreeOfFailure - Degrees of failure on the Fear test
+     * Roll a d100 table that adds +10 per Degree of Failure on the triggering test.
+     * @param {string} tableName - The table to roll
+     * @param {number} degreesOfFailure - Degrees of failure on the triggering test
      * @returns {Promise<TableResult>}
      */
-    static async rollFearEffects(fearRating = 1, degreeOfFailure = 1): Promise<RollTableResult | null> {
-        const modifier = (fearRating - 1) * 10 + degreeOfFailure * 10;
-        const roll = new Roll(`1d100 + ${modifier}`);
+    private static async rollOnFailure(tableName: string, degreesOfFailure: number): Promise<RollTableResult | null> {
+        const roll = new Roll(`1d100 + ${degreesOfFailure * 10}`);
         await roll.evaluate();
 
-        return this.rollTable('Fear Effects', {
+        return this.rollTable(tableName, {
             displayChat: true,
             roll: roll,
         });
+    }
+
+    /**
+     * Roll on Table 9-5: Shock, after a failed Fear Test in combat.
+     * @param {number} degreesOfFailure - Degrees of failure on the Fear Test
+     * @returns {Promise<TableResult>}
+     */
+    static async rollShock(degreesOfFailure = 1): Promise<RollTableResult | null> {
+        return this.rollOnFailure('Shock', degreesOfFailure);
+    }
+
+    /**
+     * Roll on Table 9-8: Mental Traumas, after a failed Trauma Test.
+     * @param {number} degreesOfFailure - Degrees of failure on the Trauma Test
+     * @returns {Promise<TableResult>}
+     */
+    static async rollMentalTrauma(degreesOfFailure = 1): Promise<RollTableResult | null> {
+        return this.rollOnFailure('Mental Traumas', degreesOfFailure);
     }
 
     /**
@@ -268,7 +285,8 @@ export class RollTableUtils {
         const tables = [
             { name: 'Psychic Phenomena', category: 'Psychic' },
             { name: 'Perils of the Warp', category: 'Psychic' },
-            { name: 'Fear Effects', category: 'Mental' },
+            { name: 'Shock', category: 'Mental' },
+            { name: 'Mental Traumas', category: 'Mental' },
             { name: 'Mutations', category: 'Corruption' },
             { name: 'Malignancies', category: 'Corruption' },
             { name: 'Navigator Mutations', category: 'Navigator' },

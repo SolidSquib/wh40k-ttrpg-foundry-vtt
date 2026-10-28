@@ -18,7 +18,7 @@ import { test } from './lib/test';
  *     `RollTableUtils.findTableInCompendiums` + `rollTable` plus the
  *     domain wrappers (`rollPsychicPhenomena`, `rollPerilsOfTheWarp`,
  *     `rollMutation`, `rollMalignancy`, `rollNavigatorMutation`,
- *     `rollGiftOfTheGods`, `rollFearEffects`, `rollCriticalInjury`).
+ *     `rollGiftOfTheGods`, `rollShock`, `rollCriticalInjury`).
  *     Each looks up a compendium table by name and rolls; the test
  *     accepts a null return (table absent from the packed world)
  *     since the goal is coverage attribution, not roll outcome.
@@ -41,7 +41,7 @@ const UTILS_VALIDATORS_FLOWS = [
     'roll-table-rollMalignancy',
     'roll-table-rollNavigatorMutation',
     'roll-table-rollGiftOfTheGods',
-    'roll-table-rollFearEffects',
+    'roll-table-rollShock',
     'roll-table-rollCriticalInjury',
 ] as const;
 
@@ -96,7 +96,7 @@ async function probeUtilsValidators(page: Page): Promise<{ results: FlowResult[]
             rollMalignancy?: () => Promise<RollOutcome | null>;
             rollNavigatorMutation?: () => Promise<RollOutcome | null>;
             rollGiftOfTheGods?: (arg: object | null) => Promise<RollOutcome | null>;
-            rollFearEffects?: (a: number, b: number) => Promise<RollOutcome | null>;
+            rollShock?: (degreesOfFailure: number) => Promise<RollOutcome | null>;
             rollCriticalInjury?: (kind: string, loc: string, n: number) => Promise<RollOutcome | null>;
         }
         interface RollTableUtilsModule {
@@ -249,7 +249,7 @@ async function probeUtilsValidators(page: Page): Promise<{ results: FlowResult[]
                     ['roll-table-rollMalignancy', async () => (await RTU.rollMalignancy?.()) ?? null],
                     ['roll-table-rollNavigatorMutation', async () => (await RTU.rollNavigatorMutation?.()) ?? null],
                     ['roll-table-rollGiftOfTheGods', async () => (await RTU.rollGiftOfTheGods?.(null)) ?? null],
-                    ['roll-table-rollFearEffects', async () => (await RTU.rollFearEffects?.(1, 1)) ?? null],
+                    ['roll-table-rollShock', async () => (await RTU.rollShock?.(1)) ?? null],
                     ['roll-table-rollCriticalInjury', async () => (await RTU.rollCriticalInjury?.('impact', 'body', 1)) ?? null],
                 ];
                 for (const [name, fn] of probes) {

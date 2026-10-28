@@ -412,8 +412,10 @@ export interface WH40KGameSystem {
     rollPsychicPhenomena: (actor: WH40KBaseActor, mod?: unknown) => Promise<unknown>;
     // eslint-disable-next-line no-restricted-syntax -- boundary: heterogeneous Foundry roll result (`game.wh40k.rollPerilsOfTheWarp`)
     rollPerilsOfTheWarp: (actor: WH40KBaseActor) => Promise<unknown>;
-    // eslint-disable-next-line no-restricted-syntax -- boundary: Foundry roll-table inputs + heterogeneous result (`game.wh40k.rollFearEffects`)
-    rollFearEffects: (fear: unknown, dof: unknown) => Promise<unknown>;
+    // eslint-disable-next-line no-restricted-syntax -- boundary: Foundry roll-table inputs + heterogeneous result (`game.wh40k.rollShock`)
+    rollShock: (dof: unknown) => Promise<unknown>;
+    // eslint-disable-next-line no-restricted-syntax -- boundary: Foundry roll-table inputs + heterogeneous result (`game.wh40k.rollMentalTrauma`)
+    rollMentalTrauma: (dof: unknown) => Promise<unknown>;
     // eslint-disable-next-line no-restricted-syntax -- boundary: heterogeneous Foundry roll-table result (`game.wh40k.rollMutation`)
     rollMutation: () => Promise<unknown>;
     // eslint-disable-next-line no-restricted-syntax -- boundary: heterogeneous Foundry roll-table result (`game.wh40k.rollMalignancy`)

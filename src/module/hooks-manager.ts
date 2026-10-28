@@ -874,7 +874,8 @@ export class HooksManager {
             // Convenience methods for common roll tables
             rollPsychicPhenomena: async (actor: WH40KBaseActor, mod: unknown) => RollTableUtils.rollPsychicPhenomena(actor, mod as number | undefined),
             rollPerilsOfTheWarp: async (actor: WH40KBaseActor) => RollTableUtils.rollPerilsOfTheWarp(actor),
-            rollFearEffects: async (fear: unknown, dof: unknown) => RollTableUtils.rollFearEffects(fear as number | undefined, dof as number | undefined),
+            rollShock: async (dof: unknown) => RollTableUtils.rollShock(dof as number | undefined),
+            rollMentalTrauma: async (dof: unknown) => RollTableUtils.rollMentalTrauma(dof as number | undefined),
             rollMutation: async () => RollTableUtils.rollMutation(),
             rollMalignancy: async () => RollTableUtils.rollMalignancy(),
             showRollTableDialog: async () => Promise.resolve(RollTableUtils.showRollTableDialog()),
