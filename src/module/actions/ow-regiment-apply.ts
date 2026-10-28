@@ -20,6 +20,7 @@ import { aggregateRegimentGrants } from '../rules/ow-regiment-creation.ts';
 import { kitGearPlans, resolveKit } from '../rules/ow-regiment-kit.ts';
 import { encodePicks, isRegimentPreset, type RegimentPresetData, type RegimentState, selectedOptionIds, stateFromPreset } from '../rules/ow-regiment-preset.ts';
 import { dedupeTalentPlans, dedupeTraitPlans, talentPlansFor, traitPlansFor } from '../rules/ow-regiment-talents.ts';
+import { forcedReplacement } from '../utils/forced-replacement.ts';
 import { loadRegimentCatalog } from '../utils/regiment-catalog.ts';
 
 const FLAG_SCOPE = 'wh40k-rpg';
@@ -167,7 +168,7 @@ export async function commitRegiment(actor: WH40KBaseActor, state: RegimentState
         'system.regimentSelection.favouredWeapons.basic': [...selection.favouredWeapons.basic],
         'system.regimentSelection.favouredWeapons.heavy': [...selection.favouredWeapons.heavy],
         'system.regimentKit': kit,
-        'system.==regimentChoices': encodePicks(state.picks),
+        'system.regimentChoices': forcedReplacement(encodePicks(state.picks)),
     });
     await applyRegimentToActor(actor, selectedOptionIds(selection), state.picks);
     await applyRegimentKit(actor, state, catalog);

@@ -66,6 +66,7 @@ import {
     stateFromPreset,
 } from '../../rules/ow-regiment-preset.ts';
 import { loadFavouredWeaponChoices } from '../../utils/favoured-weapons.ts';
+import { forcedReplacement } from '../../utils/forced-replacement.ts';
 import { loadKitItemChoices } from '../../utils/kit-items.ts';
 import { loadRegimentCatalog, loadRegimentPresets } from '../../utils/regiment-catalog.ts';
 import type { ApplicationV2Ctor } from '../api/application-types.ts';
@@ -198,13 +199,12 @@ export interface RegimentPresetItem {
     update: (data: RegimentPresetUpdate) => Promise<object | undefined>;
 }
 
-/** What saving a preset writes to its item; the picks use `==` so an old pick cannot linger. */
+/** What saving a preset writes to its item; the picks are a forced replacement so an old pick cannot linger. */
 interface RegimentPresetUpdate {
     'system.step': string;
     'system.stepIndex': number;
     'system.gameSystem': string;
-    'system.regimentPreset': Omit<RegimentPresetData, 'choices'> & { choices: Record<string, never> };
-    'system.regimentPreset.==choices': RegimentPresetData['choices'];
+    'system.regimentPreset': Omit<RegimentPresetData, 'choices'> & { choices: object };
 }
 
 function isRegimentCategory(value: string): value is RegimentCategory {
@@ -663,8 +663,9 @@ export default class RegimentBuilderDialog extends ApplicationV2Mixin(Applicatio
                 'system.step': 'regiment',
                 'system.stepIndex': 1,
                 'system.gameSystem': 'ow',
-                'system.regimentPreset': { ...presetFromState(this.#state(), this.presetLocked), choices: {} },
-                'system.regimentPreset.==choices': presetFromState(this.#state(), this.presetLocked).choices,
+                'system.regimentPreset': (({ choices, ...rest }) => ({ ...rest, choices: forcedReplacement(choices) }))(
+                    presetFromState(this.#state(), this.presetLocked),
+                ),
             });
             ui.notifications.info(game.i18n.format('WH40K.OW.Regiment.Preset.Saved', { name: this.presetItem.name }));
             await this.close();

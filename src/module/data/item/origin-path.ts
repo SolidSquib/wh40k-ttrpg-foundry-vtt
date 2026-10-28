@@ -1,42 +1,13 @@
+import { type OriginChoiceOption, resolveActiveModifiers } from '../../rules/origin-active-modifiers.ts';
 import { REGIMENT_OPTION_CATEGORIES, type RegimentOptionCategory } from '../../rules/ow-regiment-creation.ts';
 import type { RegimentPresetData } from '../../rules/ow-regiment-preset.ts';
 import { formatSigned } from '../../utils/format.ts';
-import { iterateResolvedChoices } from '../../utils/origin-choices.ts';
 import { ORIGIN_STEP_CHOICES } from '../../utils/origin-step-choices.ts';
 import ItemDataModel from '../abstract/item-data-model.ts';
 import IdentifierField from '../fields/identifier-field.ts';
 import DescriptionTemplate from '../shared/description-template.ts';
 import ModifiersTemplate from '../shared/modifiers-template.ts';
 import { originStepLabel } from '../shared/origin-steps.ts';
-import SubtletyAdjusterTemplate from '../shared/subtlety-adjuster-template.ts';
-import type { SubtletyAdjusterKind } from '../shared/subtlety-adjuster.ts';
-
-/**
- * Grants an individual choice option can confer when selected. Mirrors the
- * `grants.*` array shapes the player picks resolve into.
- */
-interface OriginChoiceOptionGrants {
-    characteristics?: Record<string, number>;
-    skills?: Array<{ name: string }>;
-    talents?: Array<{ name: string; uuid?: string }>;
-    traits?: Array<{ name: string; level?: number; uuid?: string }>;
-    equipment?: Array<{ name: string; quantity?: number; uuid?: string; craftsmanship?: string }>;
-}
-
-/**
- * A single selectable option inside a `grants.choices[].options` array. Stored
- * as a free-form `ObjectField` in the schema; this is the structured shape the
- * runtime reads. RT packs key on `value`, DH2e/BC/OW on `name`.
- */
-interface OriginChoiceOption {
-    value?: string;
-    name?: string;
-    uuid?: string;
-    /** For an equipment option: how many are issued, and at what craftsmanship. */
-    quantity?: number;
-    craftsmanship?: string;
-    grants?: OriginChoiceOptionGrants;
-}
 
 /**
  * Aptitude-derivation surface (#381). The pure logic lives in the Foundry-free
@@ -72,13 +43,10 @@ function regimentGearField(): foundry.data.fields.SchemaField<foundry.data.field
  * @extends ItemDataModel
  * @mixes DescriptionTemplate
  * @mixes ModifiersTemplate
- * @mixes SubtletyAdjusterTemplate
  */
-export default class OriginPathData extends ItemDataModel.mixin(DescriptionTemplate, ModifiersTemplate, SubtletyAdjusterTemplate) {
+export default class OriginPathData extends ItemDataModel.mixin(DescriptionTemplate, ModifiersTemplate) {
     // Typed property declarations matching defineSchema()
     declare identifier: string;
-    // From SubtletyAdjusterTemplate (mixin static type does not surface it).
-    declare subtletyAdjuster?: { kind: SubtletyAdjusterKind; delta: number; minAbsoluteDelta: number; requiresEquipped: boolean };
     declare step: string;
     declare stepIndex: number;
     declare positions: number[];
@@ -639,131 +607,8 @@ export default class OriginPathData extends ItemDataModel.mixin(DescriptionTempl
      * This populates the activeModifiers array based on what the player has chosen.
      * @private
      */
-    // eslint-disable-next-line complexity -- choice resolution spans fixed grants, generic choice synthesis, and specialization splitting; refactoring it is larger than this lint-focused change
     _calculateActiveModifiers(): void {
-        const activeModifiers: Array<{
-            source: string;
-            type: string;
-            key: string;
-            value: number | null;
-            itemUuid: string | null;
-            specialization?: string;
-            craftsmanship?: string;
-        }> = [];
-
-        /**
-         * Composite picks land in selectedChoices as e.g. "Weapon Training (Chain)".
-         * Split into base name + specialization so the granted talent on the actor
-         * carries the player's chosen variant rather than the generic "(any)" item.
-         */
-        const splitComposite = (raw: string): { base: string; specialization?: string } => {
-            const match = raw.match(/^(.+?)\s*\((.+)\)\s*$/);
-            if (match === null) return { base: raw };
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- noUncheckedIndexedAccess: capture-group access is `string | undefined` under strict tsconfig, `string` under regular tsconfig; the fallback satisfies both
-            const base = match[1] ?? raw;
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- noUncheckedIndexedAccess: see above
-            const specialization = match[2] ?? '';
-            return { base: base.trim(), specialization: specialization.trim() };
-        };
-
-        // Label disambiguation + scoped/legacy pick lookup is shared (#305); the
-        // narrow `value ?? name` matcher stays inline here so the synthesized
-        // active-modifier path is byte-identical.
-        for (const { choice, choiceKey, selectedValues } of iterateResolvedChoices(this.grants.choices, this.selectedChoices)) {
-            for (const selectedStr of selectedValues) {
-                const option = choice.options.find((opt) => (opt.value ?? opt.name) === selectedStr);
-                // When the option carries no explicit grants, synthesize an
-                // activeModifier from the choice's declared type so picks like
-                // "Sleight of Hand" on a generic skill choice or
-                // "Weapon Training (Chain)" on a talent choice still attach to
-                // the actor. The composite "(specialization)" suffix is
-                // preserved in the key so downstream consumers can stamp the
-                // specialization onto the granted item.
-                if (option?.grants === undefined) {
-                    const choiceType = typeof choice.type === 'string' ? choice.type : '';
-                    if (choiceType === '') continue;
-                    const parts = splitComposite(selectedStr);
-                    const optionUuid = typeof option?.uuid === 'string' ? option.uuid : null;
-                    const base = { source: choiceKey, type: choiceType, key: parts.base, value: option?.quantity ?? null, itemUuid: optionUuid };
-                    const withGear =
-                        option?.craftsmanship === undefined || option.craftsmanship === '' ? base : { ...base, craftsmanship: option.craftsmanship };
-                    activeModifiers.push(parts.specialization === undefined ? withGear : { ...withGear, specialization: parts.specialization });
-                    continue;
-                }
-                const grants = option.grants;
-
-                // Extract characteristic modifiers
-                if (grants.characteristics !== undefined) {
-                    for (const [char, value] of Object.entries(grants.characteristics)) {
-                        if (value !== 0) {
-                            activeModifiers.push({
-                                source: choiceKey,
-                                type: 'characteristic',
-                                key: char,
-                                value,
-                                itemUuid: null,
-                            });
-                        }
-                    }
-                }
-
-                // Extract skill grants
-                if (grants.skills !== undefined) {
-                    for (const skill of grants.skills) {
-                        activeModifiers.push({
-                            source: choiceKey,
-                            type: 'skill',
-                            key: skill.name,
-                            value: null,
-                            itemUuid: null,
-                        });
-                    }
-                }
-
-                // Extract talent grants — split composite picks like
-                // "Weapon Training (Chain)" so the spec lands on the actor item.
-                if (grants.talents !== undefined) {
-                    for (const talent of grants.talents) {
-                        const parts = splitComposite(talent.name);
-                        // If the talent name already carries a (spec), prefer that;
-                        // otherwise fall back to splitting the option's selected
-                        // value so picks like "Weapon Training" → "Weapon Training (Chain)"
-                        // promoted via the dialog still record the spec.
-                        const composite = parts.specialization !== undefined ? parts : splitComposite(selectedStr);
-                        const base = { source: choiceKey, type: 'talent', key: composite.base, value: null, itemUuid: talent.uuid ?? null };
-                        activeModifiers.push(composite.specialization === undefined ? base : { ...base, specialization: composite.specialization });
-                    }
-                }
-
-                // Extract trait grants
-                if (grants.traits !== undefined) {
-                    for (const trait of grants.traits) {
-                        activeModifiers.push({
-                            source: choiceKey,
-                            type: 'trait',
-                            key: trait.name,
-                            value: trait.level ?? null,
-                            itemUuid: trait.uuid ?? null,
-                        });
-                    }
-                }
-
-                // Extract equipment grants
-                if (grants.equipment !== undefined) {
-                    for (const equip of grants.equipment) {
-                        activeModifiers.push({
-                            source: choiceKey,
-                            type: 'equipment',
-                            key: equip.name,
-                            value: equip.quantity ?? null,
-                            itemUuid: equip.uuid ?? null,
-                            ...(equip.craftsmanship === undefined || equip.craftsmanship === '' ? {} : { craftsmanship: equip.craftsmanship }),
-                        });
-                    }
-                }
-            }
-        }
-
+        const activeModifiers = resolveActiveModifiers(this.grants.choices, this.selectedChoices);
         // Store the calculated modifiers
         // Note: This is safe because prepareDerivedData is called after the item is initialized
         // and we're just updating a derived field, not modifying source data

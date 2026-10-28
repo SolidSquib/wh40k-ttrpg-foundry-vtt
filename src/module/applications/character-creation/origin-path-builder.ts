@@ -9,14 +9,16 @@
  * - Live preview of accumulated bonuses
  */
 
-import type { BaseSystemConfig } from '../../config/game-systems/base-system-config.ts';
 import { SystemConfigRegistry } from '../../config/game-systems/index.ts';
+import type { OWSystemConfig } from '../../config/game-systems/ow-config.ts';
 import type { GameSystemId, OriginStepConfig, OriginStepDef } from '../../config/game-systems/types.ts';
 import WH40K, { type AvailabilityConfig } from '../../config.ts';
 import type { WH40KBaseActor } from '../../documents/base-actor.ts';
 import type { WH40KItem } from '../../documents/item.ts';
 import { GrantsManager, generateDeterministicId } from '../../managers/grants-manager.ts';
 import { deltaFromModifiers, originDeltaFlagPath, originIdentityKey, type OriginModifierBag } from '../../origin-grant-ledger.ts';
+import { resolveActiveModifiers } from '../../rules/origin-active-modifiers.ts';
+import { isRegimentPreset, type RegimentPresetData } from '../../rules/ow-regiment-preset.ts';
 import { gearPlansFor, mergeGearPlans } from '../../rules/starting-gear.ts';
 import type { WH40KCharacteristic, WH40KItemModifiers } from '../../types/global.d.ts';
 import { resolvePack } from '../../utils/compendium-query.ts';
@@ -83,6 +85,7 @@ interface OriginPathSystemData {
     homebrew?: { throneGelt?: string; thrones?: string };
     modifiers?: WH40KItemModifiers;
     selectedChoices?: Record<string, string[]>;
+    regimentPreset?: RegimentPresetData;
     rollResults?: Record<string, { rolled?: number; breakdown?: string } | undefined>;
     grants?: {
         characteristics?: Record<string, number>;
@@ -351,7 +354,7 @@ function resolveBuilderGameSystem(actor: WH40KBaseActor, options: Record<string,
     if (fromType !== '' && SystemConfigRegistry.has(fromType)) {
         return fromType as GameSystemId;
     }
-    return 'dh2';
+    return 'ow';
 }
 
 /** Display labels for game lines, used in adapted-homebrew tooltips. */
@@ -407,7 +410,7 @@ export function filterOriginsByProvenance(
 export default class OriginPathBuilder extends HandlebarsApplicationMixin(ApplicationV2) {
     declare actor: WH40KBaseActor;
     declare gameSystem: GameSystemId;
-    declare registryConfig: BaseSystemConfig;
+    declare registryConfig: OWSystemConfig;
     declare systemConfig: OriginStepConfig;
     declare currentStepIndex: number;
     declare guidedMode: boolean;
@@ -564,9 +567,8 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
         const actorSys = this._actorSys();
         this._divination = actorSys.originPath?.divination ?? '';
         this._divinationSelection = null;
-        const isDH2Homebrew = this.gameSystem === 'dh2' && WH40KSettings.isHomebrew();
-        this._thronesRolled = isDH2Homebrew ? 0 : actorSys.throneGelt ?? 0;
-        this._influenceRolled = isDH2Homebrew ? 0 : actorSys.influence ?? 0;
+        this._thronesRolled = actorSys.throneGelt ?? 0;
+        this._influenceRolled = actorSys.influence ?? 0;
         this._savedScrollTop = 0;
         this.aptitudeOverrides = new Map();
         this._initCharacteristicState();
@@ -1009,7 +1011,7 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
         }
 
         // Only War regiment presets name their options but grant nothing; show what those options give.
-        if (this.gameSystem === 'ow') previewRegimentPresets(allOriginPaths);
+        previewRegimentPresets(allOriginPaths);
 
         // Separate optional step origins from core origins
         this.allOrigins = allOriginPaths.filter((o) => o.stepIndex !== optionalStepIndex);
@@ -1087,10 +1089,6 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
         const optionalStepLabel = optionalStep ? this._getLocalizedStepLabel(optionalStep.key) : '';
         const optionalStepIcon = optionalStep?.icon ?? 'fa-crown';
 
-        const isDH2 = this.gameSystem === 'dh2';
-        const ruleset = WH40KSettings.getRuleset();
-        const isHomebrew = isDH2 && ruleset === 'homebrew';
-        const isRaw = isDH2 && ruleset === 'raw';
         return {
             actor: this.actor,
             gameSystem: this.gameSystem,
@@ -1099,15 +1097,11 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
             guidedMode: this.guidedMode,
             isForward: this.direction === DIRECTION.FORWARD,
             isBackward: this.direction === DIRECTION.BACKWARD,
-            hasDirectionToggle: this.gameSystem === 'rt',
+            hasDirectionToggle: false,
             showLineage: this.showLineage,
             showCharacteristics: this.showCharacteristics,
             showEquipment: this.showEquipment,
             hasEquipmentStep: !!this.systemConfig.equipmentStep,
-            isDH2,
-            isHomebrew,
-            isRaw,
-            hideThroneGelt: isRaw,
             provenanceFilter: this._provenanceFilter,
 
             // System-aware content
@@ -2093,8 +2087,6 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
      * @private
      */
     _getInfluenceBonus(): number {
-        // Homebrew grants 3 starting Armoury acquisitions regardless of Influence; RAW uses the DH2e core pg 80 rule (floor(Influence/10)).
-        if (this.gameSystem === 'dh2' && WH40KSettings.isHomebrew()) return 3;
         const rolled = this._influenceRolled;
         const stored = Number(this._actorSys().influence ?? 0);
         const influence = rolled > 0 ? rolled : stored;
@@ -2467,29 +2459,6 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
             };
         }
 
-        // Per-origin throne gelt roll. Throne Gelt is NOT a strict DH2 RAW rule;
-        // it ships only on the homebrew track (`WH40KSettings.dh2Ruleset === 'homebrew'`)
-        // and traditionally rolls exactly ONCE at character creation, against the
-        // home world's formula. Issue #204: the previous implementation also exposed
-        // a separate roll button on the Background step, doubling the player's starting
-        // throne gelt. Restrict the rollable widget to the Home World step only; any
-        // formula authored on a Background entry is ignored at the UI layer (its data
-        // remains in the compendium for narrative reference but no separate roll fires).
-        const thronesFormulaForItem = this._getSelectionThronesFormula(item);
-        const itemSys = item.system as OriginPathSystemData;
-        const thronesEligibleStep = itemSys.step === 'homeWorld';
-        const thronesAllowedByRuleset = this.gameSystem === 'dh2' && WH40KSettings.isHomebrew();
-        if (thronesFormulaForItem !== '' && thronesEligibleStep && thronesAllowedByRuleset) {
-            const thronesResult = rollResults['thrones'];
-            const hasRolled = thronesResult?.rolled !== undefined;
-            rolls['thrones'] = {
-                formula: thronesFormulaForItem,
-                hasValue: hasRolled,
-                value: thronesResult?.rolled,
-                breakdown: thronesResult?.breakdown ?? '',
-            };
-        }
-
         const skills = await Promise.all(
             (grants.skills ?? []).map(async (skill) => {
                 const skillName = skill.name ?? '';
@@ -2524,9 +2493,7 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
             isConfirmed = selection?.id === itemId;
         }
 
-        const isDH2Homebrew = this.gameSystem === 'dh2' && WH40KSettings.isHomebrew();
-        // Influence is RAW-only: in homebrew it's not rolled at creation, so hide the block entirely.
-        const showInfluence = currentStep.key === 'background' && !isDH2Homebrew;
+        const showInfluence = currentStep.key === 'background';
         const influenceMod = this._getContextualInfluenceMod();
 
         return {
@@ -3366,8 +3333,7 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
         // _toggleEquipmentByUuid.
         const equipmentAvailable = this.systemConfig.equipmentStep != null;
         const equipmentMaxPicks = equipmentAvailable ? this._getInfluenceBonus() : 0;
-        const homebrewSkipsEquipment = this.gameSystem === 'dh2' && WH40KSettings.isHomebrew();
-        const equipmentRequired = equipmentAvailable && !homebrewSkipsEquipment;
+        const equipmentRequired = equipmentAvailable;
         const equipmentComplete = !equipmentRequired || this.equipmentSelections.size > 0;
         let pendingChoices = 0;
         let pendingRolls = 0;
@@ -4527,13 +4493,6 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
      * Roll starting influence (1d5 + Fellowship Bonus + homeworld modifier).
      */
     static async #rollInfluence(this: OriginPathBuilder, _event: Event, _target: HTMLElement): Promise<void> {
-        if (this.gameSystem === 'dh2' && WH40KSettings.isHomebrew()) {
-            ui.notifications.info(game.i18n.localize('WH40K.OriginPath.HomebrewInfluenceNoRoll'));
-            this._influenceRolled = 0;
-            this._saveScrollPosition();
-            void this.render();
-            return;
-        }
         const felBonus = this._actorSys().characteristics?.['fellowship']?.bonus ?? 0;
         const mod = this._getContextualInfluenceMod();
         const roll = new Roll('1d5');
@@ -5348,6 +5307,23 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
     }
 
     /**
+     * The system of a committed selection with its picks resolved into active modifiers (a plain origin carries
+     * none of its own), or null for a regiment preset: the regiment commit applies that one's talents and gear itself.
+     */
+    _grantSource(selection: NormalizedOrigin): OriginPathSystemData | null {
+        const system = this._getSelectionSystem(selection);
+        if (isRegimentPreset(system.regimentPreset)) return null;
+        return {
+            ...system,
+            activeModifiers: resolveActiveModifiers(
+                // eslint-disable-next-line no-restricted-syntax -- boundary: the builder's plain compendium payload and the DataModel declare the same choice entries with different option typings
+                (system.grants?.choices ?? []) as unknown as Parameters<typeof resolveActiveModifiers>[0],
+                system.selectedChoices ?? {},
+            ),
+        };
+    }
+
+    /**
      * Walk every committed origin's fixed talent grants AND its resolved
      * choice-driven activeModifiers, fetch the source talent compendium item
      * by UUID, stamp the player's chosen specialization onto the clone, and
@@ -5370,7 +5346,8 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
         };
 
         for (const [, selection] of this.selections) {
-            const system = this._getSelectionSystem(selection);
+            const system = this._grantSource(selection);
+            if (system === null) continue;
             // Fixed talents written into grants.talents
             const fixedTalents = system.grants?.talents ?? [];
             for (const t of fixedTalents) {
@@ -5430,7 +5407,12 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
      */
     async _applyEquipmentGrantsFromOrigins(): Promise<void> {
         if (this.systemConfig.equipmentStep) return;
-        const plans = mergeGearPlans(Array.from(this.selections.values()).flatMap((selection) => gearPlansFor(this._getSelectionSystem(selection))));
+        const plans = mergeGearPlans(
+            Array.from(this.selections.values()).flatMap((selection) => {
+                const system = this._grantSource(selection);
+                return system === null ? [] : gearPlansFor(system);
+            }),
+        );
         if (plans.length === 0) return;
 
         const held = new Set(
