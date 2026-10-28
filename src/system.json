@@ -183,11 +183,6 @@
                     "description.value"
                 ]
             },
-            "originPath": {
-                "htmlFields": [
-                    "description.value"
-                ]
-            },
             "psychicPower": {
                 "htmlFields": [
                     "description.value"
@@ -249,6 +244,21 @@
                 ]
             },
             "location": {
+                "htmlFields": [
+                    "description.value"
+                ]
+            },
+            "regiment": {
+                "htmlFields": [
+                    "description.value"
+                ]
+            },
+            "regimentOption": {
+                "htmlFields": [
+                    "description.value"
+                ]
+            },
+            "speciality": {
                 "htmlFields": [
                     "description.value"
                 ]

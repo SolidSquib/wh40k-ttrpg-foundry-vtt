@@ -103,7 +103,7 @@ async function probeChargenDialogs(page: Page): Promise<{ results: FlowResult[] 
                 (await actor.createEmbeddedDocuments?.('Item', [
                     {
                         name: 'chargen-spec-origin',
-                        type: 'originPath',
+                        type: 'regimentOption',
                         img: 'icons/svg/d20.svg',
                         system: {
                             gameSystem: 'dh2',

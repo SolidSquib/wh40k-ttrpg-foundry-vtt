@@ -23,6 +23,7 @@ import { isRecharging, type RechargeMark } from '../rules/weapon-recharge.ts';
 import type { WH40KActorSystemData, WH40KCharacteristic, WH40KModifierEntry, WH40KSkill, WH40KStatBreakdown } from '../types/global.d.ts';
 import { firstSystemId } from '../utils/chat-system-id.ts';
 import { flattenLegacyOwnedItems } from '../utils/legacy-line-containers.ts';
+import { migrateLegacyOwnedOriginTypes } from '../utils/origin-item-types.ts';
 import { handleTalentRemoval, processTalentGrants } from '../utils/talent-grants.ts';
 import { WH40KSettings } from '../wh40k-rpg-settings.ts';
 import { isActorWritable } from './actor-liveness.ts';
@@ -93,6 +94,7 @@ export class WH40KBaseActor extends Actor {
     // eslint-disable-next-line no-restricted-syntax -- boundary: Foundry Document.migrateData receives the raw, unvalidated actor source
     static override migrateData(source: Record<string, unknown>): Record<string, unknown> {
         flattenLegacyOwnedItems(source);
+        migrateLegacyOwnedOriginTypes(source);
         return super.migrateData(source);
     }
 

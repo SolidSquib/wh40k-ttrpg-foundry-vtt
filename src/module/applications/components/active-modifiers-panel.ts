@@ -17,6 +17,7 @@
 
 import type { WH40KActiveEffect } from '../../documents/active-effect.ts';
 import type { WH40KBaseActorDocument, WH40KItemModifiers } from '../../types/global.d.ts';
+import { isOriginItemType } from '../../utils/origin-item-types.ts';
 
 interface ConditionSystem {
     description?: string;
@@ -231,7 +232,7 @@ export function ActiveModifiersMixin<TBase extends ActorSheetCtor>(Base: TBase):
             // Collect origin paths with modifiers (homeworld/background/role/... traits;
             // #432 origin wiring). Origins are always active — their flat skill bonuses
             // apply at runtime and their scoped ones surface as roll toggles.
-            const origins = actor.items.filter((i) => i.type === 'originPath');
+            const origins = actor.items.filter((i) => isOriginItemType(i.type));
             for (const item of origins) {
                 const mods = (item.system as { modifiers?: WH40KItemModifiers }).modifiers;
                 if (mods !== undefined && this.#hasActiveModifiers(mods)) {

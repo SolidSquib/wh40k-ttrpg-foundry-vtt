@@ -25,6 +25,7 @@ import { resolvePack } from '../../utils/compendium-query.ts';
 import { capitalize } from '../../utils/format.ts';
 import { OriginChartLayout } from '../../utils/origin-chart-layout.ts';
 import { iterateResolvedChoices, typedOptionGrants } from '../../utils/origin-choices.ts';
+import { isOriginItemType, originItemTypeForStep } from '../../utils/origin-item-types.ts';
 import { getAllCharacteristicDisplayInfo, getCharacteristicDisplayInfo, getChoiceTypeLabel, getTrainingLabel } from '../../utils/origin-ui-labels.ts';
 import { WH40KSettings } from '../../wh40k-rpg-settings.ts';
 import type { ApplicationV2Ctor } from '../api/application-types.ts';
@@ -715,7 +716,7 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
      * @private
      */
     _initializeFromActor(): void {
-        const originItems = this.actor.items.filter((i) => i.type === 'originPath');
+        const originItems = this.actor.items.filter((i) => isOriginItemType(i.type));
         const optionalStepKey = this.systemConfig.optionalStep?.step ?? this.systemConfig.optionalStep?.key;
         for (const item of originItems) {
             const step = item.system.step;
@@ -969,7 +970,7 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
             // Filter and normalize
             allOriginPaths.push(
                 ...documents
-                    .filter((d): d is typeof d & { type: string } => (d as { type?: string }).type === 'originPath')
+                    .filter((d): d is typeof d & { type: string } => isOriginItemType((d as { type?: string }).type))
                     // eslint-disable-next-line no-restricted-syntax -- boundary: normalizeOrigin accepts the raw compendium document shape and validates structurally
                     .map((d) => normalizeOrigin(d as unknown as Record<string, unknown>)),
             );
@@ -979,7 +980,7 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
         // a compendium source, so they are marked `fromWorld` and rendered with
         // a warning marker in the builder. Scope to the active game system when
         // the item declares one; otherwise include it. See issue #219.
-        const worldOrigins = game.items.filter((i): i is typeof i & { type: string } => (i as { type?: string }).type === 'originPath');
+        const worldOrigins = game.items.filter((i): i is typeof i & { type: string } => isOriginItemType((i as { type?: string }).type));
         for (const doc of worldOrigins) {
             // eslint-disable-next-line no-restricted-syntax -- boundary: WH40KItem.system is an untyped Foundry DataModel union; narrow to the originPath gameSystem fields we read, each guarded on the next lines
             const itemSystem = doc.system as { gameSystem?: unknown; gameSystems?: unknown };
@@ -3385,7 +3386,7 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
         }
 
         // Delete origin path items from actor
-        const originPathItems = this.actor.items.filter((i) => i.type === 'originPath');
+        const originPathItems = this.actor.items.filter((i) => isOriginItemType(i.type));
         if (originPathItems.length > 0) {
             const ids = originPathItems.map((i) => i.id).filter((id): id is string => typeof id === 'string');
             await this.actor.deleteEmbeddedDocuments('Item', ids);
@@ -4595,7 +4596,7 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
             // Delete existing origin path items before applying new ones.
             // Without this, re-committing would accumulate duplicate origin items
             // and _getOriginPathCharacteristicModifier() would double-count modifiers.
-            const existingOriginItems = this.actor.items.filter((i) => i.type === 'originPath');
+            const existingOriginItems = this.actor.items.filter((i) => isOriginItemType(i.type));
             if (existingOriginItems.length > 0) {
                 const idsToDelete = existingOriginItems.map((i) => i.id).filter((id): id is string => typeof id === 'string');
                 await this.actor.deleteEmbeddedDocuments('Item', idsToDelete);
@@ -4633,7 +4634,7 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
             // reverseExisting ensures old grants are reversed before applying new ones
             const itemLikeRecords = originItems.map((data) => ({
                 name: data.name,
-                type: 'originPath',
+                type: originItemTypeForStep((data.system as { step?: string } | undefined)?.step),
                 system: data.system,
                 toObject: () => data,
             }));
@@ -4662,7 +4663,7 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
                 delete itemData._sourceUuid;
                 delete itemData._actorItemId;
                 // Ensure it's marked as an origin path item
-                itemData.type = 'originPath';
+                itemData.type = originItemTypeForStep(itemData.system?.step);
                 if (sourceUuid !== undefined && sourceUuid !== null && sourceUuid !== '') {
                     const flags: { core?: CoreFlags } & Record<string, CoreFlags | undefined> = itemData.flags ?? {};
                     const core: CoreFlags = flags.core ?? {};
@@ -4966,7 +4967,7 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
         const wanted = text.toLowerCase();
         const match = documents.find((d): d is typeof d & { type: string; name: string } => {
             const doc = d as { type?: string; name?: string };
-            return doc.type === 'originPath' && typeof doc.name === 'string' && doc.name.trim().toLowerCase() === wanted;
+            return isOriginItemType(doc.type) && typeof doc.name === 'string' && doc.name.trim().toLowerCase() === wanted;
         });
         if (!match) return;
         // eslint-disable-next-line no-restricted-syntax -- boundary: normalizeOrigin accepts the raw compendium document shape and validates structurally (mirrors _loadOrigins)
@@ -4992,7 +4993,7 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
      * @private
      */
     async _stampOriginGrantLedger(): Promise<void> {
-        const embeddedOrigins = this.actor.items.filter((i) => i.type === 'originPath');
+        const embeddedOrigins = this.actor.items.filter((i) => isOriginItemType(i.type));
         if (embeddedOrigins.length === 0) return;
         // eslint-disable-next-line no-restricted-syntax -- boundary: actor.update() accepts an untyped path-keyed payload; Record<string,unknown> is the documented pattern
         const ledgerUpdate: Record<string, unknown> = {};

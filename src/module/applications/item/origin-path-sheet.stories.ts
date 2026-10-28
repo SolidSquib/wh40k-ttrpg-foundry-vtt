@@ -47,7 +47,7 @@ function makeCtx(overrides: Partial<OriginPathCtx> = {}): OriginPathCtx {
         _id: id,
         id,
         name: 'Hive World',
-        type: 'originPath',
+        type: 'regimentOption',
         img: 'icons/environment/settlement/town-exterior.webp',
         system: {
             step: 'homeWorld',
@@ -215,7 +215,7 @@ function renderPerSystem(systemId: SystemId): HTMLElement {
         _id: id,
         id,
         name: fixture.name,
-        type: 'originPath',
+        type: 'regimentOption',
         img: 'icons/environment/settlement/town-exterior.webp',
         system: {
             step: fixture.step,

@@ -53,7 +53,7 @@ describe.skipIf(skipAll)('document lifecycle (Tier A)', () => {
     // `system.state` exists, or prepareData throws for every such item.
     // A `weapon`-only fixture never exercised this; these types are the ones that
     // actually broke at runtime (item-container.ts reading undefined `.container`).
-    it.each(['skill', 'originPath', 'talent'])('creates a non-equippable %s item and prepareData runs without throwing', async (type) => {
+    it.each(['skill', 'speciality', 'talent'])('creates a non-equippable %s item and prepareData runs without throwing', async (type) => {
         const item = await createItem(runtime, { type, name: `Lifecycle ${type}` });
         expect(item).toBeDefined();
         // totalWeight reads `this.items.size`; prepareEmbeddedDocuments must have

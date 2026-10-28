@@ -1740,7 +1740,6 @@ export default class AdvancementDialog extends HandlebarsApplicationMixin(Applic
                 // eslint-disable-next-line no-restricted-syntax -- boundary: Foundry Document#toObject() returns a plain data payload typed as object
                 const itemData = sourceDoc.toObject() as Record<string, unknown> & { system: Record<string, unknown> };
                 itemData['_id'] = foundry.utils.randomID();
-                itemData['type'] = 'originPath';
                 // eslint-disable-next-line no-restricted-syntax -- boundary: Foundry createEmbeddedDocuments returns plain Document refs
                 const [created] = (await this.actor.createEmbeddedDocuments('Item', [itemData] as never[])) as unknown as Item[];
 

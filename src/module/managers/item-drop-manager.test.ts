@@ -22,7 +22,9 @@ describe('ItemDropManager.isDroppable', () => {
         expect(ItemDropManager.isDroppable('talent')).toBe(false);
         expect(ItemDropManager.isDroppable('trait')).toBe(false);
         expect(ItemDropManager.isDroppable('condition')).toBe(false);
-        expect(ItemDropManager.isDroppable('originPath')).toBe(false);
+        expect(ItemDropManager.isDroppable('regiment')).toBe(false);
+        expect(ItemDropManager.isDroppable('regimentOption')).toBe(false);
+        expect(ItemDropManager.isDroppable('speciality')).toBe(false);
     });
 });
 

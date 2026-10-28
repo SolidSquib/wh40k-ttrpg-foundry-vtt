@@ -30,7 +30,6 @@
             "mutation": "Mutation",
             "npcTemplate": "NPC Template",
             "order": "Order",
-            "originPath": "Origin Path",
             "psychicPower": "Psychic Power",
             "skill": "Skill",
             "specialAbility": "Special Ability",
@@ -43,7 +42,10 @@
             "weapon": "Weapon",
             "weaponModification": "Weapon Modification",
             "weaponQuality": "Weapon Quality",
-            "location": "Location"
+            "location": "Location",
+            "regiment": "Regiment",
+            "regimentOption": "Regiment Option",
+            "speciality": "Speciality"
         }
     },
     "WH40K": {

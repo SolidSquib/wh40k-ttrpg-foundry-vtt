@@ -76,7 +76,7 @@ export async function loadRegimentPresets(): Promise<RegimentPresetEntry[]> {
     }
     for (const item of game.items) {
         // eslint-disable-next-line no-restricted-syntax -- boundary: a world Item's system is an untyped DataModel union; RegimentDocLike is the narrowed surface the preset reads
-        const entry = item.type === 'originPath' ? presetEntryFromDoc(item.uuid, item as unknown as RegimentDocLike) : undefined;
+        const entry = item.type === 'regiment' ? presetEntryFromDoc(item.uuid, item as unknown as RegimentDocLike) : undefined;
         if (entry !== undefined) presets.push(entry);
     }
     return presets.sort((a, b) => a.label.localeCompare(b.label));

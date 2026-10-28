@@ -28,11 +28,11 @@ function getApply(mod: { WH40KItem: { prototype: { applyOriginToActor: unknown }
 function makeOriginThis(modifiers: Record<string, unknown>): unknown {
     return {
         isOriginPath: true,
-        type: 'originPath',
+        type: 'regimentOption',
         id: 'origin-xyz',
         name: 'Imperial World',
         system: { modifiers },
-        toObject: () => ({ type: 'originPath', name: 'Imperial World' }),
+        toObject: () => ({ type: 'regimentOption', name: 'Imperial World' }),
     };
 }
 

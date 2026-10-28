@@ -367,7 +367,7 @@ async function probeOriginSkillModifier(page: Page, actorId: string): Promise<Fl
     const ids = await createItems(page, actorId, [
         {
             name: 'probe-origin-dodge-10',
-            type: 'originPath',
+            type: 'regimentOption',
             system: { modifiers: { skills: { dodge: 10 } } },
         },
     ]);
@@ -389,7 +389,7 @@ async function probeOriginSituational(page: Page, actorId: string): Promise<Flow
     const ids = await createItems(page, actorId, [
         {
             name: 'probe-origin-situational',
-            type: 'originPath',
+            type: 'regimentOption',
             system: { modifiers: { situational: { skills: [{ key: 'navigate', value: 20, condition: 'In an enclosed space' }] } } },
         },
     ]);

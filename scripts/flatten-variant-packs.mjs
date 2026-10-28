@@ -104,6 +104,20 @@ function flattenCost(system) {
     system.cost = { logistics };
 }
 
+/** The origin item type for each step (mirrors `data/shared/origin-item-types.ts`). */
+const ORIGIN_STEP_TYPE = {
+    regiment: 'regiment',
+    speciality: 'speciality',
+    advancedSpeciality: 'speciality',
+};
+
+/** Rewrite a legacy `originPath` document's type to regiment / regimentOption / speciality by its step. */
+function retypeOrigin(doc) {
+    if (doc.type !== 'originPath') return false;
+    doc.type = ORIGIN_STEP_TYPE[doc.system?.step] ?? 'regimentOption';
+    return true;
+}
+
 function* sourceFiles(dir) {
     for (const name of readdirSync(dir)) {
         const full = join(dir, name);
@@ -129,7 +143,8 @@ for (const file of sourceFiles(root)) {
     materialize(doc.system, rawLines(doc.system), stats, 'system');
     containers += stats.containers;
     for (const u of stats.unresolved) unresolved.push(`${relative(root, file)} ${u}`);
-    if (JSON.stringify(doc.system) !== before) {
+    const retyped = retypeOrigin(doc);
+    if (retyped || JSON.stringify(doc.system) !== before) {
         touched++;
         if (snapshotPath) snapshot[relative(root, file)] = doc.system;
         if (write) writeFileSync(file, `${JSON.stringify(doc, null, 4)}\n`);

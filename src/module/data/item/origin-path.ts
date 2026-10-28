@@ -18,17 +18,6 @@ import { originStepLabel } from '../shared/origin-steps.ts';
  */
 export { type AptitudeDerivation, type AptitudeGrantSource, collectGrantedAptitudes, deriveAptitudes, extractLegacyElectives } from './aptitude-derivation.ts';
 
-/**
- * A single prerequisite gating a career Rank-1 advance. `type` is one of
- * `characteristic` / `skill` / `talent` / `trait`; `value` is present for
- * characteristic thresholds.
- */
-interface CareerAdvancePrerequisite {
-    type: string;
-    key: string;
-    value?: number;
-}
-
 /** One stack of a compendium item a regiment kit line issues. */
 function regimentGearField(): foundry.data.fields.SchemaField<foundry.data.fields.DataSchema> {
     const fields = foundry.data.fields;
@@ -39,7 +28,9 @@ function regimentGearField(): foundry.data.fields.SchemaField<foundry.data.field
 }
 
 /**
- * Data model for Origin Path items (homeworld, birthright, career, etc).
+ * Shared base for the Only War origin item types (`regiment`, `regimentOption`,
+ * `speciality` — see `utils/origin-item-types.ts`). Each concrete type
+ * below trims the schema to the blocks it uses.
  * @extends ItemDataModel
  * @mixes DescriptionTemplate
  * @mixes ModifiersTemplate
@@ -88,20 +79,6 @@ export default class OriginPathData extends ItemDataModel.mixin(DescriptionTempl
         specialAbilities: Array<{ name: string; description: string }>;
         choices: Array<{ type: string; label: string; name?: string; options: OriginChoiceOption[]; count: number; xpCost: number }>;
     };
-    // Career advancement tables (RT careers only; null on every other origin step).
-    // Content lives here on the compendium doc, indexed at `ready` by the career
-    // advancement boot cache — see `config/advancements/career-advancement-cache.ts`.
-    declare careerAdvancement: {
-        characteristicCosts: Record<string, { simple: number; intermediate: number; trained: number; expert: number }>;
-        rank1Advances: Array<{
-            name: string;
-            cost: number;
-            type: string;
-            specialization?: string;
-            multiplier?: number;
-            prerequisites: CareerAdvancePrerequisite[];
-        }>;
-    } | null;
     declare effectText: string;
     declare notes: string;
     declare selectedChoices: Record<string, string[]>;
@@ -161,7 +138,7 @@ export default class OriginPathData extends ItemDataModel.mixin(DescriptionTempl
             // Which game system this origin path belongs to
             gameSystem: new fields.StringField({
                 required: true,
-                initial: 'rt',
+                initial: 'ow',
                 choices: ['rt', 'dh2', 'dh1', 'bc', 'ow', 'dw'],
             }),
 
@@ -383,29 +360,6 @@ export default class OriginPathData extends ItemDataModel.mixin(DescriptionTempl
                     { required: true, initial: [] },
                 ),
             }),
-
-            // Career advancement tables (RT careers only). Content authored on the
-            // compendium doc; the career advancement boot cache reads it at `ready`.
-            // Null on every non-career origin step (only careers populate it).
-            careerAdvancement: new fields.SchemaField(
-                {
-                    // characteristic key → { simple, intermediate, trained, expert } cost tiers.
-                    characteristicCosts: new fields.ObjectField({ required: false, initial: {} }),
-                    // Rank 1 skill/talent advance options.
-                    rank1Advances: new fields.ArrayField(
-                        new fields.SchemaField({
-                            name: new fields.StringField({ required: true }),
-                            cost: new fields.NumberField({ required: true, initial: 0, min: 0, integer: true }),
-                            type: new fields.StringField({ required: true, choices: ['skill', 'talent'] }),
-                            specialization: new fields.StringField({ required: false, blank: true }),
-                            multiplier: new fields.NumberField({ required: false, initial: null, min: 1, integer: true }),
-                            prerequisites: new fields.ArrayField(new fields.ObjectField({ required: true }), { required: false, initial: [] }),
-                        }),
-                        { required: false, initial: [] },
-                    ),
-                },
-                { required: false, nullable: true, initial: null },
-            ),
 
             // Effect/flavor text
             effectText: new fields.HTMLField({ required: false, blank: true }),
@@ -652,5 +606,43 @@ export default class OriginPathData extends ItemDataModel.mixin(DescriptionTempl
             step: this.stepLabel,
             stepIndex: this.stepIndex + 1,
         };
+    }
+}
+
+/** Step-initial helper: swap the default step for a concrete type, keeping the shared choice list. */
+function withStep(schema: Record<string, foundry.data.fields.DataField.Any>, step: string): Record<string, foundry.data.fields.DataField.Any> {
+    const fields = foundry.data.fields;
+    schema['step'] = new fields.StringField({ required: true, initial: step, choices: [...ORIGIN_STEP_CHOICES] });
+    return schema;
+}
+
+/** A pre-built regiment: the ready-made regiment choices (`regimentPreset`). Carries no budget option block. */
+export class RegimentData extends OriginPathData {
+    /** @inheritdoc */
+    static override defineSchema(): Record<string, foundry.data.fields.DataField.Any> {
+        const schema = withStep(super.defineSchema(), 'regiment');
+        delete schema['regiment'];
+        return schema;
+    }
+}
+
+/** One Regiment Builder pick: home world, type, commanding officer, doctrine, drawback or kit item. */
+export class RegimentOptionData extends OriginPathData {
+    /** @inheritdoc */
+    static override defineSchema(): Record<string, foundry.data.fields.DataField.Any> {
+        const schema = withStep(super.defineSchema(), 'homeWorld');
+        delete schema['regimentPreset'];
+        return schema;
+    }
+}
+
+/** A Speciality, or an advanced one taken at a milestone. */
+export class SpecialityData extends OriginPathData {
+    /** @inheritdoc */
+    static override defineSchema(): Record<string, foundry.data.fields.DataField.Any> {
+        const schema = withStep(super.defineSchema(), 'speciality');
+        delete schema['regimentPreset'];
+        delete schema['regiment'];
+        return schema;
     }
 }

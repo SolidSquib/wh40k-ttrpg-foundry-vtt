@@ -19,10 +19,10 @@ describe('mapOriginStepNames', () => {
 
     it('fills steps from matching originPath items (across systems)', () => {
         const items: OriginItemLike[] = [
-            { type: 'originPath', name: 'Hive World', system: { step: 'homeWorld' } },
-            { type: 'originPath', name: 'Scum', system: { step: 'background' } },
-            { type: 'originPath', name: 'Assassin', system: { step: 'role' } },
-            { type: 'originPath', name: 'Ultramarines', system: { step: 'chapter' } },
+            { type: 'regimentOption', name: 'Hive World', system: { step: 'homeWorld' } },
+            { type: 'regimentOption', name: 'Scum', system: { step: 'background' } },
+            { type: 'regimentOption', name: 'Assassin', system: { step: 'role' } },
+            { type: 'regimentOption', name: 'Ultramarines', system: { step: 'chapter' } },
         ];
         const map = mapOriginStepNames(items);
         expect(map['homeWorld']).toBe('Hive World');
@@ -35,8 +35,8 @@ describe('mapOriginStepNames', () => {
     it('ignores non-originPath items and unknown steps', () => {
         const items: OriginItemLike[] = [
             { type: 'weapon', name: 'Lasgun', system: { step: 'homeWorld' } },
-            { type: 'originPath', name: 'Mystery', system: { step: 'notAStep' } },
-            { type: 'originPath', name: 'No Step', system: {} },
+            { type: 'regimentOption', name: 'Mystery', system: { step: 'notAStep' } },
+            { type: 'regimentOption', name: 'No Step', system: {} },
         ];
         const map = mapOriginStepNames(items);
         expect(map['homeWorld']).toBe('');
@@ -44,7 +44,7 @@ describe('mapOriginStepNames', () => {
     });
 
     it('tolerates missing name / system', () => {
-        const items: OriginItemLike[] = [{ type: 'originPath', system: { step: 'homeWorld' } }, { type: 'originPath' }];
+        const items: OriginItemLike[] = [{ type: 'regimentOption', system: { step: 'homeWorld' } }, { type: 'regimentOption' }];
         expect(mapOriginStepNames(items)['homeWorld']).toBe('');
     });
 });

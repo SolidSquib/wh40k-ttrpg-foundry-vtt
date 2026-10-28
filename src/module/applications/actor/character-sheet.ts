@@ -54,6 +54,7 @@ import { firstSystemId } from '../../utils/chat-system-id.ts';
 import { errorMessage } from '../../utils/error-message.ts';
 import { capitalize, formatSigned } from '../../utils/format.ts';
 import { gameSystemPackPrefix } from '../../utils/game-system-pack-prefix.ts';
+import { isOriginItemType } from '../../utils/origin-item-types.ts';
 import { uuidNameCache } from '../../utils/uuid-name-cache.ts';
 import { WH40KSettings } from '../../wh40k-rpg-settings.ts';
 import type { DialogV2Like, TextEditorImplementationLike } from '../api/application-types.ts';
@@ -1024,7 +1025,7 @@ export default class CharacterSheet extends BaseActorSheet {
 
         for (const index of indexes) {
             for (const entry of index) {
-                if (entry.type !== 'originPath') continue;
+                if (!isOriginItemType(entry.type)) continue;
                 const step = entry.system?.step;
                 if (step === undefined || step === '') continue;
                 // eslint-disable-next-line no-restricted-syntax -- ??= used to lazily initialize per-step Set; stepNames is a local accumulator not owned by any DataModel
@@ -1408,7 +1409,7 @@ export default class CharacterSheet extends BaseActorSheet {
             };
         });
 
-        const originItems = this.actor.items.filter((item) => item.type === 'originPath');
+        const originItems = this.actor.items.filter((item) => isOriginItemType(item.type));
 
         // Calculate totals from all origins
         const charTotals: Record<string, number> = {};
@@ -4836,8 +4837,7 @@ export default class CharacterSheet extends BaseActorSheet {
         // Origin Path Builder — dragging one onto an actor is not the supported
         // build flow. Reject it (with guidance) unless the world has opted into
         // freeform character building. See issue #219.
-        const flags = item.flags as { rt?: { kind?: string } } | undefined;
-        const isOriginPath = item.type === 'originPath' || (item.type === 'trait' && flags?.rt?.kind === 'origin');
+        const isOriginPath = isOriginItemType(item.type);
         const alreadyOwned = item.id !== null && item.id !== '' && this.actor.items.get(item.id) !== undefined;
 
         if (isOriginPath && !alreadyOwned && !WH40KSettings.isFreeformCharactersEnabled()) {

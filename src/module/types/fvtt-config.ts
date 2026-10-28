@@ -42,7 +42,9 @@ import type {
     MutationData,
     NPCTemplateData,
     OrderData,
-    OriginPathData,
+    RegimentData,
+    RegimentOptionData,
+    SpecialityData,
     PsychicPowerData,
     SkillData,
     SpecialAbilityData,
@@ -158,7 +160,9 @@ declare module 'fvtt-types/configuration' {
             talent: typeof TalentData;
             trait: typeof TraitData;
             skill: typeof SkillData;
-            originPath: typeof OriginPathData;
+            regiment: typeof RegimentData;
+            regimentOption: typeof RegimentOptionData;
+            speciality: typeof SpecialityData;
             aptitude: typeof AptitudeData;
             condition: typeof ConditionData;
             psychicPower: typeof PsychicPowerData;

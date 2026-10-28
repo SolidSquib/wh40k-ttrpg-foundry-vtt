@@ -260,7 +260,7 @@ describe('hydrateActorInMemory — commits onto a sealed source', () => {
     it('adds a canonical field the lean item lacks without throwing', async () => {
         vi.stubGlobal('fromUuid', vi.fn().mockResolvedValue({ img: null, system: { effectText: '<p>Gain a Fate point.</p>', xpCost: 0 } }));
         const doc = sealedDoc({ xpCost: 100 });
-        const item = { id: 'o1', name: 'Mind Cleansed', img: null, type: 'originPath', _stats: { compendiumSource: 'Compendium.x.Item.o' }, ...doc };
+        const item = { id: 'o1', name: 'Mind Cleansed', img: null, type: 'regimentOption', _stats: { compendiumSource: 'Compendium.x.Item.o' }, ...doc };
         const actor = { items: { contents: [item] }, reset: vi.fn() };
         await expect(hydrateActorInMemory(actor)).resolves.toBe(1);
         expect(doc._source.system).toEqual({ effectText: '<p>Gain a Fate point.</p>', xpCost: 100 });

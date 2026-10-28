@@ -11,6 +11,8 @@
  * Foundry-free so it is unit-testable; callers pass the actor's item collection.
  */
 
+import { isOriginItemType } from '../../utils/origin-item-types.ts';
+
 /**
  * Origin-path step keys across all seven systems. Matches the `originPath`
  * object shape so every key is always present (unfilled steps are `''`).
@@ -87,7 +89,7 @@ export function mapOriginStepNames(items: Iterable<OriginItemLike>): Record<stri
     const out: Record<string, string> = {};
     for (const key of ORIGIN_STEP_KEYS) out[key] = '';
     for (const item of items) {
-        if (item.type !== 'originPath') continue;
+        if (!isOriginItemType(item.type)) continue;
         const step = item.system?.step;
         if (typeof step === 'string' && step in out) out[step] = item.name ?? '';
     }

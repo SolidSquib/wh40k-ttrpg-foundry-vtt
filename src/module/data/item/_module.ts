@@ -17,7 +17,7 @@ export { default as LocationData } from './location.ts';
 export { default as TalentData } from './talent.ts';
 export { default as TraitData } from './trait.ts';
 export { default as SkillData } from './skill.ts';
-export { default as OriginPathData } from './origin-path.ts';
+export { default as OriginPathData, RegimentData, RegimentOptionData, SpecialityData } from './origin-path.ts';
 export { default as ConditionData } from './condition.ts';
 export { default as AptitudeData } from './aptitude.ts';
 

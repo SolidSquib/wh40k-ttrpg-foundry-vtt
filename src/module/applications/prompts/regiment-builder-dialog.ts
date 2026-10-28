@@ -647,7 +647,7 @@ export default class RegimentBuilderDialog extends ApplicationV2Mixin(Applicatio
         if (choice === null || choice.name === '') return;
         await Item.create({
             name: choice.name,
-            type: 'originPath',
+            type: 'regiment',
             system: { step: 'regiment', stepIndex: 1, gameSystem: 'ow', positions: [], regimentPreset: presetFromState(this.#state(), choice.locked) },
         });
         ui.notifications.info(game.i18n.format('WH40K.OW.Regiment.Preset.Saved', { name: choice.name }));

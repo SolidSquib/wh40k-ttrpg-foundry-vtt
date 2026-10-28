@@ -11,6 +11,7 @@ import { applyRollModeWhispers, getDegreeForMode, isD100Success, resolveDegreesM
 import type { WH40KItemSystemData } from '../types/global.d.ts';
 import { firstSystemId } from '../utils/chat-system-id.ts';
 import { capitalize } from '../utils/format.ts';
+import { isOriginItemType, migrateLegacyOriginType } from '../utils/origin-item-types.ts';
 import { WH40KSettings } from '../wh40k-rpg-settings.ts';
 import type { WH40KBaseActor } from './base-actor.ts';
 import { WH40KItemContainer } from './item-container.ts';
@@ -81,6 +82,17 @@ export class WH40KItem extends WH40KItemContainer {
         }
 
         return value;
+    }
+
+    /**
+     * Rewrite a stored legacy `originPath` item to its split type (regiment /
+     * regimentOption / speciality) before the type is validated.
+     * @override
+     */
+    // eslint-disable-next-line no-restricted-syntax -- boundary: Foundry Document.migrateData receives the raw, unvalidated item source
+    static override migrateData(source: Record<string, unknown>): Record<string, unknown> {
+        migrateLegacyOriginType(source);
+        return super.migrateData(source);
     }
 
     /**
@@ -164,7 +176,9 @@ export class WH40KItem extends WH40KItemContainer {
             forceField: 'icons/svg/shield.svg',
             condition: 'icons/svg/daze.svg',
             criticalInjury: 'icons/svg/blood.svg',
-            originPath: 'icons/svg/direction.svg',
+            regiment: 'icons/svg/direction.svg',
+            regimentOption: 'icons/svg/direction.svg',
+            speciality: 'icons/svg/direction.svg',
             order: 'icons/svg/pawprint.svg',
         };
 
@@ -247,8 +261,7 @@ export class WH40KItem extends WH40KItemContainer {
     }
 
     get isOriginPath(): boolean {
-        const rtFlags = this.flags.rt;
-        return this._type === 'originPath' || (this._type === 'trait' && rtFlags?.['kind'] === 'origin');
+        return isOriginItemType(this._type);
     }
 
     get isSkill(): boolean {
@@ -408,7 +421,7 @@ export class WH40KItem extends WH40KItemContainer {
             if (next !== undefined) this.updateSource({ system: { identifier: next } });
         }
         // A new origin path item starts as an Only War one unless its data names a line (copies and imports do).
-        if (this.type === 'originPath') {
+        if (isOriginItemType(this.type)) {
             const given: { system?: { gameSystem?: string } } = data;
             if (given.system?.gameSystem === undefined) this.updateSource({ system: { gameSystem: NEW_ORIGIN_PATH_LINE } });
         }
@@ -517,7 +530,9 @@ export class WH40KItem extends WH40KItemContainer {
             skill: 'Skill',
             psychicPower: 'Psychic Power',
             order: 'Order',
-            originPath: 'Origin Path',
+            regiment: 'Regiment',
+            regimentOption: 'Regiment Option',
+            speciality: 'Speciality',
             gear: 'Gear',
             cybernetic: 'Cybernetic',
             consumable: 'Consumable',
