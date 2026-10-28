@@ -52,8 +52,18 @@ function resolve(value, fallback) {
     let branch = value;
     if (isLineContainer(value)) {
         branch = value[ACTIVE];
-        if (!defined(branch)) for (const l of fallback) if (defined(value[l])) { branch = value[l]; break; }
-        if (!defined(branch)) for (const l of LINE_ORDER) if (defined(value[l])) { branch = value[l]; break; }
+        if (!defined(branch))
+            for (const l of fallback)
+                if (defined(value[l])) {
+                    branch = value[l];
+                    break;
+                }
+        if (!defined(branch))
+            for (const l of LINE_ORDER)
+                if (defined(value[l])) {
+                    branch = value[l];
+                    break;
+                }
     }
     if (isBookContainer(branch)) branch = resolveBook(branch);
     if (!container) return { resolved: true, value };
@@ -111,6 +121,10 @@ for (const file of sourceFiles(root)) {
     }
 }
 if (snapshotPath) writeFileSync(snapshotPath, `${JSON.stringify(snapshot, null, 2)}\n`);
-console.log(`[flatten-variant-packs] ${write ? 'WROTE' : 'dry-run'}: ${files} files scanned, ${touched} changed, ${containers} containers collapsed, ${unresolved.length} unresolved`);
+console.log(
+    `[flatten-variant-packs] ${write ? 'WROTE' : 'dry-run'}: ${files} files scanned, ${touched} changed, ${containers} containers collapsed, ${
+        unresolved.length
+    } unresolved`,
+);
 for (const u of unresolved.slice(0, 40)) console.log(`  unresolved: ${u}`);
 process.exit(unresolved.length > 0 ? 1 : 0);
