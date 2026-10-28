@@ -59,7 +59,7 @@ describe('buildConditionCatalog', () => {
     });
 });
 
-describe('resolveCondition — per-line copy and per-line containers', () => {
+describe('resolveCondition — per-line pack copy', () => {
     it("picks the bearer's own line copy (IM names on-fire 'Ablaze')", () => {
         expect(resolveCondition('on-fire', 'im')?.name).toBe('Ablaze');
         expect(resolveCondition('on-fire', 'dh2')?.name).toBe('Fire');
@@ -109,13 +109,6 @@ describe('conditionEffectData — the applied effect comes from the document', (
         ]);
     });
 
-    it('Prone (RT): WS −10 and −20 to Dodge — the same status id, the RT line payload', () => {
-        expect(conditionEffectData('prone', 'rt')?.changes).toEqual([
-            { key: 'system.characteristics.weaponSkill.modifier', mode: MODE_ADD, value: -10 },
-            { key: 'system.skills.dodge.bonus', mode: MODE_ADD, value: -20 },
-        ]);
-    });
-
     it('Stunned carries NO bearer modifiers (others get +20 to hit instead)', () => {
         expect(conditionEffectData('stunned', 'dh2')?.changes).toEqual([]);
     });
@@ -124,12 +117,8 @@ describe('conditionEffectData — the applied effect comes from the document', (
         expect(conditionEffectData('blinded', 'dh2')?.changes).toEqual([{ key: 'system.characteristics.weaponSkill.modifier', mode: MODE_ADD, value: -30 }]);
     });
 
-    it('Fatigued: no flat modifier in DH2 (halving is rules/fatigue.ts), −10 to all in RT', () => {
+    it('Fatigued carries no flat modifier (halving is rules/fatigue.ts)', () => {
         expect(conditionEffectData('fatigued', 'dh2')?.changes).toEqual([]);
-        const rt = conditionEffectData('fatigued', 'rt')?.changes ?? [];
-        expect(rt).toHaveLength(9);
-        expect(rt.every((change) => change.value === -10)).toBe(true);
-        expect(rt.map((change) => change.key)).toContain('system.characteristics.fellowship.modifier');
     });
 
     it('stamps the nature flag and merges per-application flags and overrides', () => {

@@ -1,9 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { WH40KBaseActor } from '../../documents/base-actor.ts';
-import { buildConditionCatalog, type EffectDataInput, setConditionCatalog } from '../../rules/condition-registry.ts';
+import { buildConditionCatalog, type ConditionLine, type EffectDataInput, setConditionCatalog } from '../../rules/condition-registry.ts';
 import { conditionPackFixture } from '../../testing/condition-catalog.ts';
 import { importModelOrSkip } from '../../testing/model-import.ts';
-import type { SupportedLineKey } from '../../utils/item-variant-utils.ts';
 import type { EffectCreationData, EffectPayload } from './effect-creation-dialog.ts';
 
 /** The dialog's form-input shape (re-exported from the source so the test asserts against the real type). */
@@ -28,7 +27,7 @@ interface EffectBuilders {
     _createCharacteristicData: (data: EffectData) => EffectPayload | null;
     _createSkillData: (data: EffectData) => EffectPayload | null;
     _createCombatData: (data: EffectData) => EffectPayload | null;
-    _createConditionData: (data: EffectData, line: SupportedLineKey) => EffectDataInput | null;
+    _createConditionData: (data: EffectData, line: ConditionLine) => EffectDataInput | null;
 }
 
 /** A minimal valid EffectPayload literal for tests that only assert on `duration`. */
@@ -201,9 +200,6 @@ describe('EffectCreationDialog payload builders (#341)', () => {
         expect(dh2?.statuses).toEqual(['prone']);
         expect(dh2?.changes?.map((c) => c.key)).toEqual(['system.characteristics.weaponSkill.modifier', 'system.combat.defense']);
         expect(dh2?.duration).toEqual({ rounds: 2, startRound: 3, startTurn: 1 });
-
-        const rt = Builders._createConditionData({ effectType: 'condition', conditionId: 'prone' }, 'rt');
-        expect(rt?.changes?.map((c) => c.key)).toEqual(['system.characteristics.weaponSkill.modifier', 'system.skills.dodge.bonus']);
 
         expect(Builders._createConditionData({ effectType: 'condition', conditionId: 'nonexistent' }, 'dh2')).toBeNull();
         setConditionCatalog(new Map());

@@ -1,5 +1,4 @@
 import type { ReloadResult } from '../../actions/reload-action-manager.ts';
-import { SYSTEM_ID } from '../../constants.ts';
 import type { WH40KItem } from '../../documents/item.ts';
 import { capitalize } from '../../handlebars/handlebars-helpers.ts';
 import { t } from '../../i18n/t.ts';
@@ -23,13 +22,6 @@ import {
     type WeaponFiringMode,
 } from '../../rules/weapon-modes.ts';
 import type { RechargeMark } from '../../rules/weapon-recharge.ts';
-import {
-    inferActiveGameLine,
-    isLineVariantContainer,
-    resolveLineVariant,
-    type SupportedLineKey,
-    tryResolveLineVariant,
-} from '../../utils/item-variant-utils.ts';
 import { buildQualityLabel, parseQualityLevel } from '../../utils/quality-id.ts';
 import ItemDataModel from '../abstract/item-data-model.ts';
 import IdentifierField from '../fields/identifier-field.ts';
@@ -42,43 +34,6 @@ import PhysicalItemTemplate from '../shared/physical-item-template.ts';
 import { WEAPON_FACING_CHOICES, WEAPON_MOUNTING_CHOICES, type WeaponFacing, type WeaponMounting } from '../shared/vehicle-mounting.ts';
 import { isWeaponClass, WEAPON_CLASS_CHOICES } from '../shared/weapon-class.ts';
 
-/** Weapons already reported this session, so a re-render doesn't re-nag the GM. */
-const reportedUnresolvedVariants = new Set<string>();
-
-/**
- * Resolve a boolean per-line variant, treating an unresolved container as an
- * ERROR rather than coercing it (#503).
- *
- * `Boolean(unresolvedContainer)` is `true`, so the old code turned "I could not
- * work out which line this weapon belongs to" into "this weapon is melee" — the
- * one answer that unlocks Charge and WS-based attacks. An unresolved flag now
- * falls back to `false` (the inert answer) and is surfaced to the GM naming the
- * weapon and its actor.
- * @param {unknown} value  Scalar boolean, or a per-line variant container.
- * @param {SupportedLineKey} lineKey  Active game line.
- * @param {unknown} parent  Owning item, for the report.
- * @param {string} field  Field name, for the report.
- * @returns {boolean}  The resolved flag, or `false` when unresolved.
- */
-// eslint-disable-next-line no-restricted-syntax -- boundary: `value` is a schema field that may still be an unresolved per-line container (tryResolveLineVariant narrows it on the next line); `parent` is the owning Foundry Item, read only for its name/uuid in the report
-function resolveFlagVariant(value: unknown, lineKey: SupportedLineKey, parent: unknown, field: string): boolean {
-    const outcome = tryResolveLineVariant(value, lineKey);
-    if (outcome.resolved) return outcome.value === true;
-
-    const item = parent as { name?: string | null; uuid?: string; actor?: { name?: string | null } | null } | null;
-    const itemName = item?.name ?? 'Unknown weapon';
-    const key = `${item?.uuid ?? itemName}|${field}`;
-    if (!reportedUnresolvedVariants.has(key)) {
-        reportedUnresolvedVariants.add(key);
-        const actorName = item?.actor?.name ?? 'no actor';
-        console.error(`${SYSTEM_ID} | weapon: could not resolve per-line '${field}' for "${itemName}" (${actorName}); treating as false rather than guessing.`);
-        if (typeof ui !== 'undefined' && typeof game !== 'undefined') {
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- boundary: `ui.notifications` is undefined until Foundry's `setup` phase
-            ui.notifications?.warn(game.i18n.format('WH40K.Warning.UnresolvedWeaponVariant', { item: itemName, field, actor: actorName }));
-        }
-    }
-    return false;
-}
 const WEAPON_TYPE_CHOICES = [
     'primitive',
     'las',
@@ -186,9 +141,6 @@ interface ReloadFieldHost {
 function getReloadField(weapon: object): string {
     const value = (weapon as ReloadFieldHost).reload;
     return typeof value === 'string' ? value : '-';
-}
-function setReloadField(weapon: object, value: string): void {
-    (weapon as ReloadFieldHost).reload = value;
 }
 
 /** Result of `fromUuid()` narrowed for ammo restock fallback. */
@@ -656,13 +608,13 @@ export default class WeaponData extends ItemDataModel.mixin(DescriptionTemplate,
         const rawClass = source['class'];
         if (typeof rawClass === 'string') {
             if (!isWeaponClass(rawClass)) source['class'] = 'exotic';
-        } else if (rawClass !== undefined && rawClass !== null && !isLineVariantContainer(rawClass)) {
+        } else if (rawClass !== undefined && rawClass !== null) {
             source['class'] = 'exotic';
         }
         const rawType = source['type'];
         if (typeof rawType === 'string') {
             if (!(WEAPON_TYPE_CHOICES as readonly string[]).includes(rawType)) source['type'] = 'primitive';
-        } else if (rawType !== undefined && rawType !== null && !isLineVariantContainer(rawType)) {
+        } else if (rawType !== undefined && rawType !== null) {
             source['type'] = 'primitive';
         }
         // `reload` is a strict choice field, but legacy/compendium data is messy:
@@ -757,22 +709,10 @@ export default class WeaponData extends ItemDataModel.mixin(DescriptionTemplate,
     override prepareBaseData(): void {
         super.prepareBaseData();
 
-        const lineKey = inferActiveGameLine(this.parent);
-        this.class = resolveLineVariant(this.class, lineKey);
-        this.type = resolveLineVariant(this.type, lineKey);
-        this.twoHanded = resolveFlagVariant(this.twoHanded, lineKey, this.parent, 'twoHanded');
-        // NEVER `Boolean(resolveLineVariant(...))`: an unresolved container is
-        // handed back as-is, and `Boolean({dh1: false, dh2: false})` is `true` —
-        // a weapon authored non-melee in every line became melee, which is what
-        // offered Charge with an autogun (#503).
-        this.melee = resolveFlagVariant(this.melee, lineKey, this.parent, 'melee');
-        this.clip = foundry.utils.mergeObject({ max: 0, value: 0, type: '', magazine: [] }, resolveLineVariant(this.clip, lineKey), { inplace: false });
+        this.clip = foundry.utils.mergeObject({ max: 0, value: 0, type: '', magazine: [] }, this.clip, { inplace: false });
         // `clip.value` is the authoritative round count; when a magazine (special /
         // mixed ammo, #ammo-system) is loaded it mirrors the segment total.
         if (this.clip.magazine.length > 0) this.clip.value = magazineTotal(this.clip.magazine);
-        setReloadField(this, resolveLineVariant(getReloadField(this), lineKey));
-        this.requiredTraining = resolveLineVariant(this.requiredTraining, lineKey);
-        this.notes = resolveLineVariant(this.notes, lineKey);
     }
 
     /**

@@ -11,9 +11,8 @@ import { isActorWritable } from './documents/actor-liveness.ts';
  * runtime and grants them to each new creature actor.
  *
  * Per-line stats are NOT resolved here: the granted item is the canonical
- * document (whatever line it is RAW in), and `item-variant-utils` materialises
- * the owning actor's line variant once the item is embedded — so a DH2 actor's
- * Unarmed shows its DH2 numbers, a Deathwatch actor's its (heavier) DW numbers.
+ * document (whatever line it is RAW in), and stored data is flat Only War
+ * values (`legacy-line-containers` only reads old per-line containers).
  */
 
 /** Foundry Item source data — `toObject()` / `createEmbeddedDocuments` payloads

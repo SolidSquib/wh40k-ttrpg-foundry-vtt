@@ -31,7 +31,7 @@
 
 import { DEAD_STATUS_ID, SYSTEM_ID } from '../constants.ts';
 import { normalizeCharacteristicKey } from '../data/shared/characteristics.ts';
-import { inferActiveGameLine, materializeItemVariants, normalizeGameLineKey, type SupportedLineKey } from '../utils/item-variant-utils.ts';
+import { flattenLegacySystem } from '../utils/legacy-line-containers.ts';
 import {
     type ConditionMechanics,
     type ConditionMechanicsInput,
@@ -144,11 +144,19 @@ export function modifiersToEffectChanges(modifiers: RawValue): EffectChange[] {
 /*  Catalog                                     */
 /* -------------------------------------------- */
 
+/**
+ * A game-line label on a condition pack (`<line>-…`). Condition fixtures and
+ * legacy packs may still carry other lines' copies; Only War bearers resolve `'ow'`.
+ */
+export type ConditionLine = string;
+
+const PACK_LINES: ReadonlySet<string> = new Set(['dh1', 'dh2', 'rt', 'dw', 'bc', 'ow', 'im']);
+
 /** One pack's copy of a condition, as read from the pack index. */
 type ConditionSource = {
     uuid: string;
     /** The pack's game line (from its `<line>-…` name), or null for a line-agnostic pack. */
-    line: SupportedLineKey | null;
+    line: ConditionLine | null;
     name: string;
     img: string;
     /** The RAW stored `system` payload (per-line containers intact). */
@@ -186,8 +194,9 @@ const CONDITION_INDEX_FIELDS: readonly string[] = [
 ];
 
 /** The game line a pack belongs to, from its `<line>-…` name prefix. */
-export function packLine(packName: string): SupportedLineKey | null {
-    return normalizeGameLineKey(packName.split('-')[0] ?? '');
+export function packLine(packName: string): ConditionLine | null {
+    const prefix = packName.split('-')[0] ?? '';
+    return PACK_LINES.has(prefix) ? prefix : null;
 }
 
 /**
@@ -227,7 +236,7 @@ export function setConditionCatalog(next: ReadonlyMap<string, ConditionCatalogEn
 }
 
 /** The copy of a condition to use for a bearer of `line`: own line, then line-agnostic, then first. */
-function pickSource(entry: ConditionCatalogEntry, line: SupportedLineKey): ConditionSource | undefined {
+function pickSource(entry: ConditionCatalogEntry, line: ConditionLine): ConditionSource | undefined {
     return entry.sources.find((s) => s.line === line) ?? entry.sources.find((s) => s.line === null) ?? entry.sources[0];
 }
 
@@ -244,22 +253,22 @@ type ResolvedCondition = {
 /**
  * Resolve a catalog condition for a game line, or null when the id is unknown.
  * @param {string} id  The status id.
- * @param {SupportedLineKey} line  The bearer's game line.
+ * @param {ConditionLine} line  The bearer's game line.
  * @returns {ResolvedCondition | null}  The line-resolved condition.
  */
-export function resolveCondition(id: string, line: SupportedLineKey): ResolvedCondition | null {
+export function resolveCondition(id: string, line: ConditionLine): ResolvedCondition | null {
     const entry = catalog.get(id);
     if (entry === undefined) return null;
     const source = pickSource(entry, line);
     if (source === undefined) return null;
     const system: RawRecord = structuredClone(source.system);
-    materializeItemVariants(system, line);
+    flattenLegacySystem(system);
     const nature = system['nature'];
     return { id, name: source.name, img: source.img, nature: typeof nature === 'string' && nature !== '' ? nature : 'neutral', system };
 }
 
 /** The line-resolved mechanics of one catalog condition, or null when unknown. */
-export function conditionMechanicsFor(id: string, line: SupportedLineKey): ConditionMechanics | null {
+export function conditionMechanicsFor(id: string, line: ConditionLine): ConditionMechanics | null {
     const resolved = resolveCondition(id, line);
     return resolved === null ? null : coerceConditionMechanics(id, resolved.name, resolved.system);
 }
@@ -318,11 +327,11 @@ function mergeFlags(base: EffectFlags, extra: EffectFlags | undefined): EffectFl
  * resolved for the bearer's line; the changes are derived from its
  * `system.modifiers` by {@link modifiersToEffectChanges}.
  * @param {string} condition  The status id.
- * @param {SupportedLineKey} line  The bearer's game line.
+ * @param {ConditionLine} line  The bearer's game line.
  * @param {EffectOptions} [options]  Per-application overrides (name, extra flags, duration…).
  * @returns {EffectDataInput | null}  The payload, or null when the id is unknown.
  */
-export function conditionEffectData(condition: string, line: SupportedLineKey, options: EffectOptions = {}): EffectDataInput | null {
+export function conditionEffectData(condition: string, line: ConditionLine, options: EffectOptions = {}): EffectDataInput | null {
     if (condition === DEAD_STATUS_ID) {
         if (coreDeadStatus === null) return null;
         return {
@@ -349,7 +358,7 @@ export function conditionEffectData(condition: string, line: SupportedLineKey, o
 }
 
 /** Picker rows (the effect-creation dialog) — one per catalog condition, resolved for `line`. */
-export function conditionPickerRows(line: SupportedLineKey): Array<{ id: string; name: string; img: string; nature: string }> {
+export function conditionPickerRows(line: ConditionLine): Array<{ id: string; name: string; img: string; nature: string }> {
     const rows: Array<{ id: string; name: string; img: string; nature: string }> = [];
     for (const id of catalog.keys()) {
         const resolved = resolveCondition(id, line);
@@ -364,7 +373,7 @@ export function conditionPickerRows(line: SupportedLineKey): Array<{ id: string;
  * the HUD is not per-actor; the APPLIED effect is resolved per bearer by
  * `WH40KActiveEffect._fromStatusEffect`).
  */
-export function conditionStatusEffects(line: SupportedLineKey): StatusEffectEntry[] {
+export function conditionStatusEffects(line: ConditionLine): StatusEffectEntry[] {
     const rows: StatusEffectEntry[] = coreDeadStatus === null ? [] : [coreDeadStatus];
     for (const row of conditionPickerRows(line)) rows.push({ id: row.id, name: row.name, img: row.img });
     return rows;
@@ -380,9 +389,9 @@ type StatusEffectTarget = { length: number; push: (...rows: StatusEffectEntry[])
  * array — REASSIGNING it with a plain array silently breaks that lookup, so it is
  * truncated and refilled instead.
  * @param {StatusEffectTarget} target  `CONFIG.statusEffects`.
- * @param {SupportedLineKey} line  The world's game line.
+ * @param {ConditionLine} line  The world's game line.
  */
-export function registerConditionStatusEffects(target: StatusEffectTarget, line: SupportedLineKey): void {
+export function registerConditionStatusEffects(target: StatusEffectTarget, line: ConditionLine): void {
     target.length = 0;
     target.push(...conditionStatusEffects(line));
 }
@@ -409,8 +418,8 @@ function isConditionSystem(system: object): system is ConditionMechanicsInput & 
 }
 
 /** The game line a bearer resolves conditions for (its own line, else the world's). */
-export function bearerLine(actor: object | null | undefined): SupportedLineKey {
-    return inferActiveGameLine({ actor });
+export function bearerLine(_actor: object | null | undefined): ConditionLine {
+    return 'ow';
 }
 
 /**

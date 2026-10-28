@@ -1,13 +1,4 @@
-import { inferActiveGameLine, resolveLineVariant } from '../../utils/item-variant-utils.ts';
 import SystemDataModel from '../abstract/system-data-model.ts';
-
-/** Typed shape of the parent document's _source.system used during prepareBaseData. */
-interface AttackParentSource {
-    // eslint-disable-next-line no-restricted-syntax -- boundary: Foundry _source.system is untyped at this layer; Record<string,unknown> is the narrowest safe type
-    _source?: { system?: Record<string, unknown> };
-    // eslint-disable-next-line no-restricted-syntax -- boundary: Foundry parent actor reference is untyped at the DataModel layer
-    actor?: unknown;
-}
 
 /**
  * Template for items with attack capabilities.
@@ -105,12 +96,7 @@ export default class AttackTemplate extends SystemDataModel {
     override prepareBaseData(): void {
         super.prepareBaseData();
 
-        const parent = this.parent as AttackParentSource | undefined;
-        const lineKey = inferActiveGameLine(parent ?? null);
-        // eslint-disable-next-line no-restricted-syntax -- boundary: per-line variant resolved at runtime
-        const resolvedAttack = resolveLineVariant(this.attack, lineKey) as Record<string, unknown>;
-
-        this.attack = foundry.utils.mergeObject(AttackTemplate.#emptyAttack(), resolvedAttack, { inplace: false }) as typeof this.attack;
+        this.attack = foundry.utils.mergeObject(AttackTemplate.#emptyAttack(), this.attack, { inplace: false }) as typeof this.attack;
     }
 
     /* -------------------------------------------- */

@@ -4,9 +4,15 @@
  */
 
 import type { WH40KBaseActor } from '../../documents/base-actor.ts';
-import { bearerLine, conditionEffectData, conditionPickerRows, type EffectDataInput, type EffectDuration } from '../../rules/condition-registry.ts';
+import {
+    bearerLine,
+    type ConditionLine,
+    conditionEffectData,
+    conditionPickerRows,
+    type EffectDataInput,
+    type EffectDuration,
+} from '../../rules/condition-registry.ts';
 import { capitalize } from '../../utils/format.ts';
-import type { SupportedLineKey } from '../../utils/item-variant-utils.ts';
 import DialogResolution from '../dialogs/dialog-resolution.ts';
 
 const { DialogV2 } = foundry.applications.api;
@@ -284,10 +290,10 @@ export default class EffectCreationDialog extends DialogV2 {
      * HUD and crit riders use, so a condition applied from this dialog is the
      * same document, with the same token status and the same `changes`.
      * @param {EffectCreationData} data  The submitted dialog form data.
-     * @param {SupportedLineKey} line  The actor's game line.
+     * @param {ConditionLine} line  The actor's game line.
      * @returns {EffectDataInput | null}  The creation payload, or null for an unknown id.
      */
-    static _createConditionData(data: EffectCreationData, line: SupportedLineKey): EffectDataInput | null {
+    static _createConditionData(data: EffectCreationData, line: ConditionLine): EffectDataInput | null {
         const conditionId = data.conditionId ?? '';
         if (conditionId === '') return null;
         const payload = conditionEffectData(conditionId, line);

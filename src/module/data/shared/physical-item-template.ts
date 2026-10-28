@@ -1,5 +1,4 @@
 import { availabilityDisplayLabel, type PlaceRating, placeRatingLabels } from '../../utils/config-choices.ts';
-import { inferActiveGameLine } from '../../utils/item-variant-utils.ts';
 import { WH40KSettings } from '../../wh40k-rpg-settings.ts';
 import SystemDataModel from '../abstract/system-data-model.ts';
 
@@ -393,19 +392,14 @@ export default class PhysicalItemTemplate extends SystemDataModel {
 
     /**
      * Baseline Foundry-standard price for third-party economy/merchant plugins
-     * (Item Piles, Loot Sheet, …). Derived, never authored: mirrors the active
-     * line's homebrew throne-gelt valuation (DH1 uses its native `throneGelt`).
+     * (Item Piles, Loot Sheet, …). Derived, never authored: mirrors the
+     * Only War homebrew throne-gelt valuation.
      * In RAW worlds throne gelt is hidden, so the value is null. The structured
      * `system.cost` remains the source of truth — see docs/VALUATION.md.
      * @type {{ value: number | null; denomination: string }}
      */
     get price(): { value: number | null; denomination: string } {
-        // eslint-disable-next-line no-restricted-syntax -- boundary: this.parent is the untyped Foundry document; inferActiveGameLine reads its actor's line
-        const line = inferActiveGameLine(this.parent as { actor?: unknown } | null | undefined);
-        // IM's cost branch is `solars` — it has no throne-gelt valuation to mirror,
-        // so there is no gelt baseline price for an Imperium Maledictum line.
-        if (line === 'im') return { value: null, denomination: 'throne' };
-        const gelt = line === 'dh1' ? this.cost.dh1.throneGelt : this.cost[line].homebrew.throneGelt;
+        const gelt = this.cost.ow.homebrew.throneGelt;
         return { value: WH40KSettings.isHomebrew() ? gelt : null, denomination: 'throne' };
     }
 }

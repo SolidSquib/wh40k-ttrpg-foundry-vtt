@@ -1,5 +1,4 @@
 import { hitLocationAbbreviation, hitLocationLabel } from '../../rules/hit-locations.ts';
-import { inferActiveGameLine, resolveLineVariant } from '../../utils/item-variant-utils.ts';
 import ItemDataModel from '../abstract/item-data-model.ts';
 import IdentifierField from '../fields/identifier-field.ts';
 import { BODY_LOCATIONS, type BodyLocationId, bodyLocationsSchema } from '../shared/body-locations.ts';
@@ -166,12 +165,11 @@ export default class ArmourData extends ItemDataModel.mixin(DescriptionTemplate,
     static override _validateJoint(data: Record<string, unknown>): void {
         super._validateJoint(data);
 
-        const lineKey = inferActiveGameLine();
-        // eslint-disable-next-line no-restricted-syntax -- boundary: data is untyped Foundry validation data; casts required for resolveLineVariant
-        const armourPoints = resolveLineVariant(data['armourPoints'] as Record<string, unknown>, lineKey) as Record<string, number> | undefined;
-        // eslint-disable-next-line no-restricted-syntax -- boundary: data is untyped Foundry validation data; casts required for resolveLineVariant
-        const coverageValue = resolveLineVariant(data['coverage'] as Record<string, unknown>, lineKey);
-        const maxAgility = resolveLineVariant(data['maxAgility'], lineKey) as number | null | undefined;
+        // eslint-disable-next-line no-restricted-syntax -- boundary: data is untyped Foundry validation data handed to _validateJoint
+        const armourPoints = data['armourPoints'] as Record<string, number> | undefined;
+        // eslint-disable-next-line no-restricted-syntax -- boundary: data is untyped Foundry validation data handed to _validateJoint
+        const coverageValue = data['coverage'] as Record<string, unknown>;
+        const maxAgility = data['maxAgility'] as number | null | undefined;
 
         // Validate AP values (0-20 reasonable range)
         const locations = BODY_LOCATIONS;
@@ -282,9 +280,6 @@ export default class ArmourData extends ItemDataModel.mixin(DescriptionTemplate,
     override prepareBaseData(): void {
         super.prepareBaseData();
 
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument -- boundary: this.parent is any-typed Foundry document; _source is untyped
-        const lineKey = inferActiveGameLine(this.parent);
-        this.type = resolveLineVariant(this.type, lineKey);
         this.armourPoints = foundry.utils.mergeObject(
             {
                 head: 0,
@@ -294,27 +289,9 @@ export default class ArmourData extends ItemDataModel.mixin(DescriptionTemplate,
                 leftLeg: 0,
                 rightLeg: 0,
             },
-            resolveLineVariant(this.armourPoints, lineKey),
+            this.armourPoints,
             { inplace: false },
         );
-
-        // eslint-disable-next-line no-restricted-syntax -- boundary: resolveLineVariant accepts unknown to handle line-variant containers
-        const resolvedCoverage = resolveLineVariant(this.coverage as unknown, lineKey);
-        this.coverage = new Set(Array.isArray(resolvedCoverage) ? (resolvedCoverage as string[]) : Array.from(resolvedCoverage as Set<string>));
-
-        // eslint-disable-next-line no-restricted-syntax -- boundary: resolveLineVariant accepts unknown to handle line-variant containers
-        this.maxAgility = (resolveLineVariant(this.maxAgility as unknown, lineKey) as number | null) ?? null;
-
-        // eslint-disable-next-line no-restricted-syntax -- boundary: resolveLineVariant accepts unknown to handle line-variant containers
-        const resolvedProperties = resolveLineVariant(this.properties as unknown, lineKey);
-        this.properties = new Set(Array.isArray(resolvedProperties) ? (resolvedProperties as string[]) : Array.from(resolvedProperties as Set<string>));
-
-        // eslint-disable-next-line no-restricted-syntax -- boundary: resolveLineVariant accepts unknown to handle line-variant containers
-        this.primitive = Boolean(resolveLineVariant(this.primitive as unknown, lineKey));
-        // eslint-disable-next-line no-restricted-syntax -- boundary: resolveLineVariant accepts unknown to handle line-variant containers
-        this.notes = resolveLineVariant(this.notes as unknown, lineKey) as string;
-        // eslint-disable-next-line no-restricted-syntax -- boundary: resolveLineVariant accepts unknown to handle line-variant containers
-        this.modificationSlots = Number(resolveLineVariant(this.modificationSlots as unknown, lineKey));
     }
 
     /* -------------------------------------------- */

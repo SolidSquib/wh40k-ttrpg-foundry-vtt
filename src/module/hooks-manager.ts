@@ -126,7 +126,6 @@ import { buildWeaponQualityPayloadIndex } from './rules/weapon-quality-payloads.
 import { DHTourMain } from './tours/main-tour.ts';
 import type { WH40KGameSystem } from './types/global.d.ts';
 import { isConvertibleCharacterActorType } from './utils/actor-system-converter.ts';
-import { inferActiveGameLine } from './utils/item-variant-utils.ts';
 import { backfillOriginPathUuids } from './utils/origin-path-uuid-backfill.ts';
 import { RollTableUtils } from './utils/roll-table-utils.ts';
 import { uuidNameCache } from './utils/uuid-name-cache.ts';
@@ -952,7 +951,7 @@ export class HooksManager {
         // whose index loads at `ready` (`loadConditionCatalog`), so until then the
         // list holds `dead` only. Mutated in place — see registerConditionStatusEffects.
         captureCoreDeadStatus(CONFIG.statusEffects);
-        registerConditionStatusEffects(CONFIG.statusEffects, inferActiveGameLine());
+        registerConditionStatusEffects(CONFIG.statusEffects, 'ow');
         // Bind core's DEFEATED special status to the registry's `dead` id, so the
         // token defeated overlay and the combat tracker's defeated marker follow
         // the same state the rules engine sees in `actor.statuses` (#495).
@@ -1164,7 +1163,7 @@ export class HooksManager {
      */
     static async loadConditionStatusEffects(): Promise<void> {
         await loadConditionCatalog(game.packs);
-        registerConditionStatusEffects(CONFIG.statusEffects, inferActiveGameLine());
+        registerConditionStatusEffects(CONFIG.statusEffects, 'ow');
     }
 
     static async ready(): Promise<void> {

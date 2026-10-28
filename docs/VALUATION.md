@@ -22,10 +22,8 @@ derived baseline and register our currencies.
 system.price === { value: number | null, denomination: 'throne' }
 ```
 
-- **Derived, never authored.** It mirrors the **active line's** throne-gelt
-  valuation — `cost.<line>.homebrew.throneGelt`, or DH1's native
-  `cost.dh1.throneGelt`. The active line is resolved by `inferActiveGameLine`
-  (owning actor's line → world `primaryGameSystem` → `rt`).
+- **Derived, never authored.** It mirrors the Only War throne-gelt
+  valuation — `cost.ow.homebrew.throneGelt`.
 - **RAW-ruleset gated.** In worlds with `dh2Ruleset: 'raw'`, throne gelt is
   intentionally hidden (Influence-only economy), so `value` is `null`. In
   `homebrew` worlds it carries the gelt amount.

@@ -6,7 +6,6 @@ import {
     composeMaintenanceTest,
     type InstallTestComposition,
 } from '../../rules/cybernetics.ts';
-import { inferActiveGameLine, resolveLineVariant } from '../../utils/item-variant-utils.ts';
 import ItemDataModel from '../abstract/item-data-model.ts';
 import IdentifierField from '../fields/identifier-field.ts';
 import { bodyLocationsSchema } from '../shared/body-locations.ts';
@@ -111,30 +110,13 @@ export default class CyberneticData extends ItemDataModel.mixin(DescriptionTempl
     override prepareBaseData(): void {
         super.prepareBaseData();
 
-        // eslint-disable-next-line no-restricted-syntax -- boundary: parent is Foundry Document type (any); actor field is untyped on base DataModel parent
-        const lineKey = inferActiveGameLine(this.parent as { actor?: unknown } | null | undefined);
-
-        this.type = resolveLineVariant(this.type, lineKey);
-
-        const resolvedLocations = resolveLineVariant(this.locations, lineKey);
-        this.locations = resolvedLocations instanceof Set ? resolvedLocations : new Set(Array.isArray(resolvedLocations) ? resolvedLocations : []);
-
-        this.hasArmourPoints = Boolean(resolveLineVariant(this.hasArmourPoints, lineKey));
-
-        const resolvedAP = resolveLineVariant(this.armourPoints, lineKey);
-        this.armourPoints = foundry.utils.mergeObject({ head: 0, leftArm: 0, rightArm: 0, body: 0, leftLeg: 0, rightLeg: 0 }, resolvedAP, {
+        this.armourPoints = foundry.utils.mergeObject({ head: 0, leftArm: 0, rightArm: 0, body: 0, leftLeg: 0, rightLeg: 0 }, this.armourPoints, {
             inplace: false,
         });
 
-        this.effect = resolveLineVariant(this.effect, lineKey);
-        this.drawbacks = resolveLineVariant(this.drawbacks, lineKey);
-
-        const resolvedInstallation = resolveLineVariant(this.installation, lineKey);
-        this.installation = foundry.utils.mergeObject({ surgery: '', difficulty: '', recoveryTime: '' }, resolvedInstallation, {
+        this.installation = foundry.utils.mergeObject({ surgery: '', difficulty: '', recoveryTime: '' }, this.installation, {
             inplace: false,
         });
-
-        this.notes = resolveLineVariant(this.notes, lineKey);
     }
 
     /* -------------------------------------------- */

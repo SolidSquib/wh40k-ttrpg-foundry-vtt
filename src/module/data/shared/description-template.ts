@@ -1,4 +1,3 @@
-import { resolveLineVariant, inferActiveGameLine, isLineVariantContainer } from '../../utils/item-variant-utils.ts';
 import SystemDataModel from '../abstract/system-data-model.ts';
 
 /**
@@ -59,7 +58,6 @@ function migrateDescriptionField(source: Record<string, unknown>): void {
     if (typeof source['description'] === 'string') {
         source['description'] = { value: source['description'], chat: '', summary: '' };
     }
-    if (isLineVariantContainer(source['description'])) return;
     // Ensure sub-fields are not null (V13 HTMLField strictness)
     if (source['description'] !== null && source['description'] !== undefined && typeof source['description'] === 'object') {
         // eslint-disable-next-line no-restricted-syntax -- boundary: sub-field is raw Foundry stored data of unknown shape; ??= permitted in _migrateData to fill missing fields in stored data
@@ -80,7 +78,6 @@ function migrateSourceField(source: Record<string, unknown>): void {
             ? { provenance: 'homebrew', book: '', page: '', url: '', derivedFrom: '', errata: false }
             : { provenance: 'raw', book: raw, page: '', url: '', derivedFrom: '', errata: false };
     }
-    if (isLineVariantContainer(source['source'])) return;
     if (source['source'] !== null && source['source'] !== undefined && typeof source['source'] === 'object') {
         // eslint-disable-next-line no-restricted-syntax -- boundary: sub-field is raw Foundry stored data of unknown shape
         const src = source['source'] as Record<string, unknown>;
@@ -189,18 +186,13 @@ export default class DescriptionTemplate extends SystemDataModel {
     override prepareBaseData(): void {
         super.prepareBaseData();
 
-        // eslint-disable-next-line no-restricted-syntax -- boundary: parent is Foundry Document type (any); actor field is untyped on the base DataModel parent
-        const lineKey = inferActiveGameLine(this.parent as { actor?: unknown } | null | undefined);
-        const resolvedDescription = resolveLineVariant(this.description, lineKey);
-        const resolvedSource = resolveLineVariant(this.source, lineKey);
-
         this.description = {
             ...DescriptionTemplate.#emptyDescription(),
-            ...resolvedDescription,
+            ...this.description,
         };
         this.source = {
             ...DescriptionTemplate.#emptySource(),
-            ...resolvedSource,
+            ...this.source,
         };
     }
 

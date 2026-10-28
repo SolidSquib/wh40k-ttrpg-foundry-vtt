@@ -29,9 +29,6 @@ import { test } from './lib/test';
  *                                         getTrainingLabel
  *   - utils/text-pattern-extractor.ts   — splitList, toKey, parseRange,
  *                                         parseValueWithModifier, cleanEntry
- *   - utils/item-variant-utils.ts       — normalizeGameLineKey,
- *                                         isLineVariantContainer,
- *                                         resolveLineVariant
  *   - utils/xp-transaction.ts           — calculateTotalCost
  *   - utils/actor-system-converter.ts   — isConvertibleActorType
  *   - utils/stat-block-validator.ts     — StatBlockValidator.validate
@@ -50,9 +47,6 @@ const UTILS_EXTRA_FLOWS = [
     'text-pattern-parse-range',
     'text-pattern-parse-value-with-modifier',
     'text-pattern-clean-entry',
-    'item-variant-normalize-line-key',
-    'item-variant-is-line-container',
-    'item-variant-resolve-variant',
     'xp-calculate-total-cost',
     'actor-converter-is-convertible-type',
     'stat-block-validator-validate',
@@ -92,11 +86,6 @@ async function probeUtilsExtra(page: Page): Promise<{ results: FlowResult[] }> {
         interface TextPatternModule {
             default?: TextPatternExtractorStatic;
             TextPatternExtractor?: TextPatternExtractorStatic;
-        }
-        interface ItemVariantModule {
-            normalizeGameLineKey?: (key: string) => string | null;
-            isLineVariantContainer?: (value: object) => boolean;
-            resolveLineVariant?: (value: string | Record<string, string>, line: string) => string;
         }
         interface XpTransactionModule {
             calculateTotalCost?: (entries: Array<{ cost: number }>) => number;
@@ -289,49 +278,6 @@ async function probeUtilsExtra(page: Page): Promise<{ results: FlowResult[] }> {
                 'text-pattern-parse-value-with-modifier',
                 'text-pattern-clean-entry',
             ] as const) {
-                record(k, false, `import: ${err instanceof Error ? err.message : String(err)}`);
-            }
-        }
-
-        // ---------- item-variant-utils ----------
-        try {
-            const mod = (await import(`${base}/item-variant-utils.js`)) as ItemVariantModule;
-            try {
-                const dh = mod.normalizeGameLineKey?.('dh2');
-                const rt = mod.normalizeGameLineKey?.('rt');
-                const bad = mod.normalizeGameLineKey?.('not-a-system');
-                record(
-                    'item-variant-normalize-line-key',
-                    dh === 'dh2' && rt === 'rt' && bad === null,
-                    `dh2=${String(dh)} rt=${String(rt)} bad=${JSON.stringify(bad)}`,
-                );
-            } catch (err) {
-                record('item-variant-normalize-line-key', false, err instanceof Error ? err.message : String(err));
-            }
-            try {
-                const isContainer = mod.isLineVariantContainer?.({ dh2: { v: 1 }, rt: { v: 2 } });
-                const notContainer = mod.isLineVariantContainer?.({ value: 1, extra: 2 });
-                record(
-                    'item-variant-is-line-container',
-                    isContainer === true && notContainer === false,
-                    `container=${String(isContainer)} notContainer=${String(notContainer)}`,
-                );
-            } catch (err) {
-                record('item-variant-is-line-container', false, err instanceof Error ? err.message : String(err));
-            }
-            try {
-                const resolved = mod.resolveLineVariant?.({ dh2: 'dh-value', rt: 'rt-value' }, 'rt');
-                const passthrough = mod.resolveLineVariant?.('plain-string', 'dh2');
-                record(
-                    'item-variant-resolve-variant',
-                    resolved === 'rt-value' && passthrough === 'plain-string',
-                    `resolved=${JSON.stringify(resolved)} passthrough=${JSON.stringify(passthrough)}`,
-                );
-            } catch (err) {
-                record('item-variant-resolve-variant', false, err instanceof Error ? err.message : String(err));
-            }
-        } catch (err) {
-            for (const k of ['item-variant-normalize-line-key', 'item-variant-is-line-container', 'item-variant-resolve-variant'] as const) {
                 record(k, false, `import: ${err instanceof Error ? err.message : String(err)}`);
             }
         }

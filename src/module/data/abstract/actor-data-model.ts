@@ -1,4 +1,4 @@
-import { flattenSourceLineVariants } from '../../utils/item-variant-utils.ts';
+import { flattenLegacySource } from '../../utils/legacy-line-containers.ts';
 import SystemDataModel from './system-data-model.ts';
 
 /**
@@ -116,7 +116,7 @@ export default class ActorDataModel extends SystemDataModel {
         // dh2: {...} }`) must resolve to the world's active line, or Foundry strips
         // the unknown line keys and falls back to schema initials (the "all zeros"
         // blank). On-disk JSON is untouched — only the in-memory source is flattened.
-        flattenSourceLineVariants(source);
+        flattenLegacySource(source);
     }
 
     /* -------------------------------------------- */

@@ -56,34 +56,6 @@ describe('collectTargetedConditionModifiers (Path B)', () => {
         expect(sumTargetedComponents(components)).toBe(60);
     });
 
-    it("resolves a per-line `targeted` container for the target's line", () => {
-        setConditionCatalog(
-            buildConditionCatalog([
-                {
-                    packName: 'dh2-core-items-conditions',
-                    rows: [
-                        {
-                            type: 'condition',
-                            name: 'Obscured',
-                            img: '',
-                            system: {
-                                identifier: 'obscured',
-                                targeted: {
-                                    dh2: [{ attack: 'ranged', value: -30, exceptRange: '', label: 'Obscured (DH2)' }],
-                                    rt: [{ attack: 'ranged', value: -20, exceptRange: '', label: '' }],
-                                },
-                            },
-                        },
-                    ],
-                },
-            ]),
-        );
-        expect(collectTargetedConditionModifiers(target('dh2', 'obscured'), RANGED_SHORT)).toEqual([
-            { key: `${TARGET_CONDITION_BUCKET}.obscured.0`, label: 'Obscured (DH2)', value: -30, source: 'Obscured' },
-        ]);
-        expect(collectTargetedConditionModifiers(target('rt', 'obscured'), RANGED_SHORT).map((c) => [c.label, c.value])).toEqual([['Obscured', -20]]);
-    });
-
     it('a directly-coerced condition (an owned item) contributes its entries', () => {
         const item = coerceConditionMechanics('smoke', 'Smoke', { targeted: [{ attack: 'any', value: -10, exceptRange: '', label: '' }] });
         expect(collectTargetedConditionModifiers([item], MELEE).map((c) => c.value)).toEqual([-10]);

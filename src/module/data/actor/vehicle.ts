@@ -247,7 +247,7 @@ export default class VehicleData extends ActorDataModel {
             }),
 
             // Book flavour / rules prose. Authored per-line on disk and
-            // collapsed by `flattenSourceLineVariants` (ActorDataModel
+            // collapsed by `flattenLegacySource` (ActorDataModel
             // `_migrateData`) before validation. The craft sheet's overview tab
             // binds a ProseMirror editor straight at `system.description`.
             description: descriptionField(),

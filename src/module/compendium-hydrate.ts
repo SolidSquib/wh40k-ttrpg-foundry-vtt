@@ -33,7 +33,7 @@
  * because it never persists.
  */
 
-import { inferActiveGameLine, materializeItemVariants, resolveOwnedLineContent, sameSourceValue } from './utils/item-variant-utils.ts';
+import { flattenLegacySystem } from './utils/legacy-line-containers.ts';
 
 /* eslint-disable no-restricted-syntax -- boundary: Foundry item/actor types carry open-ended Record<string,unknown> at framework boundaries */
 type HydratableItem = {
@@ -116,7 +116,7 @@ function deepMerge(base: Record<string, unknown>, overlay: Record<string, unknow
 /**
  * Pure join: canonical source system as the base layer, the item's PERSISTED
  * system overlaid on top (per-actor specialization/level/state/variantOf win).
- * No foundry-global dependency — unit-testable (cf. item-variant-utils' shim).
+ * No foundry-global dependency — unit-testable.
  */
 export function buildHydratedSystem(sourceSystem: Record<string, unknown>, persistedSystem: Record<string, unknown>): Record<string, unknown> {
     return deepMerge(structuredClone(sourceSystem), persistedSystem);
@@ -265,6 +265,23 @@ interface HydrationResult {
 }
 
 /**
+ * Order-insensitive structural equality over source data (plain objects, arrays,
+ * primitives). Key order is irrelevant because merges and schema cleaning both
+ * reorder keys.
+ */
+// eslint-disable-next-line no-restricted-syntax -- boundary: compares two untyped Foundry source payloads, `unknown` at every depth by construction
+function sameSourceValue(a: unknown, b: unknown): boolean {
+    if (isPlainObject(a) && isPlainObject(b)) {
+        const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+        return [...keys].every((key) => sameSourceValue(a[key], b[key]));
+    }
+    if (Array.isArray(a) && Array.isArray(b)) {
+        return a.length === b.length && a.every((value, index) => sameSourceValue(value, b[index]));
+    }
+    return a === b;
+}
+
+/**
  * Build the per-item hydration patches for an actor, its own variant-chain
  * join, and the list of join keys that did not resolve. Items with neither a
  * `compendiumSource` nor a `variantOf` are left alone (they are self-contained),
@@ -275,10 +292,6 @@ async function buildHydration(actor: HydratableActor): Promise<HydrationResult> 
     const patches: Array<Record<string, unknown>> = [];
     const unresolved: UnresolvedJoin[] = [];
     const cache = new Map<string, SourceLike | null>();
-    // The line all of this actor's embedded items resolve their per-line variant
-    // containers to (their owning actor's line), computed once for the pass.
-    const lineKey = inferActiveGameLine({ actor });
-
     for (const item of actor.items.contents) {
         const uuid = joinUuid(item);
         if (uuid === null || item.id === null) continue;
@@ -306,22 +319,11 @@ async function buildHydration(actor: HydratableActor): Promise<HydrationResult> 
             continue;
         }
 
-        // Resolve the canonical body's per-line variant containers to the OWNING
-        // actor's line BEFORE the merge. The fetched canonical was itself flattened
-        // to the WORLD line when it loaded, so its recorded unflattened source is
-        // re-resolved for this actor, and any persisted value that is merely an
-        // unedited world-line copy is re-pointed to the actor's line (in memory
-        // only — "persisted wins" for anything the actor customised).
         // `updateSource` (the hydration write path) re-cleans WITHOUT running
-        // `_migrateData`, so an unresolved container (e.g. `description: { rt:
-        // { value } }`) would be stripped by the schema; the fallback materialize
-        // covers a canonical with no recorded source (#574). A no-op when flat.
+        // `_migrateData`, so a canonical still carrying legacy per-line containers
+        // is flattened here first. A no-op for flat pack data.
         const persisted = item._source?.system ?? item.system;
-        const ownedLine = resolveOwnedLineContent(source, persisted, lineKey);
-        const merged =
-            ownedLine === null
-                ? buildHydratedSystem(materializeItemVariants(structuredClone(source.system), lineKey), persisted)
-                : buildHydratedSystem(ownedLine.base, ownedLine.overlay);
+        const merged = buildHydratedSystem(flattenLegacySystem(structuredClone(source.system)), persisted);
         // Order-insensitive no-op check (as the actor path uses), so a re-render of
         // an already-hydrated item does not needlessly re-patch and `reset()`.
         if (sameSourceValue(merged, persisted)) continue; // already full — no-op

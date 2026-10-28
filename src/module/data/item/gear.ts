@@ -1,4 +1,3 @@
-import { inferActiveGameLine, resolveLineVariant } from '../../utils/item-variant-utils.ts';
 import ItemDataModel from '../abstract/item-data-model.ts';
 import IdentifierField from '../fields/identifier-field.ts';
 import DescriptionTemplate from '../shared/description-template.ts';
@@ -152,17 +151,7 @@ export default class GearData extends ItemDataModel.mixin(DescriptionTemplate, P
     override prepareBaseData(): void {
         super.prepareBaseData();
 
-        // eslint-disable-next-line no-restricted-syntax -- boundary: parent _source is Foundry's pre-processed raw payload, untyped at this layer
-        const parent = this.parent as { _source?: { system?: Record<string, unknown> }; actor?: unknown } | null;
-        const lineKey = inferActiveGameLine(parent);
-        this.category = resolveLineVariant(this.category, lineKey);
-        this.consumable = Boolean(resolveLineVariant(this.consumable, lineKey));
-        this.uses = foundry.utils.mergeObject({ value: 0, max: 0 }, resolveLineVariant(this.uses, lineKey), {
-            inplace: false,
-        });
-        this.effect = resolveLineVariant(this.effect, lineKey);
-        this.duration = resolveLineVariant(this.duration, lineKey);
-        this.notes = resolveLineVariant(this.notes, lineKey);
+        this.uses = foundry.utils.mergeObject({ value: 0, max: 0 }, this.uses, { inplace: false });
     }
 
     /* -------------------------------------------- */

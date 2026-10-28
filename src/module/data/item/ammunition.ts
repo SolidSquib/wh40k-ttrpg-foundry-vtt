@@ -1,5 +1,4 @@
 import { formatSigned } from '../../utils/format.ts';
-import { inferActiveGameLine, resolveLineVariant } from '../../utils/item-variant-utils.ts';
 import ItemDataModel from '../abstract/item-data-model.ts';
 import IdentifierField from '../fields/identifier-field.ts';
 import DamageTemplate from '../shared/damage-template.ts';
@@ -109,15 +108,6 @@ export default class AmmunitionData extends ItemDataModel.mixin(DescriptionTempl
     override prepareBaseData(): void {
         super.prepareBaseData();
 
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument -- boundary: this.parent._source is an opaque Foundry Document source; _source type is any in Foundry's type definitions
-        const lineKey = inferActiveGameLine(this.parent);
-        // eslint-disable-next-line no-restricted-syntax -- boundary: weaponTypes may be a line-variant object {default: Set, bc: Set, ...}; cast to unknown required for resolveLineVariant dispatch
-        const resolvedWeaponTypes = resolveLineVariant(this.weaponTypes as unknown, lineKey);
-        this.weaponTypes = new Set(
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- resolvedWeaponTypes may be undefined at runtime when variant key is absent; defensive fallback required
-            Array.isArray(resolvedWeaponTypes) ? (resolvedWeaponTypes as string[]) : Array.from((resolvedWeaponTypes as Set<string>) ?? new Set()),
-        );
-
         this.modifiers = foundry.utils.mergeObject(
             {
                 damage: 0,
@@ -126,38 +116,9 @@ export default class AmmunitionData extends ItemDataModel.mixin(DescriptionTempl
                 attack: 0,
                 rateOfFire: { single: 0, semi: 0, full: 0 },
             },
-            // eslint-disable-next-line no-restricted-syntax, @typescript-eslint/no-unnecessary-condition -- boundary: resolveLineVariant may return undefined at runtime when variant key is absent despite the cast type
-            (resolveLineVariant(this.modifiers as unknown, lineKey) as Record<string, unknown>) ?? {},
+            this.modifiers,
             { inplace: false },
-        ) as typeof this.modifiers;
-
-        // eslint-disable-next-line no-restricted-syntax -- boundary: line-variant dispatch requires unknown cast; resolved value may be array or Set
-        const resolvedAdded = resolveLineVariant(this.addedQualities as unknown, lineKey);
-        this.addedQualities = new Set(
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- resolvedAdded may be undefined at runtime when variant key is absent
-            Array.isArray(resolvedAdded) ? (resolvedAdded as string[]) : Array.from((resolvedAdded as Set<string>) ?? new Set()),
         );
-
-        // eslint-disable-next-line no-restricted-syntax -- boundary: line-variant dispatch requires unknown cast; resolved value may be array or Set
-        const resolvedRemoved = resolveLineVariant(this.removedQualities as unknown, lineKey);
-        this.removedQualities = new Set(
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- resolvedRemoved may be undefined at runtime when variant key is absent
-            Array.isArray(resolvedRemoved) ? (resolvedRemoved as string[]) : Array.from((resolvedRemoved as Set<string>) ?? new Set()),
-        );
-
-        // eslint-disable-next-line no-restricted-syntax -- boundary: line-variant dispatch requires unknown cast; resolved scalar values cast at call site
-        this.clipModifier = Number(resolveLineVariant(this.clipModifier as unknown, lineKey) ?? 0);
-        // eslint-disable-next-line no-restricted-syntax, @typescript-eslint/no-unnecessary-condition -- boundary: resolveLineVariant may return undefined at runtime when variant key is absent
-        const resolvedFireRate = resolveLineVariant(this.fireRateOverride as unknown, lineKey) as number | null | undefined;
-        this.fireRateOverride = resolvedFireRate ?? null;
-        // eslint-disable-next-line no-restricted-syntax, @typescript-eslint/no-unnecessary-condition -- boundary: resolveLineVariant may return undefined at runtime when variant key is absent
-        this.hitEffect = (resolveLineVariant(this.hitEffect as unknown, lineKey) as string) ?? '';
-        // eslint-disable-next-line no-restricted-syntax, @typescript-eslint/no-unnecessary-condition -- boundary: resolveLineVariant may return undefined at runtime when variant key is absent
-        this.effect = (resolveLineVariant(this.effect as unknown, lineKey) as string) ?? '';
-        // eslint-disable-next-line no-restricted-syntax, @typescript-eslint/no-unnecessary-condition -- boundary: resolveLineVariant may return undefined at runtime when variant key is absent
-        this.notes = (resolveLineVariant(this.notes as unknown, lineKey) as string) ?? '';
-        // `source` is resolved per-line by DescriptionTemplate.prepareBaseData (via
-        // super); do not re-resolve it here into the legacy {book,page,custom} shape.
     }
 
     /* -------------------------------------------- */

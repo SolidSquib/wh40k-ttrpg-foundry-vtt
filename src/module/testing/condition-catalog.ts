@@ -8,8 +8,6 @@
 
 import type { ConditionIndexRow } from '../rules/condition-registry.ts';
 
-const RAW = { provenance: 'raw' };
-
 /** One fixture condition row for a pack. */
 function row(pack: string, id: string, name: string, img: string, system: NonNullable<ConditionIndexRow['system']>): ConditionIndexRow {
     return { _id: `${pack}-${id}`, uuid: `Compendium.wh40k-rpg.${pack}.Item.${id}`, name, img, type: 'condition', system: { identifier: id, ...system } };
@@ -20,16 +18,11 @@ function sharedConditions(pack: string): ConditionIndexRow[] {
     return [
         row(pack, 'prone', 'Prone', 'icons/svg/falling.svg', {
             nature: 'harmful',
-            modifiers: {
-                dh2: { characteristics: { ws: -10 }, skills: {}, combat: { defense: -20 } },
-                rt: { characteristics: { ws: -10 }, skills: { dodge: -20 }, combat: {} },
-                dh1: { characteristics: { ws: -10, bs: -10 }, skills: { dodge: -20 }, combat: {} },
-            },
+            modifiers: { characteristics: { ws: -10 }, skills: {}, combat: { defense: -20 } },
             targeted: [
                 { attack: 'melee', value: 10, exceptRange: '', label: '' },
                 { attack: 'ranged', value: -10, exceptRange: 'pointBlank', label: '' },
             ],
-            source: { dh2: RAW, rt: RAW, dh1: RAW },
         }),
         row(pack, 'stunned', 'Stunned', 'icons/svg/daze.svg', {
             nature: 'harmful',
@@ -39,12 +32,8 @@ function sharedConditions(pack: string): ConditionIndexRow[] {
         }),
         row(pack, 'blinded', 'Blinded', 'icons/svg/blind.svg', {
             nature: 'harmful',
-            modifiers: {
-                dh2: { characteristics: { ws: -30 }, skills: {}, combat: {} },
-                dh1: { characteristics: { ws: -30 }, skills: { dodge: -30, parry: -30 }, combat: {} },
-            },
+            modifiers: { characteristics: { ws: -30 }, skills: {}, combat: {} },
             autoFail: ['ballisticSkill', 'Visual'],
-            source: { dh2: RAW, dh1: RAW },
         }),
         row(pack, 'deafened', 'Deafened', 'icons/svg/deaf.svg', {
             nature: 'harmful',
@@ -53,11 +42,7 @@ function sharedConditions(pack: string): ConditionIndexRow[] {
         }),
         row(pack, 'fatigued', 'Fatigued', 'icons/svg/sleep.svg', {
             nature: 'harmful',
-            modifiers: {
-                dh2: { characteristics: {}, skills: {}, combat: {} },
-                rt: { characteristics: { ws: -10, bs: -10, s: -10, t: -10, ag: -10, int: -10, per: -10, wp: -10, fel: -10 }, skills: {}, combat: {} },
-            },
-            source: { dh2: RAW, rt: RAW },
+            modifiers: { characteristics: {}, skills: {}, combat: {} },
         }),
         row(pack, 'pinned', 'Pinned', 'icons/svg/net.svg', {
             nature: 'harmful',
@@ -121,7 +106,7 @@ function rogueTraderConditions(pack: string): ConditionIndexRow[] {
         }),
         row(pack, 'concealed', 'Concealed', 'icons/svg/mystery-man.svg', {
             nature: 'harmful',
-            modifiers: { rt: { characteristics: {}, skills: { concealment: 10 }, combat: {} }, dh2: { characteristics: {}, skills: {}, combat: {} } },
+            modifiers: { characteristics: {}, skills: { concealment: 10 }, combat: {} },
             targeted: [{ attack: 'ranged', value: -20, exceptRange: '', label: '' }],
         }),
         row(pack, 'surprised-unaware', 'Surprised / Unaware', 'icons/svg/terror.svg', {

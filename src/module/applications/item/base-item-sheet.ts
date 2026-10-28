@@ -6,7 +6,6 @@
 import WH40K from '../../config.ts';
 import type { WH40KItemDocument } from '../../types/global.d.ts';
 import { flattenNestedForms } from '../../utils/dom-forms.ts';
-import { getMaterializedItemSource, remapSubmitDataToVariantPaths } from '../../utils/item-variant-utils.ts';
 import { WH40KSettings } from '../../wh40k-rpg-settings.ts';
 import ApplicationV2Mixin, { setupNumberInputAutoSelect } from '../api/application-v2-mixin.ts';
 import * as EffectActions from '../api/effect-actions.ts';
@@ -199,7 +198,7 @@ export default class BaseItemSheet<TItem extends WH40KItemDocument = WH40KItemDo
             item: this.item,
             document: this.item, // Required for V13 {{editor}} helper
             system: this.item.system,
-            source: this.isEditable ? getMaterializedItemSource(this.item) : this.item.system,
+            source: this.item.system,
             fields: this.item.system.schema.fields,
             effects: this.item.getEmbeddedCollection('ActiveEffect').contents,
             flags: this.item.flags,
@@ -293,7 +292,7 @@ export default class BaseItemSheet<TItem extends WH40KItemDocument = WH40KItemDo
             _prepareSubmitData?: (e: SubmitEvent, f: HTMLFormElement, fd: FormDataExtended, ud?: object) => Record<string, unknown>;
         };
         const proto = Object.getPrototypeOf(BaseItemSheet.prototype) as SuperWithPrepare;
-        let submitData = proto._prepareSubmitData?.call(this, event, form, formData, updateData) ?? {};
+        const submitData = proto._prepareSubmitData?.call(this, event, form, formData, updateData) ?? {};
 
         // CRITICAL FIX: Clean img field if present to prevent validation errors
         // Foundry V13 has very strict validation on img field
@@ -315,8 +314,6 @@ export default class BaseItemSheet<TItem extends WH40KItemDocument = WH40KItemDo
                 }
             }
         }
-
-        submitData = remapSubmitDataToVariantPaths(this.item, submitData);
 
         return submitData;
     }

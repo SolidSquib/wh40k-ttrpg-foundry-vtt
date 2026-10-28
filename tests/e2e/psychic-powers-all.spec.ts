@@ -15,7 +15,7 @@ import { scaledMs } from './lib/timing';
  * test the live compendium index (`game.packs`) is walked in batched
  * `page.evaluate` calls; every expectation is derived from that power's own
  * on-disk source (materialized to its game line by the system's own
- * `materializeItemVariants`) — never from a name table (Direction #7).
+ * `flattenLegacySystem`) — never from a name table (Direction #7).
  *
  * Per-power defects never fail this spec. They are recorded with a failure
  * CATEGORY in `.e2e-results/psychic-powers/packs/<pack>.json`;
@@ -422,7 +422,7 @@ async function inPageCastBatch(args: CastArgs): Promise<PowerResult[]> {
         psychicGateActors?: Map<string, { psyker: string; target: string }>;
     }
     interface VariantModule {
-        materializeItemVariants: (source: JsonObj, line: string) => JsonObj;
+        flattenLegacySystem: (source: JsonObj) => JsonObj;
     }
     interface CasterValues {
         psyRating: number;
@@ -464,7 +464,7 @@ async function inPageCastBatch(args: CastArgs): Promise<PowerResult[]> {
     const g = globalThis as unknown as Globals;
     const helpers = globalThis.wh40kE2E;
     const moduleRoot = `/systems/${args.systemId}/module`;
-    const variants = (await import(/* @vite-ignore */ `${moduleRoot}/utils/item-variant-utils.js`)) as VariantModule;
+    const variants = (await import(/* @vite-ignore */ `${moduleRoot}/utils/legacy-line-containers.js`)) as VariantModule;
     const ranges = (await import(/* @vite-ignore */ `${moduleRoot}/rules/psychic-range.js`)) as RangeModule;
     const targeted = (await import(/* @vite-ignore */ `${moduleRoot}/actions/targeted-action-manager.js`)) as TargetedModule;
     const basic = (await import(/* @vite-ignore */ `${moduleRoot}/actions/basic-action-manager.js`)) as BasicModule;
@@ -826,7 +826,7 @@ async function inPageCastBatch(args: CastArgs): Promise<PowerResult[]> {
         const parsedRaw = entry.rawJson === null ? null : (JSON.parse(entry.rawJson) as JsonIn);
         const rawDoc: JsonObj = isObj(parsedRaw) ? parsedRaw : {};
         const rawSystem = rawDoc['system'];
-        const m = variants.materializeItemVariants(structuredClone(isObj(rawSystem) ? rawSystem : {}), entry.line);
+        const m = variants.flattenLegacySystem(structuredClone(isObj(rawSystem) ? rawSystem : {}));
         const declared = checkStructure(
             m,
             rawDoc,
