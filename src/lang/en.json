@@ -3174,7 +3174,9 @@
                 "speciality": "Spec",
                 "chapter": "Chapter",
                 "equipment": "Equip"
-            }
+            },
+            "RegimentDesc": "Choose the regiment your character fights in: its home world, commanding officer, regiment type and doctrines.",
+            "SpecialityDesc": "Choose your character's Speciality: the role they fill in the squad."
         },
         "ChoiceType": {
             "talent": "Talent",
