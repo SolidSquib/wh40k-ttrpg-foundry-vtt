@@ -11,8 +11,6 @@ import { test } from './lib/test';
  * never opening any of the per-step dialogs.
  *
  * Modules exercised (pre-spec line / fn coverage):
- *   - `origin-roll-dialog.ts` (31.5% / 4.2%) — dialog ctor + render
- *     against a synthetic OriginRollContext (actor + origin item).
  *   - `origin-path-choice-dialog.ts` (31.6% / 5.9%) — dialog ctor +
  *     render against a synthetic origin-path item attached to an
  *     actor; surfaces `_prepareContext`'s choice-list assembly and
@@ -24,7 +22,7 @@ import { test } from './lib/test';
  * CHARGEN_FLOWS constant in scripts/e2e-coverage.mjs.
  */
 
-const CHARGEN_FLOWS = ['origin-roll-dialog-renders', 'origin-path-choice-dialog-renders', 'origin-detail-dialog-renders'] as const;
+const CHARGEN_FLOWS = ['origin-path-choice-dialog-renders', 'origin-detail-dialog-renders'] as const;
 
 type FlowName = (typeof CHARGEN_FLOWS)[number];
 
@@ -155,22 +153,6 @@ async function probeChargenDialogs(page: Page): Promise<{ results: FlowResult[] 
                 record(flow, false, String(err instanceof Error ? err.message : err));
             }
         };
-
-        // ---------- origin-roll-dialog ----------
-        await tryDialog('origin-roll-dialog-renders', `${base}/origin-roll-dialog.js`, 'OriginRollDialog', (Ctor) => {
-            const ctx = {
-                actor: {
-                    name: actor.name,
-                    img: 'icons/svg/mystery-man.svg',
-                    system: { characteristics: { toughness: { bonus: 3 } } },
-                },
-                originItem: {
-                    name: 'chargen-spec-origin',
-                    img: 'icons/svg/d20.svg',
-                },
-            };
-            return new Ctor('wounds' as never, '1d10+3' as never, ctx as never, {} as never);
-        });
 
         // ---------- origin-path-choice-dialog ----------
         await tryDialog('origin-path-choice-dialog-renders', `${base}/origin-path-choice-dialog.js`, 'OriginPathChoiceDialog', (Ctor) => {

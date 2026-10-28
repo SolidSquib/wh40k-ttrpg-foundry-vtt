@@ -532,16 +532,18 @@
  <div class="tw-text-[0.85rem] tw-font-semibold tw-text-[color:var(--wh40k-text-light)]">
  <i class="fa-solid fa-heart tw-mr-[var(--wh40k-space-xs)]"></i> {{localize "WH40K.Wounds"}}
  </div>
+ <div class="tw-flex tw-items-baseline tw-gap-[var(--wh40k-space-sm)] tw-flex-wrap">
+ {{#if selectedOrigin.rolls.wounds.hasValue}}<span class="tw-text-[1.1rem] tw-font-semibold tw-text-[color:var(--wh40k-gold)]">{{selectedOrigin.rolls.wounds.value}}</span>{{/if}}
+ <span class="tw-text-[0.75rem] tw-text-[color:var(--wh40k-text-muted)] tw-font-mono" data-tooltip="{{localize "WH40K.OriginPath.RollFormula"}}">{{selectedOrigin.rolls.wounds.formula}}</span>
+ </div>
  {{#if selectedOrigin.rolls.wounds.hasValue}}
- <div class="tw-text-[0.9rem] tw-font-semibold tw-text-[color:var(--wh40k-gold)]">{{selectedOrigin.rolls.wounds.value}} <span class="tw-text-[0.75rem] tw-font-normal tw-text-[color:var(--wh40k-text-muted)]">({{selectedOrigin.rolls.wounds.breakdown}})</span></div>
- {{else}}
- <div class="tw-text-[0.75rem] tw-text-[color:var(--wh40k-text-muted)] tw-font-mono">{{selectedOrigin.rolls.wounds.formula}}</div>
+ <div class="tw-text-[0.75rem] tw-text-[color:var(--wh40k-text-muted)]">{{selectedOrigin.rolls.wounds.breakdown}}</div>
  {{/if}}
  </div>
  <div class="tw-flex tw-gap-[var(--wh40k-space-xs)]">
  <button type="button" class="tw-flex tw-items-center tw-gap-[var(--wh40k-space-xs)] tw-py-[var(--wh40k-space-xs)] tw-px-[var(--wh40k-space-sm)] tw-bg-[var(--wh40k-gold)] tw-border-0 tw-rounded-[var(--wh40k-radius-sm)] tw-text-[color:var(--wh40k-panel-bg-solid)] tw-text-[0.8rem] tw-font-semibold tw-cursor-pointer hover:tw-scale-105 hover:tw-shadow-[0_2px_8px_rgba(var(--wh40k-gold-rgb),0.4)]" data-action="rollStat" data-stat-type="wounds" data-tooltip="{{localize 'WH40K.OriginPath.RollTooltip'}}">
  <i class="fa-solid fa-dice"></i>
- {{#if selectedOrigin.rolls.wounds.hasValue}}{{localize "WH40K.OriginPath.Reroll"}}{{else}}{{localize "WH40K.Roll.Roll"}}{{/if}}
+ {{localize "WH40K.OriginPath.RerollStat"}}
  </button>
  <button type="button" class="tw-flex tw-items-center tw-py-[var(--wh40k-space-xs)] tw-px-[var(--wh40k-space-sm)] tw-bg-[var(--wh40k-gold)] tw-border-0 tw-rounded-[var(--wh40k-radius-sm)] tw-text-[color:var(--wh40k-panel-bg-solid)] tw-text-[0.8rem] tw-font-semibold tw-cursor-pointer hover:tw-scale-105" data-action="manualStat" data-stat-type="wounds" data-tooltip="{{localize 'WH40K.OriginPath.ManualTooltip'}}">
  <i class="fa-solid fa-keyboard"></i>
@@ -555,16 +557,18 @@
  <div class="tw-text-[0.85rem] tw-font-semibold tw-text-[color:var(--wh40k-text-light)]">
  <i class="fa-solid fa-star tw-mr-[var(--wh40k-space-xs)]"></i> {{localize "WH40K.Fate"}}
  </div>
+ <div class="tw-flex tw-items-baseline tw-gap-[var(--wh40k-space-sm)] tw-flex-wrap">
+ {{#if selectedOrigin.rolls.fate.hasValue}}<span class="tw-text-[1.1rem] tw-font-semibold tw-text-[color:var(--wh40k-gold)]">{{selectedOrigin.rolls.fate.value}}</span>{{/if}}
+ <span class="tw-text-[0.75rem] tw-text-[color:var(--wh40k-text-muted)] tw-font-mono" data-tooltip="{{localize "WH40K.OriginPath.RollFormula"}}">{{selectedOrigin.rolls.fate.formula}}</span>
+ </div>
  {{#if selectedOrigin.rolls.fate.hasValue}}
- <div class="tw-text-[0.9rem] tw-font-semibold tw-text-[color:var(--wh40k-gold)]">{{selectedOrigin.rolls.fate.value}} <span class="tw-text-[0.75rem] tw-font-normal tw-text-[color:var(--wh40k-text-muted)]">({{selectedOrigin.rolls.fate.breakdown}})</span></div>
- {{else}}
- <div class="tw-text-[0.75rem] tw-text-[color:var(--wh40k-text-muted)] tw-font-mono">{{selectedOrigin.rolls.fate.formula}}</div>
+ <div class="tw-text-[0.75rem] tw-text-[color:var(--wh40k-text-muted)]">{{selectedOrigin.rolls.fate.breakdown}}</div>
  {{/if}}
  </div>
  <div class="tw-flex tw-gap-[var(--wh40k-space-xs)]">
  <button type="button" class="tw-flex tw-items-center tw-gap-[var(--wh40k-space-xs)] tw-py-[var(--wh40k-space-xs)] tw-px-[var(--wh40k-space-sm)] tw-bg-[var(--wh40k-gold)] tw-border-0 tw-rounded-[var(--wh40k-radius-sm)] tw-text-[color:var(--wh40k-panel-bg-solid)] tw-text-[0.8rem] tw-font-semibold tw-cursor-pointer hover:tw-scale-105 hover:tw-shadow-[0_2px_8px_rgba(var(--wh40k-gold-rgb),0.4)]" data-action="rollStat" data-stat-type="fate" data-tooltip="{{localize 'WH40K.OriginPath.RollTooltip'}}">
  <i class="fa-solid fa-dice"></i>
- {{#if selectedOrigin.rolls.fate.hasValue}}{{localize "WH40K.OriginPath.Reroll"}}{{else}}{{localize "WH40K.Roll.Roll"}}{{/if}}
+ {{localize "WH40K.OriginPath.RerollStat"}}
  </button>
  <button type="button" class="tw-flex tw-items-center tw-py-[var(--wh40k-space-xs)] tw-px-[var(--wh40k-space-sm)] tw-bg-[var(--wh40k-gold)] tw-border-0 tw-rounded-[var(--wh40k-radius-sm)] tw-text-[color:var(--wh40k-panel-bg-solid)] tw-text-[0.8rem] tw-font-semibold tw-cursor-pointer hover:tw-scale-105" data-action="manualStat" data-stat-type="fate" data-tooltip="{{localize 'WH40K.OriginPath.ManualTooltip'}}">
  <i class="fa-solid fa-keyboard"></i>

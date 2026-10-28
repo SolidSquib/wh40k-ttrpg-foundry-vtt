@@ -148,10 +148,6 @@ vi.mock('./origin-path-choice-dialog.ts', () => ({
     default: class OriginPathChoiceDialog {},
 }));
 
-vi.mock('./origin-roll-dialog.ts', () => ({
-    default: class OriginRollDialog {},
-}));
-
 class FakeRoll {
     total: number;
     constructor(public formula: string) {
@@ -723,6 +719,7 @@ describe('OriginPathBuilder commit (issue #206)', () => {
     }
     interface CommitHost {
         _calculateStatus: () => CommitStatus;
+        _getBlockingAptitudeCollisions: () => string[];
         _hasAssignedCharacteristics: ReturnType<typeof vi.fn>;
         _clearPreviewedOrigin: ReturnType<typeof vi.fn>;
         render: ReturnType<typeof vi.fn>;
@@ -752,6 +749,7 @@ describe('OriginPathBuilder commit (issue #206)', () => {
 
         const host: CommitHost = {
             _calculateStatus: () => ({ canCommit: true, stepsComplete: true, choicesComplete: true, equipmentComplete: true }),
+            _getBlockingAptitudeCollisions: () => [],
             _hasAssignedCharacteristics: vi.fn().mockReturnValue(false),
             _clearPreviewedOrigin: vi.fn(),
             render: vi.fn().mockResolvedValue(undefined),
@@ -777,6 +775,7 @@ describe('OriginPathBuilder commit (issue #206)', () => {
 
         const host: CommitHost = {
             _calculateStatus: () => ({ canCommit: false, stepsComplete: true, choicesComplete: true, equipmentComplete: false }),
+            _getBlockingAptitudeCollisions: () => [],
             _hasAssignedCharacteristics: vi.fn().mockReturnValue(true),
             _clearPreviewedOrigin: vi.fn(),
             render: vi.fn().mockResolvedValue(undefined),
@@ -1811,5 +1810,51 @@ describe('filterOriginsByProvenance (#295)', () => {
 
     it('shows only adapted origins when only adapted is enabled', () => {
         expect(apply({ raw: false, adapted: true, homebrew: false })).toEqual([adapted]);
+    });
+});
+
+/**
+ * Duplicate aptitudes block Apply to Character until the player picks a replacement —
+ * unless there is no aptitude left to swap in, where blocking would strand the player.
+ */
+describe('OriginPathBuilder._getBlockingAptitudeCollisions', () => {
+    type AptCollision = { original: string; replacement: string | null };
+    interface BlockingHost {
+        aptitudeOverrides: Map<string, string>;
+        _getAptitudeCollisions: () => AptCollision[];
+        _collectExistingAptitudes: () => Set<string>;
+        _collectAptitudeGrantCounts: () => Map<string, number>;
+        _collectAvailableAptitudePool: (taken: ReadonlySet<string>) => string[];
+    }
+    const makeHost = (collisions: AptCollision[], pool: string[]): BlockingHost => ({
+        aptitudeOverrides: new Map<string, string>(),
+        _getAptitudeCollisions: () => collisions,
+        _collectExistingAptitudes: () => new Set<string>(),
+        _collectAptitudeGrantCounts: () => new Map<string, number>(),
+        _collectAvailableAptitudePool: (): string[] => pool,
+    });
+    const blocking = (host: BlockingHost): string[] => proto._getBlockingAptitudeCollisions.call(host);
+
+    it('lists each unresolved duplicate when a replacement is available', () => {
+        const host = makeHost(
+            [
+                { original: 'Ballistic Skill', replacement: null },
+                { original: 'Agility', replacement: '' },
+            ],
+            ['Toughness'],
+        );
+        expect(blocking(host)).toEqual(['Ballistic Skill', 'Agility']);
+    });
+
+    it('does not list a duplicate the player already replaced', () => {
+        expect(blocking(makeHost([{ original: 'Ballistic Skill', replacement: 'Toughness' }], ['Strength']))).toEqual([]);
+    });
+
+    it('does not block when there is no aptitude left to choose', () => {
+        expect(blocking(makeHost([{ original: 'Ballistic Skill', replacement: null }], []))).toEqual([]);
+    });
+
+    it('does not block when there are no duplicates', () => {
+        expect(blocking(makeHost([], ['Toughness']))).toEqual([]);
     });
 });

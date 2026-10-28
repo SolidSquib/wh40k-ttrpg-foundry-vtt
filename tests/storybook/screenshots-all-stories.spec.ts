@@ -157,10 +157,6 @@ const STORY_MATRIX: ReadonlyArray<{ title: string; exports: readonly string[] }>
         title: 'Character Creation/OriginPathChoiceDialog',
         exports: ['Default', 'CompleteSelection', 'ConfirmFlow'],
     },
-    {
-        title: 'Character Creation/OriginRollDialog',
-        exports: ['Default', 'Rolled', 'ActionFlow', 'RerollOverflow'],
-    },
 
     // ── src/module/applications/components/ ──────────────────────────────
     {

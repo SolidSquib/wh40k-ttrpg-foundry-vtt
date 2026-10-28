@@ -1977,7 +1977,7 @@ recordDimension('roll-data.flow', covered['roll-data.flow'], ROLL_DATA_FLOWS);
 // `src/module/applications/character-creation/origin-roll-dialog.ts`,
 // `origin-path-choice-dialog.ts`, `origin-detail-dialog.ts`. Each was
 // below 10% function coverage before this spec landed.
-const CHARGEN_FLOWS = ['origin-roll-dialog-renders', 'origin-path-choice-dialog-renders', 'origin-detail-dialog-renders'];
+const CHARGEN_FLOWS = ['origin-path-choice-dialog-renders', 'origin-detail-dialog-renders'];
 recordDimension('chargen.flow', covered['chargen.flow'], CHARGEN_FLOWS);
 
 // NPC-creation dialog render flows exercised by tests/e2e/npc-creation.spec.ts.

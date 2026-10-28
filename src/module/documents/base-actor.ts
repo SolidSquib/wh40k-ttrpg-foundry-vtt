@@ -22,6 +22,7 @@ import { weaponFireBlockReason } from '../rules/weapon-jam.ts';
 import { isRecharging, type RechargeMark } from '../rules/weapon-recharge.ts';
 import type { WH40KActorSystemData, WH40KCharacteristic, WH40KModifierEntry, WH40KSkill, WH40KStatBreakdown } from '../types/global.d.ts';
 import { firstSystemId } from '../utils/chat-system-id.ts';
+import { planStackMerges, type StackableItem } from '../utils/item-stacking.ts';
 import { flattenLegacyOwnedItems } from '../utils/legacy-line-containers.ts';
 import { migrateLegacyOwnedOriginTypes } from '../utils/origin-item-types.ts';
 import { handleTalentRemoval, processTalentGrants } from '../utils/talent-grants.ts';
@@ -135,6 +136,32 @@ export class WH40KBaseActor extends Actor {
     // eslint-disable-next-line no-restricted-syntax -- boundary: base class stub returns unknown; subclasses override with concrete roll results
     async rollPsychicPower(item: WH40KItem): Promise<unknown> {
         return this.rollItem(item.id ?? '');
+    }
+
+    /**
+     * Merge owned stacks of the same item into one (see `utils/item-stacking.ts`).
+     * Items stack only when they are identical apart from quantity.
+     * @returns The number of stacks that were folded away.
+     */
+    async mergeItemStacks(): Promise<number> {
+        const stackable: StackableItem[] = this.items.contents.map((item) => ({
+            id: item.id,
+            name: item.name,
+            type: item.type,
+            system: { quantity: 'quantity' in item.system && typeof item.system.quantity === 'number' ? item.system.quantity : undefined },
+            _source: item._source,
+            scopeFlags: item.flags[SYSTEM_ID],
+        }));
+        const plans = planStackMerges(stackable);
+        if (plans.length === 0) return 0;
+
+        await this.updateEmbeddedDocuments(
+            'Item',
+            plans.map((plan) => ({ '_id': plan.keepId, 'system.quantity': plan.quantity, [`flags.${SYSTEM_ID}`]: plan.scopeFlags })),
+        );
+        const removeIds = plans.flatMap((plan) => plan.removeIds);
+        await this.deleteEmbeddedDocuments('Item', removeIds);
+        return removeIds.length;
     }
 
     async spendFate(): Promise<void> {}

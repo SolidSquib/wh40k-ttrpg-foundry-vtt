@@ -60,7 +60,7 @@ describe('mockPlayerSheetContext', () => {
     it('uses SystemConfigRegistry.getHeaderFields for header rows', () => {
         const ctx = mockPlayerSheetContext();
         const names = ctx.headerFields.map((f) => f.name);
-        expect(names).toEqual(['system.originPath.homeWorld', 'system.originPath.background', 'system.originPath.role', 'system.originPath.motivation']);
+        expect(names).toEqual(['system.originPath.homeWorld', 'system.originPath.regiment', 'system.originPath.speciality', 'system.originPath.motivation']);
         // Player name is rendered on the identity row, not in headerFields.
         expect(names).not.toContain('system.bio.playerName');
     });

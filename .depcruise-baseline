@@ -4,10 +4,10 @@
     "no-orphans"
   ],
   "totals": {
-    "totalViolations": 99
+    "totalViolations": 96
   },
   "byRule": {
-    "no-circular": 97,
+    "no-circular": 94,
     "sheets-must-not-import-data-models-directly": 2
   }
 }

@@ -59,7 +59,10 @@
             "NoItemsCarried": "No items carried",
             "NoItemsElsewhere": "No items stored elsewhere",
             "CapacityProperty": "Capacity: {capacity} kg",
-            "CombatVestProperty": "Combat Vest"
+            "CombatVestProperty": "Combat Vest",
+            "MergeStacks": "Merge stacks of the same item",
+            "StacksMerged": "Merged {count} duplicate stack(s).",
+            "NoStacksToMerge": "No stacks to merge."
         },
         "Bonuses": "Bonuses",
         "ContextMenu": {
@@ -3049,20 +3052,20 @@
             "CharacteristicsRequiredBeforeCommit": "Roll or assign your characteristics before completing character creation.",
             "StepInProgressEquipment": "The Equip Acolyte step is still in progress — finish picking starting gear before applying the origin path.",
             "StepInProgressCharacteristics": "The Characteristic Roll step is still in progress — roll or assign your characteristics before applying the origin path.",
-            "DuplicateAptitude": "Your origin path grants these aptitudes more than once: {aptitudes}. Duplicate aptitudes have no effect — under Dark Heresy 2e you may swap a duplicate for a characteristic aptitude (GM adjudication).",
             "AptitudeDouble": {
                 "BannerTitle": "Duplicate aptitude detected",
-                "BannerBody": "One or more of your origin steps grants an aptitude your character already has. Per Dark Heresy 2e, pick a replacement aptitude you do not currently possess.",
-                "PickButton": "Pick replacement",
+                "BannerBody": "One or more of your origin steps grants an aptitude your character already has. Choose a different aptitude you do not currently possess. You must do this before applying your origin path.",
+                "PickButton": "Choose new aptitude",
                 "ChangeButton": "Change",
                 "DialogTitle": "Replace Duplicate Aptitude",
-                "PromptBody": "Your origin grants the {aptitude} aptitude, but your character already has it. Pick a replacement aptitude.",
-                "PickerLabel": "Replacement aptitude",
+                "PromptBody": "Your origin grants the {aptitude} aptitude, but your character already has it. Choose a different aptitude.",
+                "PickerLabel": "New aptitude",
                 "ConfirmLabel": "Pick",
                 "NoCandidates": "No replacement aptitudes are available. Ask the GM to adjudicate.",
                 "Resolved": "Replaced {from} with {to}.",
                 "ResolvedTitle": "Aptitude swap applied",
-                "ResolvedBody": "You resolved a duplicate aptitude by swapping it for the listed replacement. You can change your choice if you wish."
+                "ResolvedBody": "A duplicate aptitude was swapped for the one listed. You can change your choice.",
+                "MustResolve": "Choose a new aptitude to replace the duplicate before applying your origin path: {aptitudes}."
             },
             "AllChoicesComplete": "All choices complete",
             "ChoicesPending": "choices pending",
@@ -3176,7 +3179,9 @@
                 "equipment": "Equip"
             },
             "RegimentDesc": "Choose the regiment your character fights in: its home world, commanding officer, regiment type and doctrines.",
-            "SpecialityDesc": "Choose your character's Speciality: the role they fill in the squad."
+            "SpecialityDesc": "Choose your character's Speciality: the role they fill in the squad.",
+            "RollFormula": "Formula used for this roll",
+            "RerollStat": "Re-roll"
         },
         "ChoiceType": {
             "talent": "Talent",
@@ -4210,14 +4215,6 @@
             "HasLevel": "Has Level",
             "HasLevelValue": "Has Level ({level})",
             "NoResults": "No items match your filters"
-        },
-        "OriginRollDialog": {
-            "Formula": "Formula:",
-            "ToughnessBonus": "(TB: {value})",
-            "PreviousAttempts": "Previous Attempts:",
-            "Choose": "Choose how you want to determine your {type}:",
-            "RollForMe": "Roll For Me",
-            "RollMyself": "I'll Roll Myself"
         },
         "OriginDetailDialog": {
             "RollWoundsTooltip": "Roll this formula to determine starting Wounds",

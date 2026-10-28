@@ -35,7 +35,7 @@ import { cloneGrantedItemData } from './grant-materialize.ts';
 import { type NormalizedChoice, type NormalizedChoiceOption, type NormalizedOrigin, normalizeOrigin } from './normalized-origin.ts';
 import OriginDetailDialog from './origin-detail-dialog.ts';
 import OriginPathChoiceDialog from './origin-path-choice-dialog.ts';
-import OriginRollDialog from './origin-roll-dialog.ts';
+import { type OriginStatType, rollOriginStat } from './origin-stat-roll.ts';
 import { openRegimentPicks, previewRegimentPresets, regimentPickBonuses, withoutRegimentPreview } from './regiment-preview.ts';
 import type {
     ActiveModifier,
@@ -86,7 +86,7 @@ interface OriginPathSystemData {
     modifiers?: WH40KItemModifiers;
     selectedChoices?: Record<string, string[]>;
     regimentPreset?: RegimentPresetData;
-    rollResults?: Record<string, { rolled?: number; breakdown?: string } | undefined>;
+    rollResults?: Record<string, { formula?: string; rolled?: number; breakdown?: string; timestamp?: number } | undefined>;
     grants?: {
         characteristics?: Record<string, number>;
         skills?: GrantItemRaw[];
@@ -464,8 +464,8 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
             minimizable: true,
         },
         position: {
-            width: 1100,
-            height: 800,
+            width: 1320,
+            height: 920,
         },
         /* eslint-disable @typescript-eslint/unbound-method -- ApplicationV2 actions accept method references and bind `this` itself */
         actions: {
@@ -3102,6 +3102,22 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
     }
 
     /**
+     * Duplicate aptitudes the player has not yet replaced, and can replace.
+     * These block Apply to Character. A collision with no aptitude left to swap in is
+     * not listed — blocking on it would leave the player stuck.
+     */
+    _getBlockingAptitudeCollisions(): string[] {
+        const unresolved = this._getAptitudeCollisions().filter((c) => c.replacement === null || c.replacement === '');
+        if (unresolved.length === 0) return [];
+        const taken = new Set<string>(this._collectExistingAptitudes());
+        for (const apt of this._collectAptitudeGrantCounts().keys()) taken.add(apt);
+        for (const replacement of this.aptitudeOverrides.values()) {
+            if (replacement !== '') taken.add(replacement);
+        }
+        return this._collectAvailableAptitudePool(taken).length > 0 ? unresolved.map((c) => c.original) : [];
+    }
+
+    /**
      * Fold one option.grants block into the preview accumulators. Extracted
      * from _calculatePreview so the nested choice loop stays under the
      * max-depth cap.
@@ -3299,6 +3315,8 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
             }
         }
 
+        pendingChoices += this._getBlockingAptitudeCollisions().length;
+
         return {
             stepsCount: stepsCount,
             totalSteps: totalSteps,
@@ -3361,6 +3379,9 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
                 this.selections.set(coreStep.step, originData);
             }
         }
+
+        // Roll the starting Wounds / Fate of every randomly chosen origin.
+        await Promise.all([...this.selections.values()].map(async (origin) => this._autoRollStats(origin)));
 
         this._refreshPathPositions();
 
@@ -3450,7 +3471,7 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
                     interface ImportSelectionEntry {
                         uuid?: string;
                         selectedChoices?: Record<string, string[]>;
-                        rollResults?: Record<string, { rolled?: number; breakdown?: string } | undefined>;
+                        rollResults?: Record<string, { formula?: string; rolled?: number; breakdown?: string; timestamp?: number } | undefined>;
                     }
                     interface ImportPayload {
                         version?: number;
@@ -3725,7 +3746,7 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
         }
 
         // Now actually select and confirm
-        this._selectOrigin(this.previewedOrigin);
+        await this._selectOrigin(this.previewedOrigin);
 
         // Clear preview
         this.previewedOrigin = null;
@@ -3780,7 +3801,7 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
      * @param {Item|object} origin - The origin to select (Item or plain data object)
      * @private
      */
-    _selectOrigin(origin: WH40KItem | NormalizedOrigin): void {
+    async _selectOrigin(origin: WH40KItem | NormalizedOrigin): Promise<void> {
         const currentStep = this.currentStep;
 
         // Convert to plain data object if it's an Item
@@ -3809,6 +3830,7 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
 
             // Store selection as plain data object
             this.selections.set(currentStep.step, originData);
+            await this._autoRollStats(originData);
 
             // Auto-advance to next step if in guided mode
             if (this.guidedMode && this.currentStepIndex < this.systemConfig.coreSteps.length - 1) {
@@ -3932,12 +3954,13 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
     }
 
     /**
-     * Roll a stat using the roll dialog
+     * Roll (or re-roll) a stat from the selected origin's formula, inline — no dialog.
      */
     static async #rollStat(this: OriginPathBuilder, _event: Event, target: HTMLElement): Promise<void> {
         const statType = target.dataset['statType'];
-        let selection = null;
+        if (statType !== 'wounds' && statType !== 'fate') return;
 
+        let selection = null;
         if (this.showLineage) {
             // eslint-disable-next-line no-restricted-syntax -- dialog state: lineageSelection/previewedOrigin are application state fields; ?? selects first non-null
             selection = this.lineageSelection ?? this.previewedOrigin;
@@ -3946,52 +3969,41 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
             // eslint-disable-next-line no-restricted-syntax -- dialog state: previewedOrigin is application state; ?? falls back to confirmed selection
             selection = this.previewedOrigin ?? this.selections.get(currentStep.step);
         }
+        if (selection === null || selection === undefined) return;
 
-        if (selection === null || selection === undefined || statType === undefined || statType === '') return;
+        await this._rollSelectionStat(selection, statType);
+        void this.render();
+    }
 
-        const system = this._getSelectionSystem(selection);
-        const grants: NonNullable<OriginPathSystemData['grants']> = system.grants ?? {};
-        let formula: string | undefined;
-        if (statType === 'wounds') formula = grants.woundsFormula ?? undefined;
-        else if (statType === 'fate') formula = grants.fateFormula ?? undefined;
-
+    /**
+     * Roll one starting stat for an origin selection and store the result on it.
+     * Does nothing when the origin grants no formula for that stat.
+     */
+    async _rollSelectionStat(selection: NormalizedOrigin, statType: OriginStatType): Promise<void> {
+        const grants: NonNullable<OriginPathSystemData['grants']> = this._getSelectionSystem(selection).grants ?? {};
+        const formula = statType === 'wounds' ? grants.woundsFormula : grants.fateFormula;
         if (formula === undefined || formula === '') return;
 
-        // Create a wrapper for the roll dialog
-        const itemLike = {
-            name: selection.name,
-            img: selection.img,
-            system: system,
-            uuid: selection.uuid ?? (selection as NormalizedOriginWithMeta)._sourceUuid,
-        };
+        const outcome = await rollOriginStat(statType, formula, this.actor, { name: selection.name, img: selection.img });
+        const system = selection.system as OriginPathSystemData;
+        // eslint-disable-next-line no-restricted-syntax -- dialog state: rollResults is a compendium payload field; ??= initializes when absent
+        system.rollResults ??= {};
+        system.rollResults[statType] = { formula, rolled: outcome.total, breakdown: outcome.breakdown, timestamp: Date.now() };
+    }
 
-        // eslint-disable-next-line no-restricted-syntax -- boundary: OriginRollDialog accepts a structurally narrowed actor view, not the full WH40KBaseActor
-        const actorLike = this.actor as unknown as {
-            name: string;
-            img: string;
-            system: { characteristics?: Record<string, { bonus?: number } | undefined> };
-        };
-        const result = await OriginRollDialog.show(statType, formula, {
-            actor: actorLike,
-            originItem: itemLike,
-        });
-
-        if (result) {
-            const rollData = {
-                formula: formula,
-                rolled: result.total,
-                breakdown: result.breakdown,
-                timestamp: Date.now(),
-            };
-
-            // Always directly mutate the plain data object
-            const selSysRoll = selection.system as OriginPathSystemData;
-            // eslint-disable-next-line no-restricted-syntax -- dialog state: selSysRoll.rollResults is a compendium payload field; ??= initializes when absent
-            selSysRoll.rollResults ??= {};
-            selSysRoll.rollResults[statType] = rollData;
-
-            void this.render();
-        }
+    /**
+     * Roll every starting stat an origin grants and has not rolled yet. Runs when an
+     * origin is confirmed, so Wounds and Fate are filled in without a click; Re-roll is
+     * still there per stat.
+     */
+    async _autoRollStats(selection: NormalizedOrigin): Promise<void> {
+        const system = this._getSelectionSystem(selection);
+        const grants: NonNullable<OriginPathSystemData['grants']> = system.grants ?? {};
+        const rolled = system.rollResults ?? {};
+        if (grants.woundsFormula !== undefined && grants.woundsFormula !== '' && rolled['wounds']?.rolled === undefined)
+            await this._rollSelectionStat(selection, 'wounds');
+        if (grants.fateFormula !== undefined && grants.fateFormula !== '' && rolled['fate']?.rolled === undefined)
+            await this._rollSelectionStat(selection, 'fate');
     }
 
     /**
@@ -4497,9 +4509,12 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
     static async #commit(this: OriginPathBuilder, _event: Event, _target: HTMLElement): Promise<void> {
         const status = this._calculateStatus();
 
+        const blockingAptitudes = this._getBlockingAptitudeCollisions();
         if (status['canCommit'] !== true) {
             if (status['stepsComplete'] !== true) {
                 ui.notifications.warn(game.i18n.localize('WH40K.OriginPath.CompleteAllSteps'));
+            } else if (blockingAptitudes.length > 0) {
+                ui.notifications.warn(game.i18n.format('WH40K.OriginPath.AptitudeDouble.MustResolve', { aptitudes: blockingAptitudes.join(', ') }));
             } else if (status['choicesComplete'] !== true) {
                 ui.notifications.warn(game.i18n.localize('WH40K.OriginPath.CompleteAllChoices'));
             } else if (status['equipmentComplete'] !== true) {
@@ -4516,17 +4531,6 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
             ui.notifications.warn(game.i18n.localize('WH40K.OriginPath.CharacteristicsRequiredBeforeCommit'));
             OriginPathBuilder.#goToCharacteristics.call(this, _event, _target);
             return;
-        }
-
-        // Soft-warn (do not block) on aptitude collisions that the player has
-        // not yet resolved via the chooser dialog. This covers both intra-
-        // selection duplicates AND collisions against aptitudes the character
-        // already had before opening the builder. (#205)
-        const unresolved = this._getAptitudeCollisions()
-            .filter((c) => c.replacement === null || c.replacement === '')
-            .map((c) => c.original);
-        if (unresolved.length > 0) {
-            ui.notifications.warn(game.i18n.format('WH40K.OriginPath.DuplicateAptitude', { aptitudes: unresolved.join(', ') }));
         }
 
         // Confirm — offer reset options. Base stats are always overridden.
@@ -4816,6 +4820,10 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
             if (this.systemConfig.equipmentStep && this.equipmentSelections.size > 0) {
                 await this._applyEquipmentSelections();
             }
+
+            // The kit, a Speciality's equipment and the armoury picks each create their own items;
+            // fold identical ones into one stack.
+            await this.actor.mergeItemStacks();
 
             // Snapshot builder-specific state (equipment picks, characteristic rolls) so a later
             // builder open can re-hydrate the UI to what was last committed.

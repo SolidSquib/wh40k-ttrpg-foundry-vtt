@@ -331,6 +331,7 @@ export default class BaseActorSheet extends BaseActorSheetBase {
             itemRoll: BaseActorSheet.#itemRoll,
             itemEdit: BaseActorSheet.#itemEdit,
             itemDelete: BaseActorSheet.#itemDelete,
+            mergeItemStacks: BaseActorSheet.#mergeItemStacks,
             itemVocalize: BaseActorSheet.#itemVocalize,
             itemCreate: BaseActorSheet.#itemCreate,
             dropItem: BaseActorSheet.#dropItem,
@@ -2121,6 +2122,12 @@ export default class BaseActorSheet extends BaseActorSheetBase {
      * @param {Event} event         Triggering click event.
      * @param {HTMLElement} target  Button that was clicked.
      */
+    /** Fold owned stacks of the same item into one (the inventory's Merge stacks button). */
+    static async #mergeItemStacks(this: BaseActorSheet, _event: Event, _target: HTMLElement): Promise<void> {
+        const merged = await this.actor.mergeItemStacks();
+        ui.notifications.info(game.i18n.format(merged > 0 ? 'WH40K.Backpack.StacksMerged' : 'WH40K.Backpack.NoStacksToMerge', { count: String(merged) }));
+    }
+
     static async #itemDelete(this: BaseActorSheet, _event: Event, target: HTMLElement): Promise<void> {
         const itemId = target.dataset['itemId'] ?? target.closest<HTMLElement>('[data-item-id]')?.dataset['itemId'];
         if (itemId === undefined || itemId === '') {
