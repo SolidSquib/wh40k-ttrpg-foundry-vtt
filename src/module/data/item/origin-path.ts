@@ -114,11 +114,9 @@ export default class OriginPathData extends ItemDataModel.mixin(DescriptionTempl
         specialization?: string;
         craftsmanship?: string;
     }>;
-    declare homebrew: { throneGelt: string; thrones: string };
     declare rollResults: {
         wounds: { formula: string; rolled: number; breakdown: string; timestamp: number };
         fate: { formula: string; rolled: number; breakdown: string; timestamp: number };
-        thrones: { formula: string; rolled: number; breakdown: string; timestamp: number };
     };
 
     // Properties from ModifiersTemplate
@@ -436,12 +434,6 @@ export default class OriginPathData extends ItemDataModel.mixin(DescriptionTempl
                 { required: true, initial: [] },
             ),
 
-            // Homebrew extensions (campaign-specific fields not in RAW)
-            homebrew: new fields.SchemaField({
-                throneGelt: new fields.StringField({ required: false, blank: true, initial: '' }),
-                thrones: new fields.StringField({ required: false, blank: true, initial: '' }),
-            }),
-
             // Roll results storage for interactive rolling
             rollResults: new fields.SchemaField({
                 wounds: new fields.SchemaField({
@@ -451,12 +443,6 @@ export default class OriginPathData extends ItemDataModel.mixin(DescriptionTempl
                     timestamp: new fields.NumberField({ required: false, initial: null }),
                 }),
                 fate: new fields.SchemaField({
-                    formula: new fields.StringField({ required: false, blank: true }),
-                    rolled: new fields.NumberField({ required: false, initial: null }),
-                    breakdown: new fields.StringField({ required: false, blank: true }),
-                    timestamp: new fields.NumberField({ required: false, initial: null }),
-                }),
-                thrones: new fields.SchemaField({
                     formula: new fields.StringField({ required: false, blank: true }),
                     rolled: new fields.NumberField({ required: false, initial: null }),
                     breakdown: new fields.StringField({ required: false, blank: true }),

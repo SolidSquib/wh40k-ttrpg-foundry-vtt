@@ -413,7 +413,7 @@ async function probeTrading(page: Page): Promise<StepResult[]> {
         };
         const trash: ActorDoc[] = [];
         const purse = (a: ActorDoc): number => {
-            const v = g.foundry.utils.getProperty(a, 'system.throneGelt');
+            const v = g.foundry.utils.getProperty(a, 'system.logisticsRating');
             return typeof v === 'number' ? v : Number.NaN;
         };
         const has = (a: ActorDoc, name: string): boolean => Array.from((a.id != null ? g.game.actors.get(a.id) : a)?.items ?? []).some((i) => i.name === name);
@@ -429,7 +429,7 @@ async function probeTrading(page: Page): Promise<StepResult[]> {
                 buyer = b;
                 seller = s;
                 trash.push(b, s);
-                await api.addCurrencies(s, '10tg'); // the seller has 10 thrones and a relic to trade
+                await api.addCurrencies(s, '10Log'); // the seller has 10 thrones and a relic to trade
                 await api.addItems(s, [{ name: 'Scenario Relic Blade', type: 'weapon', system: { quantity: 1 } }]);
                 if (purse(g.game.actors.get(s.id) ?? s) !== 10) throw new Error(`seller should hold 10 tg, has ${purse(g.game.actors.get(s.id) ?? s)}`);
                 return 'seller holds 10 thrones and a relic blade';

@@ -6,7 +6,7 @@ import { NON_DROPPABLE_TYPES } from '../managers/non-droppable-types.ts';
  * Item Piles (and basic economy plugin) integration.
  *
  * The derived `system.price` (see PhysicalItemTemplate / docs/VALUATION.md)
- * exposes the active line's throne-gelt valuation at a Foundry-standard path so
+ * exposes the item's Logistics cost at a Foundry-standard path so
  * generic merchant/loot modules price our items. This module registers the full
  * system integration with Item Piles when that module is present — currencies,
  * the pile actor type, the item-quantity path, and the non-physical item filter

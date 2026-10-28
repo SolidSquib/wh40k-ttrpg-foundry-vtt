@@ -146,8 +146,6 @@ const STORY_MATRIX: ReadonlyArray<{ title: string; exports: readonly string[] }>
             'Issue206_CharacteristicStepReached',
             'Issue206_EquipmentStepReached',
             'RogueTraderDirection',
-            'Issue204HomeWorldThroneGelt',
-            'Issue204BackgroundNoThroneGelt',
             'Issue198VoidBornPreview',
             'Issue205AptitudeDoubling',
             'Issue215NoPhantomDuplicate',

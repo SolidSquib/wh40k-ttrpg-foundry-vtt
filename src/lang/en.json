@@ -377,8 +377,7 @@
             "OriginPath": {
                 "SelectionLimit": "You can only select {count} option(s).",
                 "CompleteChoices": "Please complete all required choices.",
-                "ItemNotFound": "Could not find that item.",
-                "NoThronesFormula": "No thrones formula available yet — select an origin with a throne gelt formula."
+                "ItemNotFound": "Could not find that item."
             },
             "Macro": {
                 "NoControlledActor": "Cannot find controlled Actor. Is an Actor selector and do you have permissions?",
@@ -578,8 +577,7 @@
             "Increase": "Increase {resource}",
             "Decrease": "Decrease {resource}",
             "InfluenceTooltip": "Social and political pull — calling in favours, securing audiences, persuading officials. Not bought with coin.",
-            "RequisitionTooltip": "Drawing on Inquisitorial resources — weapons from the armoury, specialist equipment, transport, and backup.",
-            "ThroneGeltTooltip": "Hard currency for street-level transactions — food, lodging, bribes, and black market purchases."
+            "RequisitionTooltip": "Drawing on Inquisitorial resources — weapons from the armoury, specialist equipment, transport, and backup."
         },
         "DropZone": {
             "AddType": "Add {type}",
@@ -675,7 +673,6 @@
             "RemoveQuality": "Remove quality",
             "PhysicalProperties": "Physical Properties",
             "Availability": "Availability",
-            "CostThrones": "Cost (Thrones)",
             "Effect": "Effect",
             "Description": "Description",
             "Notes": "Notes",
@@ -1480,9 +1477,9 @@
             },
             "DH2Ruleset": {
                 "Name": "DH2e Economy Ruleset",
-                "Hint": "RAW uses only Influence + Requisition (Throne Gelt hidden). Homebrew adds Throne Gelt as street-level currency and keeps Influence at 0 until earned (no starting roll).",
+                "Hint": "RAW uses only Influence + Requisition. Homebrew keeps Influence at 0 until earned (no starting roll).",
                 "Choices": {
-                    "Homebrew": "Homebrew (Influence + Requisition + Throne Gelt)",
+                    "Homebrew": "Homebrew (Influence + Requisition)",
                     "Raw": "RAW (Influence + Requisition)"
                 }
             },
@@ -3032,11 +3029,9 @@
             "Grants": "Grants",
             "StartingStats": "Starting Stats",
             "RollStartingWounds": "Roll Starting Wounds",
-            "RollStartingThrones": "Roll Starting Throne Gelt",
             "RollStartingFate": "Roll Starting Fate Points",
             "ManualWoundsTitle": "Manual Wounds Roll",
             "ManualFateTitle": "Manual Fate Roll",
-            "ManualThronesTitle": "Manual Throne Gelt Roll",
             "RollErrorUnsupportedType": "Unsupported roll type: {type}",
             "RollErrorGeneric": "Error rolling dice. Check console for details.",
             "RollPromptFirst": "Please roll or input a value first!",
@@ -3091,7 +3086,6 @@
             "EquipmentColName": "Name",
             "EquipmentColType": "Type",
             "EquipmentColAvailability": "Availability",
-            "EquipmentColThroneGelt": "Thrones",
             "EquipmentLimitReached": "Selection limit reached ({max}).",
             "EquipmentNoInfluence": "Roll or enter starting Influence before selecting equipment.",
             "EquipmentNeedsCharacteristics": "Assign characteristics before equipping your Acolyte.",
@@ -3100,7 +3094,7 @@
             "ResetInventory": "Reset Inventory",
             "ResetExperience": "Reset Experience and Advancements",
             "ResetInjuries": "Reset Injuries and Effects",
-            "ResetCurrency": "Reset Currency (Influence, Requisition, Throne Gelt)",
+            "ResetCurrency": "Reset Currency (Influence, Requisition)",
             "Characteristics": "Characteristics",
             "StepHomeWorld": "Home World",
             "StepBirthright": "Birthright",
@@ -3133,12 +3127,8 @@
             "ManualD5Note": "<br><strong>Note:</strong> For 1d5, roll a d10 and divide by 2, rounded up.",
             "ManualFateOutcome": "{min}-{max} → {outcome} Fate Points",
             "ManualFateResults": "<strong>Results:</strong><br>{options}",
-            "ManualThronesInstruction": "Roll <code>{formula}</code> and enter the dice total:",
-            "ManualThronesHint": "Enter the sum of your dice rolls only — static bonuses in the formula will be added automatically.",
             "OriginBonus": "Origin Bonus",
             "ManualDivinationLabel": "Divination:",
-            "ManualThronesPromptTitle": "Enter Starting Throne Gelt",
-            "ManualThronesLabel": "Thrones:",
             "ManualInfluencePromptTitle": "Enter Starting Influence",
             "ManualInfluenceLabel": "Influence:",
             "ManualValue": "Enter Value",
@@ -3536,7 +3526,6 @@
             "AtPlace": "{availability} ({place})"
         },
         "Currency": {
-            "ThroneGelt": "Throne Gelt",
             "Influence": "Influence",
             "ProfitFactor": "Profit Factor",
             "Requisition": "Requisition",
@@ -5977,7 +5966,6 @@
             "NoGM": "No active GM is available to approve the transaction.",
             "OutOfRange": "{source} is no longer within trading range.",
             "Resource": {
-                "throneGelt": "Throne Gelt",
                 "requisition": "Requisition",
                 "influence": "Influence"
             },

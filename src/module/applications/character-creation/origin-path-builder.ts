@@ -82,7 +82,6 @@ interface OriginPathSystemData {
     description?: { value?: string; chat?: string; summary?: string };
     requirements?: { text?: string };
     activeModifiers?: ActiveModifier[];
-    homebrew?: { throneGelt?: string; thrones?: string };
     modifiers?: WH40KItemModifiers;
     selectedChoices?: Record<string, string[]>;
     regimentPreset?: RegimentPresetData;
@@ -100,13 +99,11 @@ interface OriginPathSystemData {
     };
     // Actor-system shaped fields (also read via `actor.system as OriginPathSystemData`)
     originPath?: { divination?: string };
-    throneGelt?: number;
     influence?: number;
     characteristics?: Record<string, WH40KCharacteristic>;
     skills?: Record<string, SkillSlice>;
     characterGeneration?: CharacterGenerationSlice;
     // Compendium index-entry shape (also read via `entry.system as OriginPathSystemData`)
-    cost?: { throneGelt?: number };
 }
 
 /**
@@ -292,7 +289,6 @@ interface EquipmentItemEntry {
     availability: string;
     availabilityLabel: string;
     availabilityOrder: number;
-    throneGelt: number | null;
 }
 
 /**
@@ -444,7 +440,6 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
     declare _divination: string;
     /** Resolved divination origin-path doc for the chosen divination text (#316), or null when freeform/unmatched. Applied via the same commit machinery as the step selections, but kept OUT of `this.selections` so it never inflates the size/completion logic keyed off it. */
     declare _divinationSelection: NormalizedOrigin | null;
-    declare _thronesRolled: number;
     declare _influenceRolled: number;
     declare _savedScrollTop: number;
     declare _originsLoaded: boolean;
@@ -500,8 +495,6 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
             setCharGenMode: OriginPathBuilder.#setCharGenMode,
             rollDivination: OriginPathBuilder.#rollDivination,
             manualDivination: OriginPathBuilder.#manualDivination,
-            rollThrones: OriginPathBuilder.#rollThrones,
-            manualThrones: OriginPathBuilder.#manualThrones,
             rollInfluence: OriginPathBuilder.#rollInfluence,
             manualInfluence: OriginPathBuilder.#manualInfluence,
             commit: OriginPathBuilder.#commit,
@@ -566,7 +559,6 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
         const actorSys = this._actorSys();
         this._divination = actorSys.originPath?.divination ?? '';
         this._divinationSelection = null;
-        this._thronesRolled = actorSys.throneGelt ?? 0;
         this._influenceRolled = actorSys.influence ?? 0;
         this._savedScrollTop = 0;
         this.aptitudeOverrides = new Map();
@@ -881,7 +873,7 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
         // Capture the previously-persisted choice + roll state BEFORE normalize
         // runs (normalize replaces the system object reference). Without this,
         // re-opening the builder against an existing actor origin item showed
-        // empty Choice Required selections and re-prompted for thrones/wounds
+        // empty Choice Required selections and re-prompted for wounds
         // rolls — even though the data was sitting on the item.
         // eslint-disable-next-line no-restricted-syntax -- boundary: raw compendium document shape pre-normalize
         const sourceSystem = (data.system as Record<string, unknown> | undefined) ?? {};
@@ -1307,19 +1299,6 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
     }
 
     /**
-     * Compute combined thrones formula from selected homeworld + background.
-     * @private
-     */
-    _getThronesFormula(): string {
-        const parts: string[] = [];
-        for (const [, selection] of this.selections) {
-            const formula = this._getSelectionThronesFormula(selection);
-            if (formula) parts.push(formula);
-        }
-        return parts.join(' + ') || '';
-    }
-
-    /**
      * Get influence modifier from selected origins.
      * @private
      */
@@ -1521,42 +1500,6 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
             title: game.i18n.localize('WH40K.OriginPath.OriginBonus'),
             content,
         });
-    }
-
-    /**
-     * Get the currently available throne gelt formula.
-     * @private
-     */
-    _getContextualThronesFormula(): string {
-        const parts: string[] = [];
-        for (const selection of this._getSelectionsForDerivedCalculations()) {
-            const formula = this._getSelectionThronesFormula(selection);
-            if (formula) parts.push(formula);
-        }
-        return parts.join(' + ');
-    }
-
-    /**
-     * Read any supported throne gelt formula field from a selection.
-     * @private
-     */
-    _getSelectionThronesFormula(selection: NormalizedOrigin): string {
-        const sys = this._getSelectionSystem(selection);
-        const homebrew = sys.homebrew;
-        return homebrew?.throneGelt ?? homebrew?.thrones ?? '';
-    }
-
-    /**
-     * Sum per-origin throne gelt rolls (homeworld + background, each with its own formula, results ADDED).
-     * @private
-     */
-    _getTotalThronesRolled(): number {
-        let total = 0;
-        for (const [, selection] of this.selections) {
-            const rolled = (selection.system as OriginPathSystemData).rollResults?.['thrones']?.rolled;
-            if (typeof rolled === 'number') total += rolled;
-        }
-        return total;
     }
 
     /**
@@ -2115,7 +2058,7 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
                 if (!pack) return [];
 
                 const index = await pack.getIndex({
-                    fields: ['system.availability', 'system.identifier', 'system.clip.max', 'system.weaponTypes', 'system.cost.throneGelt', 'type'],
+                    fields: ['system.availability', 'system.identifier', 'system.clip.max', 'system.weaponTypes', 'type'],
                 });
                 const fromPack: EquipmentEntry[] = [];
                 for (const rawEntry of index) {
@@ -2140,7 +2083,6 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
                         availability,
                         availabilityLabel: game.i18n.localize(availabilityEntry.label),
                         availabilityOrder: modifier,
-                        throneGelt: entrySys?.cost?.throneGelt ?? null,
                     };
                     if (entry.name !== undefined) equipEntry.name = entry.name;
                     if (entry.img !== undefined) equipEntry.img = entry.img;
@@ -2278,7 +2220,6 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
             items,
             selectedItems,
             totalAvailable: this.equipmentItems.length,
-            isHomebrew: WH40KSettings.isHomebrew(),
         };
     }
 
@@ -4012,7 +3953,6 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
         let formula: string | undefined;
         if (statType === 'wounds') formula = grants.woundsFormula ?? undefined;
         else if (statType === 'fate') formula = grants.fateFormula ?? undefined;
-        else if (statType === 'thrones') formula = this._getSelectionThronesFormula(selection);
 
         if (formula === undefined || formula === '') return;
 
@@ -4099,7 +4039,6 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
         let formula: string | undefined;
         if (statType === 'wounds') formula = grants.woundsFormula ?? undefined;
         else if (statType === 'fate') formula = grants.fateFormula ?? undefined;
-        else if (statType === 'thrones') formula = this._getSelectionThronesFormula(selection);
 
         if (formula === undefined || formula === '') return;
 
@@ -4216,7 +4155,6 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
             uuid: item.uuid,
             availability: item.availability,
             availabilityLabel: item.availabilityLabel,
-            throneGelt: item.throneGelt ?? null,
             identifier: item.identifier ?? null,
             clipMax: item.clipMax ?? null,
             weaponTypes: Array.isArray(item.weaponTypes) ? [...item.weaponTypes] : [],
@@ -4440,38 +4378,6 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
         });
         if (text !== null && text !== '') {
             this._divination = text;
-            this._saveScrollPosition();
-            void this.render();
-        }
-    }
-
-    /**
-     * Roll starting throne gelt from combined homeworld + background formulas.
-     */
-    static async #rollThrones(this: OriginPathBuilder, _event: Event, _target: HTMLElement): Promise<void> {
-        const formula = this._getContextualThronesFormula();
-        if (formula === '') {
-            ui.notifications.warn(game.i18n.localize('WH40K.Notify.OriginPath.NoThronesFormula'));
-            return;
-        }
-        const roll = new Roll(formula);
-        await roll.evaluate();
-        this._thronesRolled = roll.total ?? 0;
-        this._saveScrollPosition();
-        void this.render();
-    }
-
-    static async #manualThrones(this: OriginPathBuilder, _event: Event, _target: HTMLElement): Promise<void> {
-        const raw = await this._promptForValue({
-            title: game.i18n.localize('WH40K.OriginPath.ManualThronesPromptTitle'),
-            label: game.i18n.localize('WH40K.OriginPath.ManualThronesLabel'),
-            name: 'value',
-            type: 'number',
-            min: '0',
-        });
-        const val = raw === null ? NaN : parseInt(raw, 10);
-        if (!Number.isNaN(val)) {
-            this._thronesRolled = val;
             this._saveScrollPosition();
             void this.render();
         }
@@ -4859,7 +4765,7 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
                 await this.actor.update(charUpdate);
             }
 
-            // Apply divination, thrones, influence, wounds and fate.
+            // Apply divination, influence, wounds and fate.
             // These are ABSOLUTE writes (not additive) so re-committing the
             // builder doesn't stack +10 wounds / +3 fate on top of values the
             // player already had: each commit re-derives the final from the
@@ -4868,8 +4774,6 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
             // eslint-disable-next-line no-restricted-syntax -- boundary: actor.update() accepts an untyped path-keyed payload; Record<string,unknown> is the documented pattern
             const resourceUpdate: Record<string, unknown> = {};
             if (this._divination !== '') resourceUpdate['system.originPath.divination'] = this._divination;
-            const thronesTotal = this._getTotalThronesRolled();
-            if (thronesTotal > 0) resourceUpdate['system.throneGelt'] = thronesTotal;
             if (this._influenceRolled !== 0) resourceUpdate['system.influence'] = this._influenceRolled;
 
             // Sum rolled wounds + rolled fate across every committed origin so
@@ -5230,7 +5134,7 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
     }
 
     /**
-     * Reset the character's influence, requisition, and throne gelt totals to zero.
+     * Reset the character's influence and requisition totals to zero.
      * The commit path then applies any values rolled on origins after this reset.
      * @private
      */
@@ -5239,7 +5143,6 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
         const currencyUpdate: Record<string, unknown> = {
             'system.influence': 0,
             'system.requisition': 0,
-            'system.throneGelt': 0,
         };
         await this.actor.update(currencyUpdate);
     }

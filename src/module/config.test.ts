@@ -56,14 +56,14 @@ describe('buildQualityLabel (#300)', () => {
 
 /**
  * Integrity guard for the acquisition-currency registry: every entry is wired to
- * a valid game line with a line-scoped cost path and a wallet path, and exactly
- * one is the throne-gelt baseline.
+ * a valid game line with a cost path and a wallet path, and exactly
+ * one is the primary.
  */
 describe('WH40K.currencies — acquisition currency registry', () => {
     const entries = Object.entries(WH40K.currencies);
 
-    it('declares the throne baseline and Only War logistics', () => {
-        expect(entries.map(([key]) => key).sort()).toEqual(['logistics', 'throne']);
+    it('declares Only War logistics', () => {
+        expect(entries.map(([key]) => key).sort()).toEqual(['logistics']);
     });
 
     it.each(entries)('%s is wired to a valid line, a line-scoped costPath, and a wallet path', (_key, currency) => {
@@ -75,8 +75,8 @@ describe('WH40K.currencies — acquisition currency registry', () => {
         expect(currency.walletPath.startsWith('system.')).toBe(true);
     });
 
-    it('marks exactly one currency as the throne-gelt primary baseline', () => {
+    it('marks exactly one currency as the primary', () => {
         const primaries = entries.filter(([, currency]) => currency.primary === true).map(([key]) => key);
-        expect(primaries).toEqual(['throne']);
+        expect(primaries).toEqual(['logistics']);
     });
 });

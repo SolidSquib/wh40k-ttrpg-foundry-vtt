@@ -24,7 +24,6 @@ import type { WH40KItem } from '../../documents/item.ts';
 import { summarizeChanges, type EffectChangeRaw } from '../../helpers/effects.ts';
 import { AssignDamageData, type ActorLike } from '../../rolls/assign-damage-data.ts';
 import { Hit } from '../../rolls/damage-data.ts';
-import { lineResourceRows, type ResourceRow } from '../../rules/acquisition-resources.ts';
 import type { ActionKind } from '../../rules/action-budget.ts';
 import { actionBudgetForActor, resetActionsForActor, spendActionForActor } from '../../rules/action-economy.ts';
 import {
@@ -84,9 +83,6 @@ function titleCase(s: string): string {
     return s.replace(/(^|-)([a-z])/g, (_m, _p, c: string) => c.toUpperCase());
 }
 
-/** Currency wallets another sheet panel already edits (the OW Logistics panel), so the Resources panel skips them. */
-const RESOURCE_WALLETS_EDITED_ELSEWHERE: ReadonlySet<string> = new Set(['system.logisticsRating']);
-
 type SheetTabConfig = {
     tab: string;
     label: string;
@@ -133,7 +129,6 @@ type CharacterSheetContextDeclaredFields = {
     mountPanel?: OwMountPanelContext;
     drawbackPanel?: Record<string, unknown>;
     battlefieldPanel?: Record<string, unknown>;
-    resourceRows?: Array<ResourceRow & { value: number | undefined }>;
     originPathSteps?: unknown;
     originPathSummary?: unknown;
     originPathComplete?: boolean;
@@ -792,15 +787,6 @@ export default class CharacterSheet extends BaseActorSheet {
                 // eslint-disable-next-line no-restricted-syntax -- boundary: dynamic panel-context key written into the free-form CharacterSheetContext
                 (context as Record<string, unknown>)[key] = build(this);
             }
-        }
-
-        // Each line shows its own acquisition currency + the gelt baseline.
-        if (activeGameSystem !== null) {
-            context.resourceRows = lineResourceRows(activeGameSystem, CONFIG.wh40k.currencies, RESOURCE_WALLETS_EDITED_ELSEWHERE).map((row) => ({
-                ...row,
-                // eslint-disable-next-line no-restricted-syntax -- boundary: foundry.utils.getProperty returns unknown for a dynamic wallet path
-                value: foundry.utils.getProperty(this.actor, row.field) as number | undefined,
-            }));
         }
 
         // Prepare characteristic HUD data

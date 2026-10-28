@@ -265,15 +265,13 @@
                        class="{{#unless inEditMode}}tw-bg-black/15 tw-border-white/5 tw-text-[color:var(--wh40k-text-medium)] tw-cursor-default tw-pointer-events-none{{/unless}} tw-px-2 tw-py-1 tw-rounded-sm tw-text-sm"
                        {{#unless inEditMode}}readonly{{/unless}} />
               </div>
-              {{#unless hideThroneGelt}}
               <div class="tw-flex tw-flex-col tw-gap-1">
-                <label class="tw-text-sm tw-font-medium">{{localize "WH40K.Ammunition.CostThrones"}}</label>
-                <input type="number" name="system.cost.throneGelt" value="{{item.system.cost.throneGelt}}"
+                <label class="tw-text-sm tw-font-medium">{{localize "WH40K.Currency.Logistics"}}</label>
+                <input type="number" name="system.cost.logistics" value="{{item.system.cost.logistics}}"
                        data-dtype="Number" min="0"
                        class="{{#unless inEditMode}}tw-bg-black/15 tw-border-white/5 tw-text-[color:var(--wh40k-text-medium)] tw-cursor-default tw-pointer-events-none{{/unless}} tw-px-2 tw-py-1 tw-rounded-sm tw-text-sm"
                        {{#unless inEditMode}}readonly{{/unless}} />
               </div>
-              {{/unless}}
               {{!-- #390: Bound toggle — only editable in edit mode --}}
               {{#if inEditMode}}
               <div class="tw-col-span-2 tw-flex tw-flex-col tw-gap-1">

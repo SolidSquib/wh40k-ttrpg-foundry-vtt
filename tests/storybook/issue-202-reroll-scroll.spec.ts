@@ -1,7 +1,7 @@
 /**
  * Regression test for issue #202.
  *
- * The Origin-Roll dialog (Starting Wounds / Fate / Throne Gelt) used to grow
+ * The Origin-Roll dialog (Starting Wounds / Fate) used to grow
  * unbounded as the "Previous Attempts" section accumulated rerolls. After ~6
  * rerolls the Reroll and Submit buttons were pushed below the viewport, so
  * players could no longer accept or reroll.

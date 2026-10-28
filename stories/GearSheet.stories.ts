@@ -35,7 +35,6 @@ export const HiddenCostReadOnly: Story = {
             gearSheetSrc,
             mockGearSheetContext({
                 hasLimitedUses: false,
-                hideThroneGelt: true,
                 system: {
                     consumable: false,
                     quantity: 1,

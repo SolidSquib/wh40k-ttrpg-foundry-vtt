@@ -526,44 +526,18 @@ Authoring rules:
 
 ## Standard Cost Shape
 
-All item compendium JSON uses the same top-level `system.cost` object: a native
-acquisition field per line, plus a **line-asymmetric** `homebrew` block for
-non-RAW valuations.
+All item compendium JSON uses the same flat `system.cost` object:
 
 ```json
-system.cost = {
-  "dh1": { "throneGelt": null },
-  "dh2": { "influence": null,    "homebrew": { "requisition": null, "throneGelt": null } },
-  "rt":  { "profitFactor": null, "homebrew": { "throneGelt": null } },
-  "dw":  { "requisition": null,  "homebrew": { "throneGelt": null } },
-  "bc":  { "infamy": null,       "homebrew": { "throneGelt": null } },
-  "ow":  { "logistics": null,    "homebrew": { "throneGelt": null } }
-}
+system.cost = { "logistics": null }
 ```
 
-The native field per line holds the rules-as-written acquisition value for that
-line: `dh1.throneGelt`, `dh2.influence`, `rt.profitFactor`, `dw.requisition`,
-`bc.infamy`, `ow.logistics`.
-
-The per-line `homebrew` block carries homebrew/non-RAW valuations, but **which
-keys exist differs by line** — a homebrew valuation that is already a line's
-native currency, or that only makes sense in one line, is not duplicated:
-
-- **`homebrew.requisition` exists only under `dh2`.** No other line carries it.
-- **`homebrew.throneGelt` exists under every line except `dh1`.** It is the
-  civilian gelt market baseline; `dh1.throneGelt` is *already* DH1's native value.
-- **`dh1` therefore has no `homebrew` block at all** — only its native
-  `throneGelt`.
-
-Rules:
-
-- use `null` for undefined or unauthored values.
-- the native field is RAW only — never put a non-RAW or converted value there; park
-  non-RAW legacy numbers in that line's `homebrew` block instead.
-- do not add `homebrew.requisition` to any line but `dh2`; do not add a `homebrew`
-  block to `dh1`.
-- do not use the legacy `system.cost.value` / `system.cost.currency` fields, and
-  do not flatten cost values back into a shared cross-line field.
+`logistics` is the item's Only War Logistics cost (the acquisition value from the
+rulebook). Use `null` for undefined or unauthored values. Do not use the legacy
+per-line blocks (`dh1`/`dh2`/`rt`/`dw`/`bc`/`ow`), `homebrew` sub-blocks, a
+`throneGelt` value (Throne Gelt is not an Only War resource), or the legacy
+`system.cost.value` / `system.cost.currency` fields. Old per-line shapes are still
+read and collapsed to `{ logistics }` on load.
 
 ---
 

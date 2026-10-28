@@ -62,8 +62,8 @@ export const WoundsWarning: Story = {
 export const SimpleValueOnly: Story = {
     args: {
         icon: 'fa-coins',
-        label: 'Thrones',
-        field: 'system.resources.thrones',
+        label: 'Logistics',
+        field: 'system.logisticsRating',
         current: 47,
         max: undefined,
     },

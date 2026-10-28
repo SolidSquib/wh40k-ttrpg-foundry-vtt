@@ -6,18 +6,17 @@ import { expect, test } from './lib/test';
 /**
  * Wealth / currency mechanics across the FFG-family systems. Drives source-
  * coverage on the shared CharacterBaseData currency fields (Influence,
- * Requisition, throneGelt, rogueTrader.profitFactor) plus the
+ * Requisition, rogueTrader.profitFactor) plus the
  * AcquisitionDialog application class. Every concrete character actor
  * (dh1-character, dh2-character, dw-character, ow-character, bc-character,
  * rt-character) extends CharacterBaseData and therefore exposes every
  * currency field on `system` — but per RAW each system surfaces its own
- * primary economy (DH2 Influence, DW/OW Requisition, BC Throne Gelt as the
- * Heretic's coffer, RT Profit Factor). One probe per system + the dialog
+ * primary economy (DH2 Influence, DW/OW Requisition, RT Profit Factor). One probe per system + the dialog
  * render flow.
  *
  * Source coverage targets:
  *   - src/module/data/actor/character.ts (influence / requisition /
- *     throneGelt / rogueTrader.profitFactor schema fields + update path)
+ *     rogueTrader.profitFactor schema fields + update path)
  *   - src/module/data/actor/concrete/{dh1,dh2,dw,ow,bc,rt}-character.ts
  *     (gameSystem dispatch into the shared base)
  *   - src/module/applications/dialogs/acquisition-dialog.ts (constructor,
@@ -52,7 +51,6 @@ type ActorFlagValue = string | number | boolean | null | ActorFlagValue[] | { [k
 interface ActorSystemView {
     influence?: number;
     requisition?: number;
-    throneGelt?: number;
     rogueTrader?: { profitFactor?: { current?: number } };
 }
 
@@ -250,36 +248,6 @@ test.describe.serial('wealth / currency mechanics (Tier B)', () => {
 
         await deleteActor(page, created.id);
         expect(failures, `ow requisition failures:\n  - ${failures.join('\n  - ')}`).toEqual([]);
-    });
-
-    test('bc-character throneGelt track persists updates', async ({ page }) => {
-        await joinOrSkip(page);
-
-        // NOTE on field selection: Black Crusade RAW does not use Thrones —
-        // its in-fiction currency is also Thrones (the Imperium's coin) but
-        // procurement is mostly via Infamy. Infamy as a per-actor track is
-        // NOT a CharacterBaseData field today (it lives on item cost slots
-        // only — see per-system-flows.spec.ts notes). The closest currency-
-        // shaped slot that IS on the schema is `throneGelt`, which BC
-        // inherits via CharacterBaseData; the probe exercises the same
-        // update path the BC sheet uses when GM bookkeeping records a
-        // character's Throne Gelt purse.
-        const failures: string[] = [];
-        const created = await createActor(page, 'bc-gelt-probe', 'bc-character', 'bc');
-        if (created.id === null) {
-            failures.push(`actor create: ${created.createError ?? 'unknown'}`);
-            expect(failures, failures.join('\n')).toEqual([]);
-            return;
-        }
-
-        const result = await probeScalarField(page, created.id, 'throneGelt', 1500);
-        if (result.error !== null) failures.push(result.error);
-        else if (result.after !== 1500) failures.push(`throneGelt after set was ${result.after}, expected 1500`);
-
-        if (failures.length === 0) recordCoverage('wealth.flow', 'bc-gelt-track');
-
-        await deleteActor(page, created.id);
-        expect(failures, `bc throneGelt failures:\n  - ${failures.join('\n  - ')}`).toEqual([]);
     });
 
     test('rt-character profit factor spend decrements current', async ({ page }) => {

@@ -92,14 +92,16 @@ function materialize(source, fallback, stats, path) {
 
 /**
  * Collapse the per-line cost block (`cost.ow.logistics`, `cost.ow.homebrew.throneGelt`, plus the
- * other lines') to the flat Only War shape `{ logistics, throneGelt }`. A cost that is already flat is left alone.
+ * other lines') to the flat Only War shape `{ logistics }`; a leftover `throneGelt` is dropped. A cost that is already
+ * `{ logistics }` is left alone.
  */
 function flattenCost(system) {
     const cost = system.cost;
-    if (!isObj(cost) || !('ow' in cost || 'dh2' in cost || 'dh1' in cost)) return;
+    if (!isObj(cost)) return;
     const ow = isObj(cost.ow) ? cost.ow : {};
-    const gelt = ow.homebrew?.throneGelt ?? cost.dh2?.homebrew?.throneGelt ?? null;
-    system.cost = { logistics: ow.logistics ?? null, throneGelt: gelt };
+    const logistics = ow.logistics ?? cost.logistics ?? null;
+    if (Object.keys(cost).length === 1 && 'logistics' in cost) return;
+    system.cost = { logistics };
 }
 
 function* sourceFiles(dir) {

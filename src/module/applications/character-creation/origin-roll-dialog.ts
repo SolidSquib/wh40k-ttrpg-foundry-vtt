@@ -87,7 +87,7 @@ interface OriginRollRenderContextAdditions {
 }
 
 export default class OriginRollDialog extends HandlebarsApplicationMixin(ApplicationV2) {
-    /** Type of roll: "wounds", "fate", or "thrones" */
+    /** Type of roll: "wounds" or "fate" */
     rollType: string;
 
     /** The formula string to evaluate */
@@ -191,7 +191,6 @@ export default class OriginRollDialog extends HandlebarsApplicationMixin(Applica
     /** @override */
     override get title(): string {
         if (this.rollType === 'wounds') return game.i18n.localize('WH40K.OriginPath.RollStartingWounds');
-        if (this.rollType === 'thrones') return game.i18n.localize('WH40K.OriginPath.RollStartingThrones');
         return game.i18n.localize('WH40K.OriginPath.RollStartingFate');
     }
 
@@ -201,7 +200,6 @@ export default class OriginRollDialog extends HandlebarsApplicationMixin(Applica
      */
     _getRollTypeLabel(): string {
         if (this.rollType === 'wounds') return 'Wounds';
-        if (this.rollType === 'thrones') return 'Throne Gelt';
         return 'Fate Points';
     }
 
@@ -257,8 +255,6 @@ export default class OriginRollDialog extends HandlebarsApplicationMixin(Applica
             return 'Roll to determine your starting Wounds. This represents your ability to withstand damage.';
         } else if (this.rollType === 'fate') {
             return 'Roll to determine your starting Fate Points. Fate Points allow you to avoid death and re-roll critical tests.';
-        } else if (this.rollType === 'thrones') {
-            return 'Roll to determine your starting Throne Gelt — your initial monetary funds.';
         }
         return '';
     }
@@ -297,8 +293,6 @@ export default class OriginRollDialog extends HandlebarsApplicationMixin(Applica
                 this.rollResult = await this._rollWounds();
             } else if (this.rollType === 'fate') {
                 this.rollResult = await this._rollFate();
-            } else if (this.rollType === 'thrones') {
-                this.rollResult = await this._rollThrones();
             } else {
                 ui.notifications.error(game.i18n.format('WH40K.OriginPath.RollErrorUnsupportedType', { type: this.rollType }));
                 return;
@@ -378,8 +372,6 @@ export default class OriginRollDialog extends HandlebarsApplicationMixin(Applica
         } else if (rollType === 'fate') {
             // For fate, handle the conditional formula
             await this._handleManualFate();
-        } else if (rollType === 'thrones') {
-            await this._handleManualThrones();
         }
     }
 
@@ -720,124 +712,6 @@ export default class OriginRollDialog extends HandlebarsApplicationMixin(Applica
             roll: roll,
             timestamp: Date.now(),
         };
-    }
-
-    /**
-     * Roll throne gelt using the formula (standard dice formula like "2d10" or "1d10+5").
-     * @returns {Promise<object>}
-     * @private
-     */
-    async _rollThrones(): Promise<OriginRollResult> {
-        const formula = this.formula;
-
-        // Plain number formula — fixed value
-        if (/^\d+$/.test(formula.trim())) {
-            const total = parseInt(formula.trim(), 10);
-            return {
-                type: 'thrones',
-                formula: formula,
-                rolled: total,
-                total: total,
-                breakdown: `${total}₮ (fixed)`,
-                timestamp: Date.now(),
-            };
-        }
-
-        const roll = new Roll(formula);
-        await roll.evaluate();
-
-        const diceTerms = roll.terms.filter((t) => t instanceof foundry.dice.terms.Die);
-        let breakdown = formula;
-        if (diceTerms.length > 0) {
-            const termsCopy = [...diceTerms];
-            breakdown = formula.replace(/(\d+)d(\d+)/g, (match) => {
-                const term = termsCopy.shift();
-                if (term) {
-                    const results = term.results.map((r) => r.result).join('+');
-                    return `[${results}]`;
-                }
-                return match;
-            });
-        }
-        breakdown += ` = ${roll.total}₮`;
-
-        return {
-            type: 'thrones',
-            formula: formula,
-            rolled: roll.total ?? 0,
-            total: roll.total ?? 0,
-            breakdown: breakdown,
-            roll: roll,
-            timestamp: Date.now(),
-        };
-    }
-
-    /**
-     * Handle manual throne gelt input — prompt for dice result, apply formula arithmetic.
-     * @private
-     */
-    async _handleManualThrones(): Promise<void> {
-        const formula = this.formula;
-
-        // Plain number formula — no dice
-        if (/^\d+$/.test(formula.trim())) {
-            const fixedTotal = parseInt(formula.trim(), 10);
-            this.rollResult = {
-                type: 'thrones',
-                formula: formula,
-                rolled: fixedTotal,
-                total: fixedTotal,
-                breakdown: `${fixedTotal}₮ (fixed)`,
-                manual: true,
-                timestamp: Date.now(),
-            };
-            this.rollHistory.push({ timestamp: Date.now(), result: fixedTotal, breakdown: `${fixedTotal}₮ (fixed)` });
-            await this.render();
-            return;
-        }
-
-        // Prompt for the dice result
-        const diceValue = await LegacyDialog.prompt({
-            title: game.i18n.localize('WH40K.OriginPath.ManualThronesTitle'),
-            content: `
-                <form>
-                    <div class="form-group">
-                        <label>${game.i18n.format('WH40K.OriginPath.ManualThronesInstruction', { formula })}</label>
-                        <input type="number" name="value" min="0" value="" autofocus />
-                        <p class="hint">${game.i18n.localize('WH40K.OriginPath.ManualThronesHint')}</p>
-                    </div>
-                </form>
-            `,
-            callback: (html: JQuery) => readDialogNumber(html),
-            rejectClose: false,
-        });
-
-        if (diceValue === null || Number.isNaN(diceValue)) return;
-
-        // Sum static bonuses from formula (strip dice terms)
-        const withoutDice = formula.replace(/\d+d\d+/gi, '0');
-        let staticTotal = 0;
-        const staticMatches = withoutDice.match(/[+-]?\s*\d+/g);
-        if (staticMatches) {
-            for (const n of staticMatches) {
-                staticTotal += parseInt(n.replace(/\s+/g, ''), 10);
-            }
-        }
-
-        const total = diceValue + staticTotal;
-        const breakdown = staticTotal === 0 ? `[${diceValue}] = ${total}₮` : `[${diceValue}] + ${staticTotal} = ${total}₮`;
-
-        this.rollResult = {
-            type: 'thrones',
-            formula: formula,
-            rolled: total,
-            total: total,
-            breakdown: breakdown,
-            manual: true,
-            timestamp: Date.now(),
-        };
-        this.rollHistory.push({ timestamp: Date.now(), result: total, breakdown });
-        await this.render();
     }
 
     /**

@@ -26,7 +26,7 @@ export const Default: Story = {};
 
 export const Acquisition: Story = {
     args: {
-        content: '<p>Authorise <strong>3,500 thrones</strong> for <em>Bolt rounds (×24)</em>?</p>',
+        content: '<p>Authorise <strong>3 Logistics</strong> for <em>Bolt rounds (×24)</em>?</p>',
         confirmLabel: 'Authorise',
         cancelLabel: 'Stand Down',
     },

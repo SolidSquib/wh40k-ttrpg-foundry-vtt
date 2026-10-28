@@ -1,12 +1,12 @@
 /**
  * Regression guard (#15): the player Overview is a TWO-column dashboard, not
  * three. The old three-column grid stretched Favourites/Progression with an
- * empty centre while cramming the Resources panel into the wide third column.
+ * empty centre while cramming panels into the wide third column.
  *
  * The columns now pack like masonry (a CSS multi-column flow) instead of grid
  * rows: a row grid left a hole under the shorter column whenever a line added
  * its own panels below (OW Regiment / Craftsmanship sat a full row down). The
- * reading order is unchanged: Vitals → Active Effects → Resources, then
+ * reading order is unchanged: Vitals → Active Effects, then
  * Favourite Skills → Favourite Talents → Progression, then the line's panels.
  * Subtlety lives in its own full-width Party Overview section below (#317).
  *
@@ -39,19 +39,14 @@ describe('overview two-column layout (#15)', () => {
         expect(wrappers).toHaveLength(2);
     });
 
-    it('places the Resources panel in column 1, under Active Effects', () => {
+    it('places Active Effects in column 1, before column 2', () => {
         const col1 = src.indexOf('COLUMN 1');
         const col2 = src.indexOf('COLUMN 2');
-        // The Vitals and Active Effects blocks moved into shared partials so the
-        // Combat tab can render the same panels without duplicating ~160 lines
-        // (#494). The ordering contract is unchanged — only the marker is now the
-        // include rather than the inline `title="Active Effects"` literal.
+        // The Vitals and Active Effects blocks live in shared partials so the Combat tab
+        // can render the same panels without duplicating them (#494).
         const activeEffects = src.indexOf('overview-active-effects-panel.hbs');
-        const resources = src.indexOf('{{!-- Resources —');
         expect(col1, 'column 1 marker present').toBeGreaterThan(-1);
         expect(activeEffects, 'active effects panel present').toBeGreaterThan(col1);
-        // Resources sits after Active Effects but still within column 1 (before column 2).
-        expect(resources, 'resources panel present').toBeGreaterThan(activeEffects);
-        expect(resources, 'resources is in column 1, before column 2').toBeLessThan(col2);
+        expect(activeEffects, 'active effects is in column 1, before column 2').toBeLessThan(col2);
     });
 });

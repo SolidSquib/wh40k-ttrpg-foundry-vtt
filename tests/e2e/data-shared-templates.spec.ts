@@ -886,14 +886,7 @@ async function probeSharedTemplates(page: Page): Promise<{ results: FlowResult[]
                         craftsmanship: 'good',
                         quantity: 3,
                         homebrew: { inventory: { profiles: ['vendor-a', 'vendor-b'], weight: 5 } },
-                        cost: {
-                            dh1: { throneGelt: 100 },
-                            dh2: { influence: 1, homebrew: { requisition: 5, throneGelt: 0 } },
-                            rt: { profitFactor: 10 },
-                            dw: { requisition: 0 },
-                            bc: { infamy: 4 },
-                            ow: { logistics: 3 },
-                        },
+                        cost: { logistics: 3 },
                     },
                     { parent: makeParent() },
                 ) as PhysicalInstance;
@@ -906,16 +899,15 @@ async function probeSharedTemplates(page: Page): Promise<{ results: FlowResult[]
                 // _migrateData branches for cost normalisation: empty / legacy per-line / string-number.
                 const empty: SchemaMap = {};
                 PhysicalItemTemplate._migrateData?.(empty);
-                const emptyCost = empty.cost as { logistics: number | null; throneGelt: number | null };
-                if (emptyCost.throneGelt !== null || emptyCost.logistics !== null) return 'empty cost normalisation failed';
+                const emptyCost = empty.cost as { logistics: number | null };
+                if (emptyCost.logistics !== null) return 'empty cost normalisation failed';
 
                 const stringy: SchemaMap = {
                     cost: { ow: { logistics: '3', homebrew: { throneGelt: '7' } }, dh2: { influence: '', homebrew: { requisition: 'nope', throneGelt: '9' } } },
                 };
                 PhysicalItemTemplate._migrateData?.(stringy);
-                const sc = stringy.cost as { logistics: number | null; throneGelt: number | null };
+                const sc = stringy.cost as { logistics: number | null };
                 if (sc.logistics !== 3) return `string-number logistics ${String(sc.logistics)}`;
-                if (sc.throneGelt !== 7) return `coerced throneGelt ${String(sc.throneGelt)}`;
 
                 // _migrateData branches for homebrew inventory normalisation.
                 const hbLegacy: SchemaMap = { homebrew: { inventory: { profiles: ['ok', '  ', '', 12, 'x'], weight: '4' } } };
@@ -936,14 +928,7 @@ async function probeSharedTemplates(page: Page): Promise<{ results: FlowResult[]
                         craftsmanship: 'good',
                         quantity: 2,
                         homebrew: { inventory: { profiles: [], weight: null } },
-                        cost: {
-                            dh1: { throneGelt: null },
-                            dh2: { influence: null, homebrew: { requisition: null, throneGelt: null } },
-                            rt: { profitFactor: null },
-                            dw: { requisition: null },
-                            bc: { infamy: null },
-                            ow: { logistics: null },
-                        },
+                        cost: { logistics: null },
                     },
                     { parent: makeParent() },
                 ) as PhysicalInstance;
@@ -961,14 +946,7 @@ async function probeSharedTemplates(page: Page): Promise<{ results: FlowResult[]
                         craftsmanship: 'common',
                         quantity: 0,
                         homebrew: { inventory: { profiles: [], weight: null } },
-                        cost: {
-                            dh1: { throneGelt: null },
-                            dh2: { influence: null, homebrew: { requisition: null, throneGelt: null } },
-                            rt: { profitFactor: null },
-                            dw: { requisition: null },
-                            bc: { infamy: null },
-                            ow: { logistics: null },
-                        },
+                        cost: { logistics: null },
                     },
                     { parent: makeParent() },
                 ) as PhysicalInstance;

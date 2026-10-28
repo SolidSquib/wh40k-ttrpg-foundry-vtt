@@ -152,7 +152,7 @@ describe('storybook composed item sheet templates', () => {
         expect(element.textContent).toContain('Blessing of Saint Drusus');
     });
 
-    it('renders gear sheet exhausted usage state and hides throne gelt when configured', () => {
+    it('renders gear sheet exhausted usage state and the logistics cost', () => {
         const exhausted = compileToElement(
             gearSheetSrc,
             mockGearSheetContext({
@@ -163,16 +163,10 @@ describe('storybook composed item sheet templates', () => {
                 },
             }),
         );
-        const hiddenCost = compileToElement(
-            gearSheetSrc,
-            mockGearSheetContext({
-                hideThroneGelt: true,
-                hasLimitedUses: false,
-            }),
-        );
+        const costed = compileToElement(gearSheetSrc, mockGearSheetContext({ hasLimitedUses: false }));
 
         expect(exhausted.querySelector('[data-action="consumeUse"]')?.getAttribute('disabled')).not.toBeNull();
         expect(exhausted.querySelector('[data-exhausted="true"]')).not.toBeNull();
-        expect(hiddenCost.textContent).not.toContain('Cost');
+        expect(costed.textContent).toContain('Cost');
     });
 });

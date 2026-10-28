@@ -142,11 +142,11 @@ export interface CurrencyConfig {
     abbreviation: string;
     /** Owning game line id. */
     line: string;
-    /** Item-cost path this currency reads, e.g. 'system.cost.throneGelt'. */
+    /** Item-cost path this currency reads, e.g. 'system.cost.logistics'. */
     costPath: string;
     /** Actor field holding a character's amount of this currency (the wallet). */
     walletPath: string;
-    /** The throne-gelt baseline currency, mirrored to system.price. */
+    /** The primary currency, mirrored to system.price. */
     primary?: boolean;
 }
 
@@ -276,25 +276,18 @@ WH40K.availabilities = {
 /* -------------------------------------------- */
 
 /**
- * Acquisition currencies. `throne` is the baseline gelt mirrored to the
- * derived `system.price`; `logistics` is Only War's RAW acquisition stat.
+ * Acquisition currencies. `logistics` is Only War's RAW acquisition stat and is
+ * mirrored to the derived `system.price`.
  * Consumed by the Item Piles integration and documented in docs/VALUATION.md.
  */
 WH40K.currencies = {
-    throne: {
-        label: 'WH40K.Currency.ThroneGelt',
-        abbreviation: 'tg',
-        line: 'ow',
-        costPath: 'system.cost.throneGelt',
-        walletPath: 'system.throneGelt',
-        primary: true,
-    },
     logistics: {
         label: 'WH40K.Currency.Logistics',
         abbreviation: 'Log',
         line: 'ow',
         costPath: 'system.cost.logistics',
         walletPath: 'system.logisticsRating',
+        primary: true,
     },
 };
 

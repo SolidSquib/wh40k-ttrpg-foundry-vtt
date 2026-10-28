@@ -16,7 +16,7 @@ import { scaledMs } from './lib/timing';
  *
  * Source coverage targets:
  *   - src/module/data/actor/character.ts (bio / experience / insanity /
- *     corruption / requisition / throneGelt / rogueTrader schema writes)
+ *     corruption / requisition / rogueTrader schema writes)
  *   - src/module/data/actor/npc.ts (wounds / armour / faction /
  *     threatLevel schema writes — exercises the NPC variant of the
  *     dh2-character schema branch)
@@ -56,7 +56,6 @@ const SHEET_FORM_SUBMIT_EXTRA_FLOWS = [
     'character-dh2-sheet::system.insanity',
     'character-dh2-sheet::system.corruption',
     'character-dh2-sheet::system.requisition',
-    'character-dh2-sheet::system.throneGelt',
     'character-dh2-sheet::system.experience.total',
     'character-dh2-sheet::system.bio.age',
     'character-dh2-sheet::system.bio.eyes',
@@ -64,7 +63,6 @@ const SHEET_FORM_SUBMIT_EXTRA_FLOWS = [
     'character-rt-sheet::system.wounds.value',
     'character-rt-sheet::system.bio.age',
     'character-rt-sheet::system.rogueTrader.profitFactor.current',
-    'character-rt-sheet::system.throneGelt',
     // --- bc character sheet ------------------------------------------
     'character-bc-sheet::system.wounds.value',
     'character-bc-sheet::system.insanity',
@@ -174,7 +172,6 @@ const SHEET_SPECS: Record<string, SheetSpec> = {
             insanity: 0,
             corruption: 0,
             requisition: 0,
-            throneGelt: 0,
             experience: { total: 1000, used: 0, available: 1000 },
             bio: { age: '30', eyes: 'brown' },
         },
@@ -186,7 +183,6 @@ const SHEET_SPECS: Record<string, SheetSpec> = {
         initialSystem: {
             gameSystem: 'rt',
             wounds: { max: 12, value: 12, critical: 0 },
-            throneGelt: 0,
             bio: { age: '40' },
             rogueTrader: { profitFactor: { current: 30, starting: 30, modifier: 0 } },
         },

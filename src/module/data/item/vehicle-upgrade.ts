@@ -75,7 +75,7 @@ export default class VehicleUpgradeData extends ItemDataModel.mixin(DescriptionT
             // Source book reference
             source: new fields.StringField({ required: false, initial: '', blank: true }),
 
-            // Installation cost (Throne Gelt or Influence)
+            // Installation cost
             installCost: new fields.NumberField({
                 required: true,
                 initial: 0,

@@ -165,9 +165,6 @@
  <th class="tw-text-left tw-px-2 tw-py-1">{{localize "WH40K.OriginPath.EquipmentColName"}}</th>
  <th class="tw-text-left tw-px-2 tw-py-1 tw-w-32">{{localize "WH40K.OriginPath.EquipmentColType"}}</th>
  <th class="tw-text-left tw-px-2 tw-py-1 tw-w-28">{{localize "WH40K.OriginPath.EquipmentColAvailability"}}</th>
- {{#if equipment.isHomebrew}}
- <th class="tw-text-right tw-px-2 tw-py-1 tw-w-24">{{localize "WH40K.OriginPath.EquipmentColThroneGelt"}}</th>
- {{/if}}
  </tr>
  </thead>
  <tbody>
@@ -187,12 +184,9 @@
  <td class="tw-px-2 tw-py-1 tw-font-medium">{{item.name}}</td>
  <td class="tw-px-2 tw-py-1 tw-capitalize tw-opacity-85">{{item.type}}</td>
  <td class="tw-px-2 tw-py-1 tw-opacity-85">{{item.availabilityLabel}}</td>
- {{#if ../equipment.isHomebrew}}
- <td class="tw-px-2 tw-py-1 tw-text-right tw-tabular-nums tw-opacity-90">{{#if item.throneGelt}}{{item.throneGelt}}₮{{else}}—{{/if}}</td>
- {{/if}}
  </tr>
  {{else}}
- <tr><td colspan="{{#if equipment.isHomebrew}}7{{else}}5{{/if}}" class="tw-text-center tw-py-3 tw-italic tw-opacity-70">{{localize "WH40K.OriginPath.EquipmentNoneAvailable"}}</td></tr>
+ <tr><td colspan="5" class="tw-text-center tw-py-3 tw-italic tw-opacity-70">{{localize "WH40K.OriginPath.EquipmentNoneAvailable"}}</td></tr>
  {{/each}}
  </tbody>
  </table>
@@ -573,29 +567,6 @@
  {{#if selectedOrigin.rolls.fate.hasValue}}{{localize "WH40K.OriginPath.Reroll"}}{{else}}{{localize "WH40K.Roll.Roll"}}{{/if}}
  </button>
  <button type="button" class="tw-flex tw-items-center tw-py-[var(--wh40k-space-xs)] tw-px-[var(--wh40k-space-sm)] tw-bg-[var(--wh40k-gold)] tw-border-0 tw-rounded-[var(--wh40k-radius-sm)] tw-text-[color:var(--wh40k-panel-bg-solid)] tw-text-[0.8rem] tw-font-semibold tw-cursor-pointer hover:tw-scale-105" data-action="manualStat" data-stat-type="fate" data-tooltip="{{localize 'WH40K.OriginPath.ManualTooltip'}}">
- <i class="fa-solid fa-keyboard"></i>
- </button>
- </div>
- </div>
- {{/if}}
- {{#if selectedOrigin.rolls.thrones}}
- <div class="tw-flex tw-items-center tw-justify-between tw-gap-[var(--wh40k-space-sm)] tw-p-[var(--wh40k-space-sm)] tw-bg-[rgba(0,0,0,0.2)] tw-rounded-[var(--wh40k-radius-sm)] tw-mb-[var(--wh40k-space-xs)] {{#if selectedOrigin.rolls.thrones.hasValue}}tw-border tw-border-[rgba(76,175,80,0.3)] tw-bg-[rgba(76,175,80,0.05)]{{else}}tw-border tw-border-transparent{{/if}}">
- <div class="tw-flex-1">
- <div class="tw-text-[0.85rem] tw-font-semibold tw-text-[color:var(--wh40k-text-light)]">
- <i class="fa-solid fa-coins tw-mr-[var(--wh40k-space-xs)]"></i> {{localize "WH40K.Currency.ThroneGelt"}}
- </div>
- {{#if selectedOrigin.rolls.thrones.hasValue}}
- <div class="tw-text-[0.9rem] tw-font-semibold tw-text-[color:var(--wh40k-gold)]">{{selectedOrigin.rolls.thrones.value}} <span class="tw-text-[0.75rem] tw-font-normal tw-text-[color:var(--wh40k-text-muted)]">({{selectedOrigin.rolls.thrones.breakdown}})</span></div>
- {{else}}
- <div class="tw-text-[0.75rem] tw-text-[color:var(--wh40k-text-muted)] tw-font-mono">{{selectedOrigin.rolls.thrones.formula}}</div>
- {{/if}}
- </div>
- <div class="tw-flex tw-gap-[var(--wh40k-space-xs)]">
- <button type="button" class="tw-flex tw-items-center tw-gap-[var(--wh40k-space-xs)] tw-py-[var(--wh40k-space-xs)] tw-px-[var(--wh40k-space-sm)] tw-bg-[var(--wh40k-gold)] tw-border-0 tw-rounded-[var(--wh40k-radius-sm)] tw-text-[color:var(--wh40k-panel-bg-solid)] tw-text-[0.8rem] tw-font-semibold tw-cursor-pointer hover:tw-scale-105 hover:tw-shadow-[0_2px_8px_rgba(var(--wh40k-gold-rgb),0.4)]" data-action="rollStat" data-stat-type="thrones" data-tooltip="{{localize 'WH40K.OriginPath.RollTooltip'}}">
- <i class="fa-solid fa-dice"></i>
- {{#if selectedOrigin.rolls.thrones.hasValue}}{{localize "WH40K.OriginPath.Reroll"}}{{else}}{{localize "WH40K.Roll.Roll"}}{{/if}}
- </button>
- <button type="button" class="tw-flex tw-items-center tw-py-[var(--wh40k-space-xs)] tw-px-[var(--wh40k-space-sm)] tw-bg-[var(--wh40k-gold)] tw-border-0 tw-rounded-[var(--wh40k-radius-sm)] tw-text-[color:var(--wh40k-panel-bg-solid)] tw-text-[0.8rem] tw-font-semibold tw-cursor-pointer hover:tw-scale-105" data-action="manualStat" data-stat-type="thrones" data-tooltip="{{localize 'WH40K.OriginPath.ManualTooltip'}}">
  <i class="fa-solid fa-keyboard"></i>
  </button>
  </div>

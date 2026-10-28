@@ -18,7 +18,7 @@ import { test } from './lib/test';
  *     (src/module/integrations/item-piles.ts → applyItemPilesReady) — the pile
  *     actor type seeded to `loot` (#402), which the gate also requires.
  *   - currency add / remove / transfer against the per-line wallet paths those
- *     currencies declare (system.throneGelt et al.) — multi-currency + trading.
+ *     currencies declare (system.logisticsRating) — multi-currency + trading.
  *   - item add + transfer between actors — trading physical items.
  *   - pile-flag-detected: an actor carrying the real item-piles enabled flag is
  *     recognised by OUR isItemPilesPile detector (and the module's own validity
@@ -157,7 +157,7 @@ async function probeRealModule(page: Page): Promise<{ results: FlowResult[] }> {
             return actor;
         };
         const wallet = (a: ActorRef): number => {
-            const v = g.foundry.utils.getProperty(a, 'system.throneGelt');
+            const v = g.foundry.utils.getProperty(a, 'system.logisticsRating');
             return typeof v === 'number' ? v : Number.NaN;
         };
         const hasItem = (a: ActorRef, itemName: string): boolean => Array.from(a.items ?? []).some((i) => i.name === itemName);
@@ -180,14 +180,14 @@ async function probeRealModule(page: Page): Promise<{ results: FlowResult[] }> {
             try {
                 if (donor === null || api.addCurrencies === undefined) throw new Error('setup/API unavailable');
                 await withTimeout(api.addCurrencies(donor, '5tg'), 'api.addCurrencies');
-                record('currency-add-and-read', wallet(donor) === 5, wallet(donor) === 5 ? null : `throneGelt=${String(wallet(donor))} after +5tg`);
+                record('currency-add-and-read', wallet(donor) === 5, wallet(donor) === 5 ? null : `logistics=${String(wallet(donor))} after +5tg`);
             } catch (err) {
                 record('currency-add-and-read', false, String((err as Error).message));
             }
             try {
                 if (donor === null || api.removeCurrencies === undefined) throw new Error('setup/API unavailable');
                 await withTimeout(api.removeCurrencies(donor, '2tg'), 'api.removeCurrencies');
-                record('currency-remove', wallet(donor) === 3, wallet(donor) === 3 ? null : `throneGelt=${String(wallet(donor))} after -2tg`);
+                record('currency-remove', wallet(donor) === 3, wallet(donor) === 3 ? null : `logistics=${String(wallet(donor))} after -2tg`);
             } catch (err) {
                 record('currency-remove', false, String((err as Error).message));
             }

@@ -38,7 +38,6 @@ export interface EquipmentEntry {
     availability?: string;
     availabilityLabel?: string;
     availabilityOrder?: number;
-    throneGelt?: number | null;
 }
 
 /**
@@ -110,12 +109,10 @@ interface ItemSystemLike {
     description?: { value?: string; chat?: string; summary?: string };
     requirements?: { text?: string };
     activeModifiers?: ActiveModifier[];
-    homebrew?: { throneGelt?: string; thrones?: string };
     modifiers?: WH40KItemModifiers;
     selectedChoices?: Record<string, string[] | string>;
     rollResults?: Record<string, { rolled?: number; breakdown?: string } | undefined>;
     grants?: GrantsSlice;
-    cost?: { throneGelt?: number };
 }
 
 /**

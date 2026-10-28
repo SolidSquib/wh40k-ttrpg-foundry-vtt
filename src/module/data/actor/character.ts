@@ -242,7 +242,6 @@ export default class CharacterData extends CreatureTemplate {
     };
     declare influence: number;
     declare requisition: number;
-    declare throneGelt: number;
     /**
      * Subtlety pool (core.md §"Influence And Subtlety", p. 268). DH2-only
      * concept tracking how covert the warband is. Adjusted by mission
@@ -525,7 +524,6 @@ export default class CharacterData extends CreatureTemplate {
                 max: new fields.NumberField({ required: true, initial: 100, min: 0, max: 100, integer: true }),
             }),
             requisition: new fields.NumberField({ required: true, initial: 0, min: 0, integer: true }),
-            throneGelt: new fields.NumberField({ required: true, initial: 0, min: 0, integer: true }),
 
             // ===== MENTAL STATE =====
             insanity: new fields.NumberField({ required: true, initial: 0, min: 0, integer: true }),

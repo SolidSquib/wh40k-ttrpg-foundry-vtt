@@ -57,9 +57,6 @@ export function armouryPileFlags(): Record<string, unknown> {
         // It supplies; it does not buy the cell's looted xenos junk. Selling TO
         // the Inquisition is a narrative event, not a shop transaction.
         purchaseOnly: true,
-        // Requisition is the gate, so the throne-gelt price is informational —
-        // showing it keeps `docs/VALUATION.md` visible without implying coin
-        // is what pays here.
         displayQuantity: 'no',
         openTimes: { enabled: false, status: 'open' },
     };

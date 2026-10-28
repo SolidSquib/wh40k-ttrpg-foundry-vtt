@@ -1,5 +1,4 @@
 import { availabilityDisplayLabel, type PlaceRating, placeRatingLabels } from '../../utils/config-choices.ts';
-import { WH40KSettings } from '../../wh40k-rpg-settings.ts';
 import SystemDataModel from '../abstract/system-data-model.ts';
 
 /** Availability rating keys: the configured ratings, or the full RAW list before CONFIG is ready. */
@@ -32,7 +31,6 @@ export default class PhysicalItemTemplate extends SystemDataModel {
     };
     declare cost: {
         logistics: number | null;
-        throneGelt: number | null;
     };
 
     /** @inheritdoc */
@@ -110,7 +108,6 @@ export default class PhysicalItemTemplate extends SystemDataModel {
             }),
             cost: new fields.SchemaField({
                 logistics: new fields.NumberField({ required: false, nullable: true, initial: null, min: 0 }),
-                throneGelt: new fields.NumberField({ required: false, nullable: true, initial: null, min: 0 }),
             }),
         };
     }
@@ -163,12 +160,11 @@ export default class PhysicalItemTemplate extends SystemDataModel {
     }
 
     /**
-     * Normalize the cost block to `{ logistics, throneGelt }`.
+     * Normalize the cost block to `{ logistics }`.
      *
-     * Older data carried a per-line block (`cost.ow.logistics`,
-     * `cost.ow.homebrew.throneGelt`, plus other lines'). Those are read here and
-     * discarded: Only War's branch wins, then the Dark Heresy 2e homebrew gelt
-     * (what the item sheets used to edit), then an already-flat value.
+     * Older data carried a per-line block (`cost.ow.logistics`, plus other lines'
+     * and a throne-gelt value). Those are read here and discarded: Only War's
+     * branch wins, then an already-flat value.
      * @param {object} source  The source data
      */
     // eslint-disable-next-line no-restricted-syntax -- boundary: migration helper receives raw source from _migrateData
@@ -180,28 +176,20 @@ export default class PhysicalItemTemplate extends SystemDataModel {
             if (!Number.isFinite(numericValue)) return null;
             return numericValue;
         };
-        const first = (...values: Array<number | null>): number | null => values.find((v) => v !== null) ?? null;
 
         if (source['cost'] === null || source['cost'] === undefined || typeof source['cost'] !== 'object') {
-            source['cost'] = { logistics: null, throneGelt: null };
+            source['cost'] = { logistics: null };
             return;
         }
 
         interface LegacyCost {
             logistics?: unknown; // eslint-disable-line no-restricted-syntax -- boundary: pre-migration numeric field value may be any type
-            throneGelt?: unknown; // eslint-disable-line no-restricted-syntax -- boundary: pre-migration numeric field value may be any type
-            ow?: { logistics?: unknown; homebrew?: { throneGelt?: unknown } }; // eslint-disable-line no-restricted-syntax -- boundary: pre-migration numeric field values may be any type
-            dh2?: { homebrew?: { throneGelt?: unknown } }; // eslint-disable-line no-restricted-syntax -- boundary: pre-migration numeric field value may be any type
+            ow?: { logistics?: unknown }; // eslint-disable-line no-restricted-syntax -- boundary: pre-migration numeric field value may be any type
         }
         const cost = source['cost'] as LegacyCost;
 
         source['cost'] = {
-            logistics: first(normalizeNullableNumber(cost.ow?.logistics), normalizeNullableNumber(cost.logistics)),
-            throneGelt: first(
-                normalizeNullableNumber(cost.ow?.homebrew?.throneGelt),
-                normalizeNullableNumber(cost.dh2?.homebrew?.throneGelt),
-                normalizeNullableNumber(cost.throneGelt),
-            ),
+            logistics: normalizeNullableNumber(cost.ow?.logistics) ?? normalizeNullableNumber(cost.logistics),
         };
     }
 
@@ -282,14 +270,11 @@ export default class PhysicalItemTemplate extends SystemDataModel {
 
     /**
      * Baseline Foundry-standard price for third-party economy/merchant plugins
-     * (Item Piles, Loot Sheet, …). Derived, never authored: mirrors the
-     * Only War homebrew throne-gelt valuation.
-     * In RAW worlds throne gelt is hidden, so the value is null. The structured
-     * `system.cost` remains the source of truth — see docs/VALUATION.md.
+     * (Item Piles, Loot Sheet, …). Derived, never authored: the item's Logistics
+     * cost. The structured `system.cost` remains the source of truth.
      * @type {{ value: number | null; denomination: string }}
      */
     get price(): { value: number | null; denomination: string } {
-        const gelt = this.cost.throneGelt;
-        return { value: WH40KSettings.isHomebrew() ? gelt : null, denomination: 'throne' };
+        return { value: this.cost.logistics, denomination: 'logistics' };
     }
 }

@@ -123,17 +123,15 @@
         </div>
       </div>
       
-      {{#unless hideThroneGelt}}
       <div class="tw-flex tw-items-center tw-gap-1.5 tw-flex-1 tw-justify-center">
         <div class="tw-opacity-60">
           <i class="fas fa-coins"></i>
         </div>
         <div>
           <span class="tw-text-xs tw-uppercase tw-tracking-wider tw-opacity-70">{{localize "WH40K.Cost"}}</span>
-          <span class="tw-font-medium">{{system.cost.throneGelt}}₮</span>
+          <span class="tw-font-medium">{{system.cost.logistics}}</span>
         </div>
       </div>
-      {{/unless}}
     </div>
 
     {{!-- ═══════════════════════════════════════════════════════════════════
@@ -283,7 +281,6 @@
             </div>
             
             {{!-- Economic --}}
-            {{#unless hideThroneGelt}}
             <div class="tw-mb-4">
               <div class="tw-flex tw-items-center tw-gap-2 tw-text-sm tw-font-display tw-mb-2">
                 <i class="fas fa-coins"></i>
@@ -291,13 +288,12 @@
               </div>
               <div class="tw-mb-3">
                 <div class="tw-flex tw-flex-col tw-gap-1">
-                  <label class="tw-text-xs tw-uppercase tw-tracking-wider tw-text-[color:var(--wh40k-text-muted)]">{{localize "WH40K.Ammunition.CostThrones"}}</label>
-                  <input type="number" name="system.cost.throneGelt" value="{{source.cost.throneGelt}}"
+                  <label class="tw-text-xs tw-uppercase tw-tracking-wider tw-text-[color:var(--wh40k-text-muted)]">{{localize "WH40K.Currency.Logistics"}}</label>
+                  <input type="number" name="system.cost.logistics" value="{{source.cost.logistics}}"
                          data-dtype="Number" min="0" class="tw-bg-[var(--wh40k-input-bg)] tw-border tw-border-[var(--wh40k-border-color-light)] tw-rounded-sm tw-px-2 tw-py-1 tw-text-[color:var(--wh40k-text-dark)]" />
                 </div>
               </div>
             </div>
-            {{/unless}}
             
             {{!-- Consumable Toggle --}}
             <div class="tw-mb-4">

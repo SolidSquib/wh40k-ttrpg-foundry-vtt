@@ -29,7 +29,7 @@ interface ProfaneGearArgs {
             availability: string;
             availabilityLabel: string;
             effectiveTotalWeight: number;
-            cost: { throneGelt: number };
+            cost: { logistics: number };
             description: { value: string };
             effect: string;
             profaneObjectId: string;
@@ -43,7 +43,6 @@ interface ProfaneGearArgs {
     usesExhausted: boolean;
     usesDisplay: string;
     profaneObject?: (typeof PROFANE_OBJECT_REGISTRY)[string];
-    hideThroneGelt: boolean;
 }
 
 const baseSystem = (overrides: Partial<ProfaneGearArgs['item']['system']> = {}): ProfaneGearArgs['item']['system'] => ({
@@ -60,7 +59,7 @@ const baseSystem = (overrides: Partial<ProfaneGearArgs['item']['system']> = {}):
     availability: 'unique',
     availabilityLabel: 'Unique',
     effectiveTotalWeight: 2,
-    cost: { throneGelt: 0 },
+    cost: { logistics: 0 },
     description: { value: 'Recovered from the ruined chapel beneath Hab District 9.' },
     effect: 'Bound by chains of saint-iron. Do not open in the presence of psykers.',
     profaneObjectId: 'eye-of-tzeentch',
@@ -79,7 +78,6 @@ const baseArgs = (slug: keyof typeof PROFANE_OBJECT_REGISTRY): ProfaneGearArgs =
         usesExhausted: false,
         usesDisplay: '',
         profaneObject: PROFANE_OBJECT_REGISTRY[slug],
-        hideThroneGelt: true,
     };
 };
 

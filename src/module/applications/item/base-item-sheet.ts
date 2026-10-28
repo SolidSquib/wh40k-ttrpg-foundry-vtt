@@ -206,7 +206,6 @@ export default class BaseItemSheet<TItem extends WH40KItemDocument = WH40KItemDo
             ruleset,
             isHomebrew: ruleset === 'homebrew',
             isRaw: ruleset === 'raw',
-            hideThroneGelt: ruleset === 'raw',
             isEditable: this.isEditable,
             editable: this.isEditable, // Alias for template compatibility with {{editor}} helper
             owner: this.item.isOwner, // Required for {{editor}} helper
