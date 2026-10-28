@@ -312,9 +312,26 @@ function declaredRawLines(system: Record<string, unknown>): string[] {
     return [...out];
 }
 
+/**
+ * The origin's `system` as plain data. A compendium Document's `system` is a DataModel instance, and
+ * the builder writes the player's picks and rolls straight onto the selection's `system`. On a DataModel
+ * those writes land on the instance, not on its `_source`, so Foundry stored the defaults when the item
+ * was created (the picks were applied once, in memory, then lost) — and they leaked into the cached
+ * compendium document. Plain data has neither problem.
+ */
+// eslint-disable-next-line no-restricted-syntax -- boundary: `system` is a raw Foundry value that is either a DataModel (has toObject) or an already-plain record
+function plainSystem(value: unknown): Record<string, unknown> {
+    if (isRecord(value)) {
+        const toObject = value['toObject'];
+        // eslint-disable-next-line no-restricted-syntax -- boundary: DataModel#toObject returns the plain source copy; validated by asRecord on the same line
+        if (typeof toObject === 'function') return asRecord((toObject as () => unknown).call(value));
+    }
+    return asRecord(value);
+}
+
 // eslint-disable-next-line no-restricted-syntax -- boundary: normalizeOrigin is the top-level entry point for raw Foundry compendium documents; asRecord and type coercion helpers validate every field access
 export function normalizeOrigin(doc: Record<string, unknown>): NormalizedOrigin {
-    const system = asRecord(doc['system']);
+    const system = plainSystem(doc['system']);
     const grants = normalizeGrants(system['grants']);
     const positions = resolvePositions(system);
     const descriptionRecord = asRecord(system['description']);

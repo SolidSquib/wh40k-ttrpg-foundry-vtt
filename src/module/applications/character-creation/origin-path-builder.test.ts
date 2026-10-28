@@ -1858,3 +1858,64 @@ describe('OriginPathBuilder._getBlockingAptitudeCollisions', () => {
         expect(blocking(makeHost([], ['Toughness']))).toEqual([]);
     });
 });
+
+/**
+ * Reopening the builder on a built character restores only the builder's own steps. The regiment's options
+ * (home world, commanding officer, …) are on the actor too, but restoring them as selections made the next
+ * apply re-grant and re-create all of them — duplicate talents and options.
+ */
+describe('OriginPathBuilder._initializeFromActor', () => {
+    interface OwnedOrigin {
+        type: string;
+        name: string;
+        system: { step: string };
+    }
+    interface RestoreHost {
+        actor: { items: { filter: (predicate: (item: OwnedOrigin) => boolean) => OwnedOrigin[] }; system: { electiveAptitudes: string[] } };
+        systemConfig: { coreSteps: Array<{ step: string }>; optionalStep: null };
+        selections: Map<string, { name: string }>;
+        lineageSelection: { name: string } | null;
+        aptitudeOverrides: Map<string, string>;
+        orderedSteps: Array<{ step: string }>;
+        currentStepIndex: number;
+        _itemToSelectionData: (item: OwnedOrigin) => { name: string };
+        _refreshPathPositions: () => void;
+        _getAptitudeCollisions: () => Array<{ original: string; replacement: string | null }>;
+        _restoreBuilderFlagState: () => void;
+    }
+
+    function restore(items: OwnedOrigin[], electives: string[] = [], collisions: Array<{ original: string; replacement: string | null }> = []): RestoreHost {
+        const host: RestoreHost = {
+            actor: { items: { filter: (predicate) => items.filter(predicate) }, system: { electiveAptitudes: electives } },
+            systemConfig: { coreSteps: [{ step: 'regiment' }, { step: 'speciality' }], optionalStep: null },
+            selections: new Map(),
+            lineageSelection: null,
+            aptitudeOverrides: new Map(),
+            orderedSteps: [{ step: 'regiment' }, { step: 'speciality' }],
+            currentStepIndex: 0,
+            _itemToSelectionData: (item) => ({ name: item.name }),
+            _refreshPathPositions: () => {},
+            _getAptitudeCollisions: () => collisions,
+            _restoreBuilderFlagState: () => {},
+        };
+        proto._initializeFromActor.call(host);
+        return host;
+    }
+
+    const owned = (type: string, name: string, step: string): OwnedOrigin => ({ type, name, system: { step } });
+
+    it('selects the regiment and speciality but not the regiment options', () => {
+        const host = restore([
+            owned('regiment', 'Vostroyan Firstborn', 'regiment'),
+            owned('regimentOption', 'Imperial World', 'homeWorld'),
+            owned('regimentOption', 'Choleric', 'commandingOfficer'),
+            owned('speciality', 'Weapon Specialist', 'speciality'),
+        ]);
+        expect([...host.selections.keys()]).toEqual(['regiment', 'speciality']);
+    });
+
+    it('re-pairs the committed replacement aptitudes with the duplicates they resolve', () => {
+        const host = restore([owned('speciality', 'Weapon Specialist', 'speciality')], ['Toughness'], [{ original: 'Ballistic Skill', replacement: null }]);
+        expect([...host.aptitudeOverrides]).toEqual([['Ballistic Skill', 'Toughness']]);
+    });
+});

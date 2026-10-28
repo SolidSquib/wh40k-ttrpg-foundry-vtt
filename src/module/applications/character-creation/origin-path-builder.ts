@@ -718,13 +718,17 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
     _initializeFromActor(): void {
         const originItems = this.actor.items.filter((i) => isOriginItemType(i.type));
         const optionalStepKey = this.systemConfig.optionalStep?.step ?? this.systemConfig.optionalStep?.key;
+        // Only the builder's own steps are selections. The regiment's options (home world, commanding officer,
+        // doctrines, …) sit on the actor too, created when the regiment was applied; they are not steps here,
+        // and restoring them as selections made the next apply re-grant and re-create all of them.
+        const coreStepKeys = new Set(this.systemConfig.coreSteps.map((core) => core.step));
         for (const item of originItems) {
             const step = item.system.step;
             // Store as plain data objects with metadata for tracking
             const originData = this._itemToSelectionData(item);
             if (optionalStepKey !== undefined && optionalStepKey !== '' && step === optionalStepKey) {
                 this.lineageSelection = originData;
-            } else if (typeof step === 'string' && step !== '') {
+            } else if (typeof step === 'string' && coreStepKeys.has(step)) {
                 this.selections.set(step, originData);
             }
         }

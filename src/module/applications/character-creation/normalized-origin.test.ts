@@ -96,3 +96,33 @@ describe('normalizeOrigin officialLines — flattened-source fallback (#295)', (
         expect(normalizeOrigin(doc).officialLines).toEqual(['dh2']);
     });
 });
+
+describe('normalizeOrigin system data', () => {
+    /** Stands in for a compendium Document's DataModel `system`: its data lives in `_source`, and `toObject()` copies it. */
+    class FakeDataModel {
+        readonly _source: { step: string; selectedChoices: Record<string, string[]> } = { step: 'speciality', selectedChoices: {} };
+        step = 'speciality';
+        selectedChoices: Record<string, string[]> = {};
+        toObject(): { step: string; selectedChoices: Record<string, string[]> } {
+            return structuredClone(this._source);
+        }
+    }
+
+    it('returns plain data, so picks written to the selection are real fields and never touch the source document', () => {
+        const model = new FakeDataModel();
+        const origin = normalizeOrigin({ name: 'Medic', type: 'speciality', system: model });
+
+        expect(origin.system).not.toBeInstanceOf(FakeDataModel);
+        origin.system['selectedChoices'] = { Skill: ['Athletics'] };
+
+        expect(origin.system['selectedChoices']).toEqual({ Skill: ['Athletics'] });
+        expect(model.selectedChoices).toEqual({});
+        expect(model._source.selectedChoices).toEqual({});
+        expect(origin.step).toBe('speciality');
+    });
+
+    it('keeps an already-plain system as it is', () => {
+        const system = { step: 'regiment', selectedChoices: {} };
+        expect(normalizeOrigin({ name: 'X', system }).system).toBe(system);
+    });
+});
