@@ -35,7 +35,7 @@ import { cloneGrantedItemData } from './grant-materialize.ts';
 import { type NormalizedChoice, type NormalizedChoiceOption, type NormalizedOrigin, normalizeOrigin } from './normalized-origin.ts';
 import OriginDetailDialog from './origin-detail-dialog.ts';
 import OriginPathChoiceDialog from './origin-path-choice-dialog.ts';
-import { type OriginStatType, rollOriginStat } from './origin-stat-roll.ts';
+import { type OriginStatType, pruneUnrolledResults, rollOriginStat } from './origin-stat-roll.ts';
 import { openRegimentPicks, previewRegimentPresets, regimentPickBonuses, withoutRegimentPreview } from './regiment-preview.ts';
 import type {
     ActiveModifier,
@@ -731,6 +731,16 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
 
         this._refreshPathPositions();
 
+        // Re-pair the replacement aptitudes the player committed earlier with the duplicates they resolve,
+        // so reopening the builder does not demand the same choice again.
+        const committed = this.actor.system.electiveAptitudes.filter((apt) => apt.trim() !== '');
+        const duplicates = this._getAptitudeCollisions().filter((c) => c.replacement === null || c.replacement === '');
+        duplicates.forEach((collision, index) => {
+            const pick = committed[index];
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- noUncheckedIndexedAccess parser mismatch: tsconfig.test.json (flag off) types `pick` as defined, tsc (flag on) requires the undefined guard
+            if (pick !== undefined) this.aptitudeOverrides.set(collision.original, pick);
+        });
+
         // Restore builder-specific state from actor flags — things that don't live on
         // individual origin items (equipment selections, characteristic generation input).
         this._restoreBuilderFlagState();
@@ -895,6 +905,7 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
         if (normalized.system['rollResults'] === undefined) {
             normalized.system['rollResults'] = persistedRolls !== undefined ? foundry.utils.deepClone(persistedRolls) : {};
         }
+        normalized.system['rollResults'] = pruneUnrolledResults(normalized.system['rollResults'] as Parameters<typeof pruneUnrolledResults>[0]);
         /* eslint-enable no-restricted-syntax */
         normalized._sourceUuid = data._sourceUuid ?? normalized._sourceUuid ?? null;
         normalized._actorItemId = data._actorItemId ?? normalized._actorItemId ?? null;
@@ -2370,7 +2381,7 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
 
         if (grants.woundsFormula !== undefined && grants.woundsFormula !== '') {
             const woundsResult = rollResults['wounds'];
-            const hasRolled = woundsResult?.rolled !== undefined;
+            const hasRolled = typeof woundsResult?.rolled === 'number';
             rolls['wounds'] = {
                 formula: grants.woundsFormula,
                 hasValue: hasRolled,
@@ -2381,7 +2392,7 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
 
         if (grants.fateFormula !== undefined && grants.fateFormula !== '') {
             const fateResult = rollResults['fate'];
-            const hasRolled = fateResult?.rolled !== undefined;
+            const hasRolled = typeof fateResult?.rolled === 'number';
             rolls['fate'] = {
                 formula: grants.fateFormula,
                 hasValue: hasRolled,
@@ -2707,11 +2718,11 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
             // Get wounds/fate from roll results
             const rollResults: Record<string, { rolled?: number; breakdown?: string } | undefined> = system.rollResults ?? {};
             const woundsResult = rollResults['wounds'];
-            if (woundsResult?.rolled !== undefined) {
+            if (typeof woundsResult?.rolled === 'number') {
                 preview.wounds = (preview.wounds ?? 0) + woundsResult.rolled;
             }
             const fateResult = rollResults['fate'];
-            if (fateResult?.rolled !== undefined) {
+            if (typeof fateResult?.rolled === 'number') {
                 preview.fate = (preview.fate ?? 0) + fateResult.rolled;
             }
         }
@@ -3307,10 +3318,10 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
             }
 
             // Count pending rolls
-            if (grants.woundsFormula !== undefined && grants.woundsFormula !== '' && rollResults['wounds']?.rolled === undefined) {
+            if (grants.woundsFormula !== undefined && grants.woundsFormula !== '' && typeof rollResults['wounds']?.rolled !== 'number') {
                 pendingRolls++;
             }
-            if (grants.fateFormula !== undefined && grants.fateFormula !== '' && rollResults['fate']?.rolled === undefined) {
+            if (grants.fateFormula !== undefined && grants.fateFormula !== '' && typeof rollResults['fate']?.rolled !== 'number') {
                 pendingRolls++;
             }
         }
@@ -4000,9 +4011,9 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
         const system = this._getSelectionSystem(selection);
         const grants: NonNullable<OriginPathSystemData['grants']> = system.grants ?? {};
         const rolled = system.rollResults ?? {};
-        if (grants.woundsFormula !== undefined && grants.woundsFormula !== '' && rolled['wounds']?.rolled === undefined)
+        if (grants.woundsFormula !== undefined && grants.woundsFormula !== '' && typeof rolled['wounds']?.rolled !== 'number')
             await this._rollSelectionStat(selection, 'wounds');
-        if (grants.fateFormula !== undefined && grants.fateFormula !== '' && rolled['fate']?.rolled === undefined)
+        if (grants.fateFormula !== undefined && grants.fateFormula !== '' && typeof rolled['fate']?.rolled !== 'number')
             await this._rollSelectionStat(selection, 'fate');
     }
 
@@ -4779,6 +4790,9 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
             // eslint-disable-next-line no-restricted-syntax -- boundary: actor.update() accepts an untyped path-keyed payload; Record<string,unknown> is the documented pattern
             const resourceUpdate: Record<string, unknown> = {};
             if (this._divination !== '') resourceUpdate['system.originPath.divination'] = this._divination;
+            // The replacement aptitudes the player chose for duplicate grants. The actor derives its aptitude
+            // set from its origins plus these electives, so they must be stored or the swap is lost.
+            resourceUpdate['system.electiveAptitudes'] = [...this.aptitudeOverrides.values()].filter((apt) => apt !== '');
             if (this._influenceRolled !== 0) resourceUpdate['system.influence'] = this._influenceRolled;
 
             // Sum rolled wounds + rolled fate across every committed origin so
@@ -4899,10 +4913,10 @@ export default class OriginPathBuilder extends HandlebarsApplicationMixin(Applic
             const rollResults = (selection.system as OriginPathSystemData).rollResults ?? {};
             const woundsResult = rollResults['wounds'];
             const fateResult = rollResults['fate'];
-            if (woundsResult?.rolled !== undefined) {
+            if (typeof woundsResult?.rolled === 'number') {
                 values.wounds = (values.wounds ?? 0) + woundsResult.rolled;
             }
-            if (fateResult?.rolled !== undefined) {
+            if (typeof fateResult?.rolled === 'number') {
                 values.fate = (values.fate ?? 0) + fateResult.rolled;
             }
         }

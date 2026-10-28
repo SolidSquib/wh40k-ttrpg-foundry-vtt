@@ -33,6 +33,24 @@ export interface OriginStatRoll {
 
 const TB_TERM = /(\d+)xTB/gi;
 
+/** A stored roll slot: the schema initialises it to `{ rolled: null }` until a roll is made. */
+interface StoredStatRoll {
+    rolled?: number | null | undefined;
+}
+
+/**
+ * Drop roll slots that hold no roll. The origin schema seeds `rolled: null`, which the builder's
+ * "has this been rolled?" checks (`rolled === undefined`) read as already rolled — so an unrolled
+ * origin looked finished and was never auto-rolled. Pruning the empty slots makes absence mean unrolled.
+ */
+export function pruneUnrolledResults<T extends StoredStatRoll>(results: Record<string, T | undefined> | undefined): Record<string, T> {
+    const kept: Record<string, T> = {};
+    for (const [stat, entry] of Object.entries(results ?? {})) {
+        if (entry !== undefined && typeof entry.rolled === 'number') kept[stat] = entry;
+    }
+    return kept;
+}
+
 /** `"2xTB+1d5"` → `"2×4+1d5"` — the formula as shown to the player. */
 export function expandWoundsFormula(formula: string, tb: number): string {
     return formula.replace(TB_TERM, (_match, multiplier: string) => `${multiplier}×${tb}`);

@@ -137,6 +137,8 @@ async function applyRegimentKit(actor: WH40KBaseActor, state: RegimentState, cat
     }
     // eslint-disable-next-line no-restricted-syntax -- boundary: createEmbeddedDocuments takes Foundry's generated create-data union; OwnedItemData is a cloned compendium payload
     if (gear.length > 0) await actor.createEmbeddedDocuments('Item', gear as CreateItemData);
+    // The kit repeats items other grants issue (a Speciality's Specialist Equipment); fold them into one stack.
+    await actor.mergeItemStacks();
 }
 
 /** Swap the squad Logistics Rating bonus a regiment gives, so a re-commit replaces the last one. */

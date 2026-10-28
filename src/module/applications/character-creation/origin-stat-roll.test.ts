@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { expandWoundsFormula, formatWoundsBreakdown, resolveFateFormula, substituteToughnessBonus } from './origin-stat-roll.ts';
+import { expandWoundsFormula, formatWoundsBreakdown, pruneUnrolledResults, resolveFateFormula, substituteToughnessBonus } from './origin-stat-roll.ts';
 
 describe('wounds formulas', () => {
     it('substitutes Toughness Bonus for the roll and for display', () => {
@@ -31,5 +31,16 @@ describe('resolveFateFormula', () => {
 
     it('is 0 and says so when no band matches', () => {
         expect(resolveFateFormula('(1-3|=2)', 9).total).toBe(0);
+    });
+});
+
+describe('pruneUnrolledResults', () => {
+    it('drops the schema-seeded null slots and keeps real rolls', () => {
+        const kept = pruneUnrolledResults({ wounds: { rolled: null }, fate: { rolled: 3 } });
+        expect(kept).toEqual({ fate: { rolled: 3 } });
+    });
+
+    it('treats a missing object as no rolls', () => {
+        expect(pruneUnrolledResults(undefined)).toEqual({});
     });
 });
