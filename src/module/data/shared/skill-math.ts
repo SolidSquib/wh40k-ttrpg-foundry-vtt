@@ -2,18 +2,15 @@
  * Pure skill-target math shared by `CreatureTemplate` (PC path) and `NPCData`
  * (#423). The untrained-base rule and the trained rank ladder were duplicated
  * three times (creature skill body, creature specialist entry, NPC
- * `getSkillTarget`). System-agnostic across all 7 lines: the only branch is the
- * `usesAptitudes` flag (DH2e-style flat −20 vs. career half-characteristic).
+ * `getSkillTarget`).
  */
 
 /**
- * Untrained-skill base value. In systems that use aptitudes (DH2e's
- * Known/Trained/Experienced/Veteran ladder) an untrained test is the full
- * characteristic minus a flat 20; career-based systems use half the
- * characteristic (rounded down). Pure.
+ * Untrained-skill base value: the full characteristic minus a flat 20
+ * (Known/Trained/Experienced/Veteran ladder). Pure.
  */
-export function untrainedSkillBase(charTotal: number, usesAptitudes: boolean): number {
-    return usesAptitudes ? charTotal - 20 : Math.floor(charTotal / 2);
+export function untrainedSkillBase(charTotal: number): number {
+    return charTotal - 20;
 }
 
 /** The rank-derived display flags and computed target for a skill. */
@@ -43,8 +40,8 @@ export interface SkillTarget {
  *
  * `flatBonus` is the caller's already-defaulted `skill.bonus || 0`. Pure.
  */
-export function computeSkillTarget(charTotal: number, effectiveRank: number, flatBonus: number, usesAptitudes: boolean): SkillTarget {
-    const baseValue = effectiveRank > 0 ? charTotal : untrainedSkillBase(charTotal, usesAptitudes);
+export function computeSkillTarget(charTotal: number, effectiveRank: number, flatBonus: number): SkillTarget {
+    const baseValue = effectiveRank > 0 ? charTotal : untrainedSkillBase(charTotal);
     const trainingBonus = effectiveRank >= 4 ? 30 : effectiveRank >= 3 ? 20 : effectiveRank >= 2 ? 10 : 0;
     return {
         rank: effectiveRank,

@@ -214,7 +214,7 @@ describe('skill tooltip regressions', () => {
         expect(html).not.toContain(localizeKey('WH40K.Tooltip.Skill.UntrainedHalfBase'));
     });
 
-    it('computes the −20 untrained base in prepared payload for aptitude systems', () => {
+    it('computes the −20 untrained base in the prepared payload', () => {
         const skill = {
             label: 'Awareness',
             characteristic: 'perception',
@@ -229,17 +229,13 @@ describe('skill tooltip regressions', () => {
             perception: makeCharacteristic('Perception', 37),
         };
 
-        // DH2 → −20 (char 37 → 17); RT → ÷2 (char 37 → 18); unknown system
-        // falls back to the DH2 family default (−20).
-        const dh2 = JSON.parse(prepareSkillTooltipData('awareness', skill, characteristics, 'Actor.mock', 'dh2')) as {
+        // Only War → −20 (char 37 → 17); an unknown system falls back to the same default.
+        const ow = JSON.parse(prepareSkillTooltipData('awareness', skill, characteristics, 'Actor.mock', 'ow')) as {
             baseValue?: number;
             gameSystem?: string;
         };
-        expect(dh2.baseValue).toBe(17);
-        expect(dh2.gameSystem).toBe('dh2');
-
-        const rt = JSON.parse(prepareSkillTooltipData('awareness', skill, characteristics, 'Actor.mock', 'rt')) as { baseValue?: number };
-        expect(rt.baseValue).toBe(18);
+        expect(ow.baseValue).toBe(17);
+        expect(ow.gameSystem).toBe('ow');
 
         const unknown = JSON.parse(prepareSkillTooltipData('awareness', skill, characteristics, 'Actor.mock', 'made-up')) as { baseValue?: number };
         expect(unknown.baseValue).toBe(17);

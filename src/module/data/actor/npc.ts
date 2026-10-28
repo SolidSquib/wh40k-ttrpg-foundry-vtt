@@ -814,10 +814,8 @@ export default class NPCData extends HordeTemplate(ActorDataModel) {
     skillEntryTarget(entry: NPCV2SkillEntry, fallbackCharacteristic: string): number {
         const char = this.getCharacteristic(entry.characteristic ?? fallbackCharacteristic);
         if (char === null) return 0;
-        const gameSystem = (this.constructor as { gameSystem?: string }).gameSystem;
-        const systemConfig = gameSystem !== undefined ? SystemConfigRegistry.getOrNull(gameSystem) : null;
         const rank = NPCData.skillRankOf(entry);
-        return computeSkillTarget(char.total, rank, entry.bonus ?? 0, systemConfig?.usesAptitudes === true).current;
+        return computeSkillTarget(char.total, rank, entry.bonus ?? 0).current;
     }
 
     /* -------------------------------------------- */
@@ -891,17 +889,12 @@ export default class NPCData extends HordeTemplate(ActorDataModel) {
         const char = this.getCharacteristic(charKey);
         if (char === null) return 0;
 
-        const gameSystem = (this.constructor as { gameSystem?: string }).gameSystem;
-        const systemConfig = gameSystem !== undefined ? SystemConfigRegistry.getOrNull(gameSystem) : null;
-        const usesAptitudes = systemConfig?.usesAptitudes === true;
-
         let target: number;
         if (skill !== undefined) {
-            target = computeSkillTarget(char.total, NPCData.skillRankOf(skill), skill.bonus !== 0 ? skill.bonus : 0, usesAptitudes).current;
+            target = computeSkillTarget(char.total, NPCData.skillRankOf(skill), skill.bonus !== 0 ? skill.bonus : 0).current;
         } else {
-            // Untrained: flat -20 in DH2e (Known/Trained/Experienced/Veteran ladder),
-            // half characteristic for career-based systems (#423).
-            target = untrainedSkillBase(char.total, usesAptitudes);
+            // Untrained: flat -20 (Known/Trained/Experienced/Veteran ladder).
+            target = untrainedSkillBase(char.total);
         }
 
         // Apply custom override if enabled

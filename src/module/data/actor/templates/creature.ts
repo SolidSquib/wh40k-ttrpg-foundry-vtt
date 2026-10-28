@@ -994,7 +994,7 @@ export default class CreatureTemplate extends CommonTemplate {
             // Rank flags + target: full characteristic once trained, flat -20 in
             // DH2e / half characteristic for career systems when untrained, plus the
             // rank>=4?30:rank>=3?20:rank>=2?10:0 training ladder and skill.bonus (#423).
-            const skillTarget = computeSkillTarget(charTotal, effectiveRank, skill.bonus || 0, systemConfig?.usesAptitudes === true);
+            const skillTarget = computeSkillTarget(charTotal, effectiveRank, skill.bonus || 0);
 
             // Store rank data for display and advancement dialog
             skill.rank = skillTarget.rank;
@@ -1024,7 +1024,7 @@ export default class CreatureTemplate extends CommonTemplate {
                     const entryOriginRank = this._getOriginPathSkillRank(key, entry.name || entry.specialization);
                     const entryEffectiveRank = Math.min(entryOriginRank + (entry.advance || 0), 4);
 
-                    const entryTarget = computeSkillTarget(entryCharTotal, entryEffectiveRank, entry.bonus || 0, systemConfig?.usesAptitudes === true);
+                    const entryTarget = computeSkillTarget(entryCharTotal, entryEffectiveRank, entry.bonus || 0);
 
                     entry.rank = entryTarget.rank;
                     entry.originRank = entryOriginRank;

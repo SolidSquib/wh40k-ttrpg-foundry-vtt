@@ -32,9 +32,6 @@ function extractContextAptitudes(
 }
 
 export class OWSystemConfig {
-    readonly usesAptitudes = true;
-    readonly usesCareerTables = false;
-
     readonly id = 'ow' as const;
     readonly label = 'WH40K.SETTINGS.PrimaryGameSystem.Choices.ow';
     readonly cssClass = 'only-war';
