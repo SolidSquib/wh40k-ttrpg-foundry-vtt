@@ -78,8 +78,8 @@ export class OWSystemConfig {
     getHeaderFields(actor: WH40KBaseActor): SidebarHeaderField[] {
         return [
             this.makeOriginField(actor, 'WH40K.OriginPath.HomeWorld', 'homeWorld'),
-            this.makeOriginField(actor, 'WH40K.OriginPath.Regiment', 'background'),
-            this.makeOriginField(actor, 'WH40K.OriginPath.Speciality', 'role'),
+            this.makeOriginField(actor, 'WH40K.OriginPath.Regiment', 'regiment'),
+            this.makeOriginField(actor, 'WH40K.OriginPath.Speciality', 'speciality'),
             this.makeOriginField(actor, 'WH40K.OriginPath.Demeanour', 'motivation'),
         ];
     }

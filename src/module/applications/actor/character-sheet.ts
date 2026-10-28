@@ -980,7 +980,7 @@ export default class CharacterSheet extends BaseActorSheet {
 
         // Check if origin path is complete (has at least homeWorld + background + role)
         const op = this.actor.system.originPath;
-        ctx.originPathComplete = op.homeWorld !== '' && op.background !== '' && op.role !== '';
+        ctx.originPathComplete = op.homeWorld !== '' && op.regiment !== '' && op.speciality !== '';
 
         return context;
     }
@@ -3836,7 +3836,7 @@ export default class CharacterSheet extends BaseActorSheet {
         if (!WH40KSettings.isOriginPathPromptEnabled()) return;
         if ((this.actor.type as string).includes('npc')) return;
         const op = this.actor.system.originPath;
-        const built = op.homeWorld !== '' && op.background !== '' && op.role !== '';
+        const built = op.homeWorld !== '' && op.regiment !== '' && op.speciality !== '';
         if (built) return;
         if (this.actor.getFlag('wh40k-rpg', 'originPromptDismissed') === true) return;
 

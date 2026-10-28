@@ -63,8 +63,8 @@ function makeActor(overrides: ActorLike = {}): WH40KBaseActor {
             bio: { playerName: 'Mona' },
             originPath: {
                 homeWorld: 'Hive World',
-                background: 'Imperial Guard',
-                role: 'Warrior',
+                regiment: 'Imperial Guard',
+                speciality: 'Warrior',
                 career: 'Adept',
                 motivation: 'Duty',
                 trialsAndTravails: 'Ambushed',
@@ -85,16 +85,16 @@ describe('OWSystemConfig.getHeaderFields — name-path stability per system', ()
     // the Player row was dropped from getHeaderFields() — the player name is rendered as a paired
     // input on the identity row instead. These tests assert the post-removal field order.
 
-    it('ow returns HomeWorld + Regiment(background) + Speciality(role) + Demeanour(motivation)', () => {
+    it('ow returns HomeWorld + Regiment + Speciality + Demeanour(motivation)', () => {
         const fields = SystemConfigRegistry.get('ow').getHeaderFields(makeActor());
         expect(names(fields)).toEqual([
             'system.originPath.homeWorld',
-            'system.originPath.background',
-            'system.originPath.role',
+            'system.originPath.regiment',
+            'system.originPath.speciality',
             'system.originPath.motivation',
         ]);
-        expect(fields.find((f) => f.label === 'Regiment')?.name).toBe('system.originPath.background');
-        expect(fields.find((f) => f.label === 'Speciality')?.name).toBe('system.originPath.role');
+        expect(fields.find((f) => f.label === 'Regiment')?.name).toBe('system.originPath.regiment');
+        expect(fields.find((f) => f.label === 'Speciality')?.name).toBe('system.originPath.speciality');
         expect(fields.find((f) => f.label === 'Demeanour')?.name).toBe('system.originPath.motivation');
     });
 
