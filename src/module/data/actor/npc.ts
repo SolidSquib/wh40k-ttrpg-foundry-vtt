@@ -203,6 +203,7 @@ export default class NPCData extends HordeTemplate(ActorDataModel) {
     declare nature: 'none' | 'swarm' | 'creature' | 'daemon' | 'xenos';
     declare threatLevel: number;
     declare fate: { value: number; max: number };
+    declare fatigue: { value: number; max: number };
     declare characteristics: {
         weaponSkill: NPCCharacteristicData;
         ballisticSkill: NPCCharacteristicData;
@@ -417,6 +418,13 @@ export default class NPCData extends HordeTemplate(ActorDataModel) {
 
             // === WOUNDS ===
             wounds: woundsField({ max: 10, value: 10, critical: 0, nullable: true }),
+
+            // Fatigue. The fatigue panel on the NPC tab, the Assign Damage dialog and damage assignment (which adds
+            // fatigue damage to `value`) all read `system.fatigue`, so an NPC must carry it like a character does.
+            fatigue: new SchemaField({
+                max: new NumberField({ required: true, initial: 0, min: 0, integer: true }),
+                value: new NumberField({ required: true, initial: 0, min: 0, integer: true }),
+            }),
 
             // === MOVEMENT ===
             movement: movementField({ half: 3, full: 6, charge: 9, run: 18, withLeap: false }),

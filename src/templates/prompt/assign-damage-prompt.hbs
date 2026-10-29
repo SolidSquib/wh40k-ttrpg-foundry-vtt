@@ -37,7 +37,7 @@
             {{/systems/wh40k-rpg/templates/prompt/partial/prompt-row.hbs}}
             {{#> systems/wh40k-rpg/templates/prompt/partial/prompt-row.hbs label="Damage Type"}}
                 <select class="tw-min-w-[140px] tw-px-3 tw-py-2 tw-bg-black/30 tw-border tw-border-solid tw-border-white/10 tw-rounded-md tw-text-gray-200 tw-text-sm" name="hit.damageType" id="damageType">
-                    {{selectOptions damageType selected=this.hit.damageType}}
+                    {{selectOptions damageType selected=this.hitDamageType}}
                 </select>
             {{/systems/wh40k-rpg/templates/prompt/partial/prompt-row.hbs}}
 

@@ -16,6 +16,7 @@ import {
 import { type BreakCheck, magnitudeLossForHit, resolveBreakCheck } from '../rules/horde-magnitude.ts';
 import { type ActorStateSource, collectActorStates } from '../rules/situation-tags.ts';
 import type { WH40KBaseActorDocument } from '../types/global.d.ts';
+import { isNpcArmour, type NpcArmourBag, type NpcDefenceSystem, npcLocationDefence } from '../utils/npc-location-armour.ts';
 import { postFlattenedInstanceToChat } from './roll-helpers.ts';
 import { buildWoundTransition, prepareWoundTransitionTooltip, type WoundTransition } from './wound-transition.ts';
 
@@ -35,7 +36,9 @@ interface ActorHordeState {
 /** Minimal actor shape needed for damage assignment. Exported for tests. */
 export interface ActorLike extends ActorStateSource {
     system: {
-        armour: Record<string, { value: number; toughnessBonus: number }>;
+        /** A character's armour per location, or an NPC's plain numbers under `locations` (its bonus is on Toughness). */
+        armour: Record<string, { value: number; toughnessBonus: number }> | NpcArmourBag;
+        characteristics?: NpcDefenceSystem['characteristics'];
         // `max` is on the DataModel schema for both tracks; this local view
         // simply hadn't declared it. Needed for the "/ 12" context in the
         // applied-damage hover (#504) — optional because a track without a
@@ -170,10 +173,18 @@ export class AssignDamageData {
         this.coverAP = this.hit.coverAP ?? 0;
         const location = this.hit.location;
         if (location) {
-            for (const [name, locationArmour] of Object.entries(this.actor.system.armour)) {
-                if (location.replace(/\s/g, '').toUpperCase() === name.toUpperCase()) {
-                    this.armour = locationArmour.value;
-                    this.tb = locationArmour.toughnessBonus;
+            // An NPC keeps armour points under `armour.locations` and its Toughness bonus on the characteristic.
+            const armour = this.actor.system.armour;
+            const npc = isNpcArmour(armour) ? npcLocationDefence(this.actor.system, location) : undefined;
+            if (npc !== undefined) {
+                this.armour = npc.value;
+                this.tb = npc.toughnessBonus;
+            } else if (!isNpcArmour(armour)) {
+                for (const [name, locationArmour] of Object.entries(armour)) {
+                    if (location.replace(/\s/g, '').toUpperCase() === name.toUpperCase()) {
+                        this.armour = locationArmour.value;
+                        this.tb = locationArmour.toughnessBonus;
+                    }
                 }
             }
         }

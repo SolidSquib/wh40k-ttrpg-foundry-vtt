@@ -2,7 +2,9 @@
  * @file AssignDamageDialog - V2 dialog for damage assignment
  */
 
+import { normalizeDamageType } from '../../rules/damage-type.ts';
 import { hitDropdown } from '../../rules/hit-locations.ts';
+import { flattenNestedForms } from '../../utils/dom-forms.ts';
 import BaseRollDialog from './base-roll-dialog.ts';
 
 /**
@@ -45,8 +47,12 @@ export default class AssignDamageDialog extends BaseRollDialog {
     /** @inheritDoc */
     // eslint-disable-next-line no-restricted-syntax -- boundary: ApplicationV2._prepareContext must return Record<string,unknown> per framework contract
     override async _prepareContext(options: ApplicationV2Config.RenderOptions): Promise<Record<string, unknown>> {
+        const context = await super._prepareContext(options);
+        // A hit's damage type arrives in whatever case the weapon wrote it ("energy"); the dropdown's keys are the
+        // canonical names ("Energy"), so a plain value would match no option and the select would show its first.
+        const hit = context['hit'] as { damageType?: string } | undefined;
         // The location dropdown labels are localized at render time, not baked into the damage data.
-        return { ...(await super._prepareContext(options)), locations: hitDropdown() };
+        return { ...context, locations: hitDropdown(), hitDamageType: normalizeDamageType(hit?.damageType) ?? 'Impact' };
     }
 
     /* -------------------------------------------- */
@@ -57,6 +63,10 @@ export default class AssignDamageDialog extends BaseRollDialog {
     // eslint-disable-next-line no-restricted-syntax -- boundary: ApplicationV2 _onRender context/options are untyped Record at the base class level
     override async _onRender(context: Record<string, unknown>, options: Record<string, unknown>): Promise<void> {
         await super._onRender(context, options);
+
+        // The template wraps its content in a second <form>. Its fields would not belong to this dialog's own form,
+        // so the form reader saw none of them and every change to a dropdown or number was discarded on re-render.
+        flattenNestedForms(this.element);
 
         // Set up button listeners
         this.element.querySelector('#assign-damage')?.addEventListener('click', (e) => {

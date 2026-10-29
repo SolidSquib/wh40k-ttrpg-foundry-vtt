@@ -121,6 +121,55 @@ describe('AssignDamageData cover AP wiring', () => {
     });
 });
 
+/** An NPC as the damage code sees it: armour points as plain numbers under `locations`, Toughness bonus on the characteristic. */
+function buildNpc(locations: Record<string, number>, toughnessBonus: number): ActorLike {
+    return buildActor({
+        armour: { locations },
+        characteristics: { toughness: { bonus: toughnessBonus, effectiveBonus: toughnessBonus } },
+        wounds: { value: 12, critical: 0 },
+    });
+}
+
+describe('AssignDamageData against an NPC (armour under locations, bonus on Toughness)', () => {
+    const OrkBoyLocations = { head: 0, body: 2, leftArm: 0, rightArm: 0, leftLeg: 0, rightLeg: 0 };
+    const hit = (location: string): { location: string; damageType: string; totalDamage: number; totalPenetration: number; totalFatigue: number } => ({
+        location,
+        damageType: 'Impact',
+        totalDamage: 10,
+        totalPenetration: 0,
+        totalFatigue: 0,
+    });
+
+    it('fills in the armour at the hit location and the Toughness bonus', () => {
+        const data = new AssignDamageData(buildNpc(OrkBoyLocations, 6), hit('body'));
+        data.update();
+        expect(data.armour).toBe(2);
+        expect(data.tb).toBe(6);
+    });
+
+    it('reads a location written as a label ("Left Arm") and gives the bare Toughness bonus where it has no armour', () => {
+        const data = new AssignDamageData(buildNpc(OrkBoyLocations, 6), hit('Left Arm'));
+        data.update();
+        expect(data.armour).toBe(0);
+        expect(data.tb).toBe(6);
+    });
+
+    it('subtracts armour and Toughness bonus from the damage', async () => {
+        // 10 damage, armour 2 + TB 6 = 8 → 2 wounds
+        const data = new AssignDamageData(buildNpc(OrkBoyLocations, 6), hit('body'));
+        data.update();
+        await data.finalize();
+        expect(data.damageTaken).toBe(2);
+    });
+
+    it('still reads a character through its per-location objects', () => {
+        const data = new AssignDamageData(buildActor(), hit('Body'));
+        data.update();
+        expect(data.armour).toBe(4);
+        expect(data.tb).toBe(3);
+    });
+});
+
 describe('Righteous Fury no-break branch (#109)', () => {
     it('damage breaks through normally — RF count does not add extra', async () => {
         const actor = buildActor();
