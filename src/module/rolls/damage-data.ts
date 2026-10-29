@@ -41,7 +41,7 @@ interface ActionItemSystem {
     effectiveDamageFormula?: string;
     // eslint-disable-next-line no-restricted-syntax -- boundary: item.system is a Foundry framework union; penetration can be number|string|Roll formula
     effectivePenetration?: unknown;
-    damage?: { formula?: string; type?: string; penetration?: number; penetrationFormula?: string; addsStrengthBonus?: boolean };
+    damage?: { formula?: string; type?: string; penetration?: number; penetrationFormula?: string; strengthBonusMultiplier?: number };
     damageType?: string;
     // eslint-disable-next-line no-restricted-syntax -- boundary: penetration field accepts numeric or formula strings from legacy data
     penetration?: unknown;
@@ -598,7 +598,8 @@ export class Hit {
             // reflects it — the canonical #415 case. For an unmodified character
             // effectiveBonus == bonus, so the common case is unchanged.
             const strength = sourceActor.getCharacteristicFuzzy('Strength');
-            if (actionItem.system.damage?.addsStrengthBonus !== false) this.modifiers['strength bonus'] = strength.effectiveBonus ?? strength.bonus;
+            const strengthFactor = actionItem.system.damage?.strengthBonusMultiplier ?? 1;
+            if (strengthFactor !== 0) this.modifiers['strength bonus'] = (strength.effectiveBonus ?? strength.bonus) * strengthFactor;
 
             // Crushing Blow → data-driven via the talent's dynamicModifiers hook
             // (applied by applyDynamicModifiers). See Direction #7.

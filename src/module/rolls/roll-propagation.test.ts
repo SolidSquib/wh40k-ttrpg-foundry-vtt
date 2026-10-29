@@ -114,7 +114,7 @@ function actor(gameSystem: string, modifierSources: ModifierSourcesShape = {}, i
 
 /** A weapon carrying its qualities the way compendium weapons do: identifiers in `effectiveSpecial`, no embedded items. */
 function weapon(
-    opts: { qualities?: string[]; ranged?: boolean; damage?: string; penetration?: number; items?: object[]; addsStrengthBonus?: boolean } = {},
+    opts: { qualities?: string[]; ranged?: boolean; damage?: string; penetration?: number; items?: object[]; strengthBonusMultiplier?: number } = {},
 ): HitWeapon {
     const ranged = opts.ranged ?? true;
     return {
@@ -123,7 +123,7 @@ function weapon(
             effectiveSpecial: new Set(opts.qualities ?? []),
             effectiveDamageFormula: opts.damage ?? '1d10',
             effectivePenetration: opts.penetration ?? 0,
-            ...(opts.addsStrengthBonus === undefined ? {} : { damage: { addsStrengthBonus: opts.addsStrengthBonus } }),
+            ...(opts.strengthBonusMultiplier === undefined ? {} : { damage: { strengthBonusMultiplier: opts.strengthBonusMultiplier } }),
         },
         items: opts.items ?? [],
         isRanged: ranged,
@@ -413,14 +413,17 @@ describe.each(SYSTEMS)('damage / penetration propagation onto a hit (%s)', (game
         expect(hit.totalDamage).toBe(11);
     });
 
-    it("a melee weapon adds the wielder's Strength Bonus unless it is flagged not to", async () => {
-        dieQueue.push(5, 5);
+    it("a melee weapon adds the wielder's Strength Bonus once, or as many times as its multiplier says", async () => {
+        dieQueue.push(5, 5, 5);
         const normal = await Hit.createHit(attack(actor(gameSystem), weapon({ ranged: false })), 1);
-        const syringe = await Hit.createHit(attack(actor(gameSystem), weapon({ ranged: false, addsStrengthBonus: false })), 1);
+        const syringe = await Hit.createHit(attack(actor(gameSystem), weapon({ ranged: false, strengthBonusMultiplier: 0 })), 1);
+        const fist = await Hit.createHit(attack(actor(gameSystem), weapon({ ranged: false, strengthBonusMultiplier: 2 })), 1);
         expect(normal.modifiers['strength bonus']).toBe(4);
         expect(normal.totalDamage).toBe(9);
         expect(syringe.modifiers['strength bonus']).toBeUndefined();
         expect(syringe.totalDamage).toBe(5);
+        expect(fist.modifiers['strength bonus']).toBe(8);
+        expect(fist.totalDamage).toBe(13);
     });
 
     // Regression: `createHit` ran the dynamic pass BEFORE `_calculatePenetration`, so a

@@ -24,8 +24,9 @@ export default class DamageTemplate extends SystemDataModel {
                 }),
                 bonus: new fields.NumberField({ required: true, initial: 0, integer: true }),
                 penetration: new fields.NumberField({ required: true, initial: 0, integer: true, min: 0 }),
-                // Whether a melee attack with this weapon adds the wielder's Strength Bonus (most do; some, like a syringe, do not).
-                addsStrengthBonus: new fields.BooleanField({ required: true, initial: true }),
+                // How many times a melee attack with this weapon adds the wielder's Strength Bonus: once for most, twice for a power
+                // fist, none for something like a syringe.
+                strengthBonusMultiplier: new fields.NumberField({ required: true, initial: 1, integer: true, min: 0 }),
                 // A penetration the book prints as a value of the user ("equal to the
                 // psyker's Psy Rating" → "PR"). When set it is rolled instead of `penetration`.
                 // eslint-disable-next-line no-restricted-syntax -- boundary: FormulaField extends StringField, ctor param shape mismatch
@@ -48,6 +49,20 @@ export default class DamageTemplate extends SystemDataModel {
     static override _migrateData(source: Record<string, unknown>): void {
         super._migrateData(source);
         DamageTemplate.#migrateSpecial(source);
+        DamageTemplate.#migrateStrengthBonus(source);
+    }
+
+    /**
+     * Migrate the short-lived `addsStrengthBonus` flag to `strengthBonusMultiplier` (false was none).
+     * @param {object} source  The source data
+     */
+    // eslint-disable-next-line no-restricted-syntax -- boundary: Foundry migration source data
+    static #migrateStrengthBonus(source: Record<string, unknown>): void {
+        const damage = source['damage'];
+        if (typeof damage !== 'object' || damage === null || !('addsStrengthBonus' in damage)) return;
+        const { addsStrengthBonus } = damage;
+        Reflect.deleteProperty(damage, 'addsStrengthBonus');
+        if (addsStrengthBonus === false && !('strengthBonusMultiplier' in damage)) Object.assign(damage, { strengthBonusMultiplier: 0 });
     }
 
     /**

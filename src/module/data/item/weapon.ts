@@ -245,7 +245,7 @@ export default class WeaponData extends ItemDataModel.mixin(DescriptionTemplate,
     declare state: EquippableState;
 
     // Properties from DamageTemplate
-    declare damage: { formula: string; type: string; bonus: number; penetration: number; addsStrengthBonus: boolean };
+    declare damage: { formula: string; type: string; bonus: number; penetration: number; strengthBonusMultiplier: number };
     declare special: Set<string>;
     declare modes: WeaponFiringMode[];
     declare activeMode: number;

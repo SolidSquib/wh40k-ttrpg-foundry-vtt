@@ -364,10 +364,14 @@
             </div>
 
             {{!-- Melee damage adds the wielder's Strength Bonus --}}
-            <label class="tw-flex tw-items-center tw-gap-2 tw-col-span-2 tw-text-xs">
-              <input type="checkbox" name="system.damage.addsStrengthBonus" {{checked source.damage.addsStrengthBonus}} {{#unless inEditMode}}disabled{{/unless}} />
-              <span>{{localize "WH40K.ItemSheet.Weapon.AddsStrengthBonus"}}</span>
-            </label>
+            <div class="wh40k-float-field wh40k-float-field--narrow">
+              <input type="number" name="system.damage.strengthBonusMultiplier" value="{{source.damage.strengthBonusMultiplier}}"
+                     placeholder=" " id="strength-bonus-multiplier" min="0" step="1"
+                     class="{{#unless inEditMode}}wh40k-input--readonly{{/unless}}"
+                     {{#unless inEditMode}}readonly{{/unless}} />
+              <label for="strength-bonus-multiplier">{{localize "WH40K.ItemSheet.Weapon.StrengthBonusMultiplier"}}</label>
+              <span class="wh40k-float-field__bar"></span>
+            </div>
 
             {{!-- Penetration --}}
             <div class="wh40k-float-field wh40k-float-field--narrow">

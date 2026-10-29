@@ -4333,7 +4333,7 @@
                 "DamageShort": "Dmg",
                 "CombatStatistics": "Combat Statistics",
                 "DamageDice": "Damage Dice",
-                "AddsStrengthBonus": "Melee damage adds the wielder's Strength Bonus",
+                "StrengthBonusMultiplier": "Strength Bonus ×",
                 "Bonus": "Bonus",
                 "WeaponClass": "Weapon Class",
                 "WeaponType": "Weapon Type",
