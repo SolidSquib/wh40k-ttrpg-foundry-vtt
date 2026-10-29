@@ -161,9 +161,11 @@ describe('getFatigueHalvedCharacteristic (#114) — full effective-value halving
         // value 45 → 23 (nat bonus 2) + bonusModifier 1 = 3
         expect(getFatigueHalvedCharacteristic(45, 4, 0, 1, 5)).toEqual({ effectiveValue: 23, effectiveBonus: 3 });
     });
-    it('applies the unnatural multiplier to the halved bonus', () => {
-        // value 45 → 23, tens 2, unnatural 2 → 4
+    it('adds the Unnatural value to the halved bonus', () => {
+        // value 45 → 23, tens 2, Unnatural 2 → 2 + 2 = 4
         expect(getFatigueHalvedCharacteristic(45, 4, 2, 0, 5)).toEqual({ effectiveValue: 23, effectiveBonus: 4 });
+        // Unnatural 3 → 2 + 3 = 5 (a multiplier would give 6)
+        expect(getFatigueHalvedCharacteristic(45, 4, 3, 0, 5)).toEqual({ effectiveValue: 23, effectiveBonus: 5 });
     });
 });
 

@@ -396,7 +396,7 @@ export default class NPCTemplateData extends ItemDataModel {
             if (labels === undefined) continue;
             // Route the bonus through the SSOT so Unnatural (X) is handled
             // identically to the creature/NPC prepare passes (#365): bonus is the
-            // tens digit, multiplied by Unnatural when ≥ 2 (not additive).
+            // tens digit plus Unnatural (X), which adds to the bonus.
             const { total, bonus } = computeCharacteristicTotals(value, 0, unnatural);
             characteristics[key] = {
                 label: labels.label,

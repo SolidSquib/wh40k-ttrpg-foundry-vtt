@@ -45,12 +45,12 @@ describe('WH40KBaseActor', () => {
         expect(agility?.bonus).toBe(4);
     });
 
-    it('_computeCharacteristics applies unnatural multiplier to bonus', async () => {
+    it('_computeCharacteristics adds the Unnatural value to the bonus', async () => {
         const mod = await importModelOrSkip(import('./base-actor.ts'));
         // eslint-disable-next-line @vitest/no-conditional-in-test -- guard: skip when the model can't load under happy-dom, not an assertion branch
         if (mod === undefined) return;
 
-        // base=40, advance=0, modifier=0, unnatural=2 → total=40, bonus = floor(40/10)*2 = 8
+        // base=40, advance=0, modifier=0, unnatural=2 → total=40, bonus = floor(40/10) + 2 = 6
         interface CharEntry2 {
             base: number;
             advance: number;
@@ -75,7 +75,7 @@ describe('WH40KBaseActor', () => {
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- noUncheckedIndexedAccess: characteristics['strength'] may be undefined at runtime despite being declared above
         expect(strength?.total).toBe(40);
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- noUncheckedIndexedAccess: same guard
-        expect(strength?.bonus).toBe(8);
+        expect(strength?.bonus).toBe(6);
     });
 
     it('_computeMovement skips calculation when agility is absent', async () => {
@@ -110,7 +110,7 @@ describe('WH40KBaseActor', () => {
             bonus: number;
         }
         const fakeActor = Object.create(mod.WH40KBaseActor.prototype) as InstanceType<typeof mod.WH40KBaseActor>;
-        // base=42, advance=3, modifier=-2, unnatural=3 → exercises the advance*5 term + unnatural multiplier.
+        // base=42, advance=3, modifier=-2, unnatural=3 → exercises the advance*5 term + the added Unnatural value.
         const characteristics: Record<string, CharEntry> = {
             agility: { base: 42, advance: 3, modifier: -2, unnatural: 3, short: 'Ag', total: 0, bonus: 0 },
         };

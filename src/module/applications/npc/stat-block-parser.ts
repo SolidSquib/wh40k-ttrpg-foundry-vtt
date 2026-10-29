@@ -679,10 +679,8 @@ export default class StatBlockParser extends HandlebarsApplicationMixin(Applicat
         for (const [key, bonusValue] of Object.entries(characteristicResult.unnaturalValues)) {
             const entry = chars[key];
             if (!entry) continue;
-            const base = entry.base;
-            const baseBonus = Math.floor(base / 10) || 1;
-            const multiplier = Math.max(2, Math.round(bonusValue / baseBonus));
-            entry.unnatural = multiplier;
+            // The parenthesised number under a characteristic is its Unnatural (X), which adds to the bonus.
+            entry.unnatural = Math.max(0, bonusValue);
         }
     }
 

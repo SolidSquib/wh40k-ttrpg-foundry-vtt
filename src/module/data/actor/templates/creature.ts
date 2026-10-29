@@ -941,7 +941,7 @@ export default class CreatureTemplate extends CommonTemplate {
     /**
      * Prepare characteristic totals and bonuses.
      * Formula: total = base + (advance * 5) + modifier - damage (the effective value).
-     * Bonus = floor(total / 10), modified by unnatural multiplier (the base bonus).
+     * Bonus = floor(total / 10) plus the Unnatural (X) value.
      * The base-vs-effective split (#415) is finalised in _applyModifiersToCharacteristics
      * once item modifiers are known; this pre-item pass seeds the effective fields so
      * they are always populated. Fatigue is a flat per-Test penalty (applied in the roll

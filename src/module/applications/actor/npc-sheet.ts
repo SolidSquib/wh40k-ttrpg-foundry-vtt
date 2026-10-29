@@ -527,7 +527,7 @@ export default class NPCSheet extends CharacterSheet {
                 unnatural: char.unnatural,
                 total: char.total,
                 bonus: char.bonus,
-                hasUnnatural: char.unnatural >= 2,
+                hasUnnatural: char.unnatural > 0,
             });
         }
 

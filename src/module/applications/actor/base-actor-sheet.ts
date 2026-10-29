@@ -554,10 +554,10 @@ export default class BaseActorSheet extends BaseActorSheetBase {
             char.isMaxed = char.advance >= 5;
 
             // Calculate unnatural bonus if applicable
-            const unnaturalMult = char.unnatural || 1;
-            if (unnaturalMult > 1) {
+            const unnatural = char.unnatural || 0;
+            if (unnatural > 0) {
                 const baseBonus = Math.floor(char.total / 10);
-                char.unnaturalBonus = baseBonus * unnaturalMult;
+                char.unnaturalBonus = baseBonus + unnatural;
             }
         }
     }
@@ -2707,7 +2707,7 @@ export default class BaseActorSheet extends BaseActorSheetBase {
 
         // Calculate new values
         const newTotal = char.base + newAdvance * 5 + char.modifier;
-        const newBonus = Math.floor(newTotal / 10) * (char.unnatural || 1);
+        const newBonus = Math.floor(newTotal / 10) + (char.unnatural || 0);
 
         // Success notification
         ui.notifications.info(
@@ -2766,7 +2766,7 @@ export default class BaseActorSheet extends BaseActorSheetBase {
         const currentBase = char.base;
         const currentAdvance = char.advance;
         const currentModifier = char.modifier;
-        const currentUnnatural = char.unnatural || 1;
+        const currentUnnatural = char.unnatural || 0;
 
         // Create edit dialog using DialogV2
         const result = (await dialogV2.wait({
@@ -2789,8 +2789,8 @@ export default class BaseActorSheet extends BaseActorSheetBase {
                         <input type="number" name="modifier" value="${currentModifier}" min="-100" max="100" />
                     </div>
                     <div class="form-group">
-                        <label>${game.i18n.localize('WH40K.CharEdit.UnnaturalMultiplier')}</label>
-                        <input type="number" name="unnatural" value="${currentUnnatural}" min="1" max="10" />
+                        <label>${game.i18n.localize('WH40K.CharEdit.UnnaturalBonus')}</label>
+                        <input type="number" name="unnatural" value="${currentUnnatural}" min="0" max="10" />
                     </div>
                     <hr/>
                     <div class="wh40k-char-preview">
@@ -2825,7 +2825,7 @@ export default class BaseActorSheet extends BaseActorSheetBase {
                 [`system.characteristics.${charKey}.base`]: parseInt(result.base) || 0,
                 [`system.characteristics.${charKey}.advance`]: parseInt(result.advance) || 0,
                 [`system.characteristics.${charKey}.modifier`]: parseInt(result.modifier) || 0,
-                [`system.characteristics.${charKey}.unnatural`]: parseInt(result.unnatural) || 1,
+                [`system.characteristics.${charKey}.unnatural`]: parseInt(result.unnatural) || 0,
             });
 
             ui.notifications.info(game.i18n.format('WH40K.Notify.Characteristic.Updated', { characteristic: char.label }));

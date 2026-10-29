@@ -65,7 +65,8 @@ export function applyEffectiveCharacteristicFields(char: EffectiveCharacteristic
  * post-item recompute additionally folds in its item/origin-path modifier here.
  * When `clampTotalToZero` is set, the total floors at 0 before the bonus is
  * derived (a characteristic cannot drop below 0 once item modifiers land).
- * Bonus is the tens digit, multiplied by the Unnatural level when ≥ 2.
+ * Bonus is the tens digit plus the Unnatural value: in Only War, Unnatural Characteristic (X) adds X to the
+ * characteristic bonus (Strength 41 with Unnatural Strength (3) has a bonus of 4 + 3 = 7). It is not a multiplier.
  */
 export function computeCharacteristicTotals(
     base: number,
@@ -77,7 +78,7 @@ export function computeCharacteristicTotals(
     const rawTotal = base + modifier + extra;
     const total = clampTotalToZero ? Math.max(0, rawTotal) : rawTotal;
     const baseBonus = Math.floor(total / 10);
-    const bonus = unnatural >= 2 ? baseBonus * unnatural : baseBonus;
+    const bonus = baseBonus + Math.max(0, unnatural);
     return { total, bonus };
 }
 

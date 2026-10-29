@@ -141,7 +141,7 @@ describe('ConventionalCraftData characteristics profile', () => {
         expect(source.characteristics).toBeUndefined();
     });
 
-    it('_prepareCharacteristics derives total/bonus and applies the Unnatural multiplier', async () => {
+    it('_prepareCharacteristics derives total/bonus and adds the Unnatural value', async () => {
         const mod = await importModelOrSkip(import('./vehicle.ts'));
         // eslint-disable-next-line @vitest/no-conditional-in-test -- guard: skip when the model can't load under happy-dom, not an assertion branch
         if (mod === undefined) return;
@@ -150,12 +150,12 @@ describe('ConventionalCraftData characteristics profile', () => {
             _prepareCharacteristics: () => void;
         };
         inst.characteristics = {
-            // Unnatural Strength (7): bonus = floor(75/10) * 7 = 49.
+            // Unnatural Strength (7): bonus = floor(75/10) + 7 = 14.
             strength: { base: 75, modifier: 0, unnatural: 7, total: 0, bonus: 0 },
             weaponSkill: { base: 25, modifier: 0, unnatural: 0, total: 0, bonus: 0 },
         };
         inst._prepareCharacteristics();
-        expect(inst.characteristics['strength']).toMatchObject({ total: 75, bonus: 49 });
+        expect(inst.characteristics['strength']).toMatchObject({ total: 75, bonus: 14 });
         expect(inst.characteristics['weaponSkill']).toMatchObject({ total: 25, bonus: 2 });
     });
 

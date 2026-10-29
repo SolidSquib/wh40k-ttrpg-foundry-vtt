@@ -146,7 +146,7 @@
             "Title": "Edit {name}",
             "BaseValue": "Base Value",
             "Advances": "Advances (0-5)",
-            "UnnaturalMultiplier": "Unnatural Multiplier",
+            "UnnaturalBonus": "Unnatural (added to bonus)",
             "Total": "Total:",
             "Bonus": "Bonus:",
             "Save": "Save"
@@ -3607,7 +3607,7 @@
                 "Characteristic": "Characteristic",
                 "Base": "Base",
                 "Unnatural": "Unnatural",
-                "UnnaturalHint": "Multiplies the characteristic bonus (2 for Unnatural ×2); 0 for none.",
+                "UnnaturalHint": "Unnatural (X): the value is added to the characteristic bonus; 0 for none.",
                 "WoundsMax": "Wounds",
                 "Size": "Size",
                 "Armour": "Armour",

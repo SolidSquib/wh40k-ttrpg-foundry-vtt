@@ -396,7 +396,7 @@ export class TooltipsWH40K {
         const base = data.base ?? 0;
         const advance = data.advance ?? 0;
         const modifier = data.modifier ?? 0;
-        const unnatural = data.unnatural ?? 1;
+        const unnatural = data.unnatural ?? 0;
         const total = data.total ?? 0;
         const bonus = data.bonus ?? 0;
         const sources = data.sources ?? [];
@@ -422,7 +422,7 @@ export class TooltipsWH40K {
             <div class="wh40k-tooltip__bonus">
                 <span class="wh40k-tooltip__label">${localize('WH40K.Tooltip.Bonus')}</span>
                 <span class="wh40k-tooltip__value wh40k-tooltip__value--bonus">${bonus}</span>
-                <span class="wh40k-tooltip__bonus-calc">(${Math.floor(total / 10)}${unnatural > 1 ? ` × ${unnatural}` : ''})</span>
+                <span class="wh40k-tooltip__bonus-calc">(${Math.floor(total / 10)}${unnatural > 0 ? ` + ${unnatural}` : ''})</span>
             </div>
             <div class="wh40k-tooltip__hint">
                 <i class="fas fa-mouse-pointer"></i>

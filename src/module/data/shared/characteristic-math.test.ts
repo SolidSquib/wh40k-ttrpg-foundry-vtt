@@ -14,20 +14,22 @@ describe('computeCharacteristicTotals (#271)', () => {
         expect(computeCharacteristicTotals(40, 0, 0, -5)).toEqual({ total: 35, bonus: 3 });
     });
 
-    it('unnatural >= 2 multiplies the bonus; 0/1 leave it untouched', () => {
-        expect(computeCharacteristicTotals(50, 0, 2)).toEqual({ total: 50, bonus: 10 });
-        expect(computeCharacteristicTotals(50, 0, 3)).toEqual({ total: 50, bonus: 15 });
-        expect(computeCharacteristicTotals(50, 0, 1).bonus).toBe(5);
+    it('Unnatural (X) adds X to the bonus; it does not multiply it (Only War)', () => {
+        expect(computeCharacteristicTotals(50, 0, 2)).toEqual({ total: 50, bonus: 7 });
+        expect(computeCharacteristicTotals(50, 0, 3)).toEqual({ total: 50, bonus: 8 });
+        expect(computeCharacteristicTotals(50, 0, 1).bonus).toBe(6);
+        expect(computeCharacteristicTotals(50, 0, 0).bonus).toBe(5);
+        // the rulebook's example: Strength 41 with Unnatural Strength (3) has a bonus of 7
+        expect(computeCharacteristicTotals(41, 0, 3).bonus).toBe(7);
     });
 
-    it('is the SSOT the NPC-template generator now routes its bonus through (#365)', () => {
-        // NPCTemplateData.generateAtThreat previously computed the bonus inline as
-        // `Math.floor(value / 10) + unnatural`, which disagrees with this SSOT
-        // whenever Unnatural (X) ≥ 2 (Unnatural multiplies the base bonus, it is
-        // not added). For value 40, unnatural 2 the correct bonus is 8, not 6.
-        expect(computeCharacteristicTotals(40, 0, 2)).toEqual({ total: 40, bonus: 8 });
-        // The old inline formula (kept here only to document the divergence) gave 6.
-        expect(Math.floor(40 / 10) + 2).toBe(6);
+    it('is the SSOT the NPC-template generator routes its bonus through (#365)', () => {
+        // The generator must agree with the actors: value 40, Unnatural 2 → 4 + 2 = 6.
+        expect(computeCharacteristicTotals(40, 0, 2)).toEqual({ total: 40, bonus: 6 });
+    });
+
+    it('ignores a negative Unnatural value', () => {
+        expect(computeCharacteristicTotals(40, 0, -2).bonus).toBe(4);
     });
 
     it('clampTotalToZero floors the total at 0 before deriving the bonus (#365)', () => {
@@ -49,7 +51,7 @@ describe('computeCharacteristicTotals (#271)', () => {
             const baseTotal = char.base + char.advance * 5 + char.modifier;
             const total = Math.max(0, baseTotal + totalMod - char.damage);
             const baseBonus = Math.floor(total / 10);
-            const bonus = char.unnatural >= 2 ? baseBonus * char.unnatural : baseBonus;
+            const bonus = baseBonus + Math.max(0, char.unnatural);
             return { total, bonus };
         };
         const cases: Array<[{ base: number; modifier: number; unnatural: number; advance: number; damage: number }, number]> = [

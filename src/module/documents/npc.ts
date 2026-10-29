@@ -464,7 +464,7 @@ export class WH40KNPC extends WH40KBaseActor {
         block += `--- Characteristics ---\n`;
         for (const [, char] of Object.entries(s.characteristics)) {
             // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- char.unnatural may be undefined per noUncheckedIndexedAccess; ?? 0 guard is intentional
-            const unnat = (char.unnatural ?? 0) >= 2 ? ` (×${char.unnatural})` : '';
+            const unnat = (char.unnatural ?? 0) > 0 ? ` (Unnatural +${char.unnatural})` : '';
             block += `${char.short}: ${char.total}${unnat}\n`;
         }
         block += `\n`;

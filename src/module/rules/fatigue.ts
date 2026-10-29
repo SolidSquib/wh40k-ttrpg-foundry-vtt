@@ -118,7 +118,7 @@ export interface HalvedCharacteristic {
  * @param effectiveValue post-modifier effective value (`char.effectiveValue`)
  * @param naturalBonus   the characteristic's own bonus (`char.bonus`) — the RAW
  *                       "characteristic bonus" compared against the fatigue level
- * @param unnatural      unnatural multiplier (≥ 2 multiplies the tens-digit bonus)
+ * @param unnatural      the Unnatural (X) value, added to the tens-digit bonus
  * @param bonusModifier  the "+X Bonus" channel added on top of the natural bonus
  * @param fatigueLevel   current fatigue level
  */
@@ -132,8 +132,7 @@ export function getFatigueHalvedCharacteristic(
     if (!isCharacteristicHalvedByFatigue(naturalBonus, fatigueLevel)) return null;
     const halvedValue = Math.ceil(nonNegInt(effectiveValue) / 2);
     const tensBonus = Math.floor(halvedValue / 10);
-    const un = nonNegInt(unnatural);
-    const nat = un >= 2 ? tensBonus * un : tensBonus;
+    const nat = tensBonus + nonNegInt(unnatural);
     return { effectiveValue: halvedValue, effectiveBonus: nat + Math.trunc(bonusModifier) };
 }
 

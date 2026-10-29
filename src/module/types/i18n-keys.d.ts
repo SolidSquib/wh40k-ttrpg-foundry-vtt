@@ -515,7 +515,7 @@ export type I18nKey =
     | 'WH40K.CharEdit.Save'
     | 'WH40K.CharEdit.Title'
     | 'WH40K.CharEdit.Total'
-    | 'WH40K.CharEdit.UnnaturalMultiplier'
+    | 'WH40K.CharEdit.UnnaturalBonus'
     | 'WH40K.CharGen.DecreasePoints'
     | 'WH40K.CharGen.Divination'
     | 'WH40K.CharGen.DivinationPlaceholder'
