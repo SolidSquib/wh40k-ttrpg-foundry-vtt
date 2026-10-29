@@ -378,7 +378,7 @@
               <select name="system.damage.type" id="damage-type"
                       class="{{#unless inEditMode}}wh40k-input--readonly{{/unless}}"
                       {{#unless inEditMode}}disabled{{/unless}}>
-                {{selectOptions damageTypes selected=source.damage.type labelAttr="label"}}
+                {{selectOptions damageTypes selected=source.damage.type labelAttr="label" localize=true}}
               </select>
               <label for="damage-type">{{localize "WH40K.DamageType.Label"}}</label>
               <i class="fa-solid fa-chevron-down wh40k-float-field__arrow"></i>
@@ -389,7 +389,7 @@
               <select name="system.class" id="weapon-class"
                       class="{{#unless inEditMode}}wh40k-input--readonly{{/unless}}"
                       {{#unless inEditMode}}disabled{{/unless}}>
-                {{selectOptions weaponClasses selected=source.class labelAttr="label"}}
+                {{selectOptions weaponClasses selected=source.class labelAttr="label" localize=true}}
               </select>
               <label for="weapon-class">{{localize "WH40K.ItemSheet.Weapon.WeaponClass"}}</label>
               <i class="fa-solid fa-chevron-down wh40k-float-field__arrow"></i>
@@ -400,7 +400,7 @@
               <select name="system.type" id="weapon-type"
                       class="{{#unless inEditMode}}wh40k-input--readonly{{/unless}}"
                       {{#unless inEditMode}}disabled{{/unless}}>
-                {{selectOptions weaponTypes selected=source.type labelAttr="label"}}
+                {{selectOptions weaponTypes selected=source.type labelAttr="label" localize=true}}
               </select>
               <label for="weapon-type">{{localize "WH40K.ItemSheet.Weapon.WeaponType"}}</label>
               <i class="fa-solid fa-chevron-down wh40k-float-field__arrow"></i>
@@ -498,8 +498,8 @@
       </section>
       {{/if}}
 
-      {{!-- AMMUNITION (if uses ammo) --}}
-      {{#if system.usesAmmo}}
+      {{!-- AMMUNITION (if uses ammo; a ranged weapon being edited always shows it so its clip can be set from zero) --}}
+      {{#if (or system.usesAmmo (and inEditMode system.isRangedWeapon))}}
       <section class="tw-mb-2 tw-bg-[rgba(12,16,24,0.5)] tw-border tw-border-[rgba(255,255,255,0.06)] tw-rounded-[var(--wh40k-radius-lg)] tw-overflow-hidden">
         <header class="tw-group tw-flex tw-items-center tw-gap-[var(--wh40k-space-sm)] tw-py-2 tw-px-3 tw-bg-[linear-gradient(135deg,rgba(62,34,22,0.35),rgba(16,20,28,0.15))] tw-border-b tw-border-[rgba(255,255,255,0.05)] tw-cursor-pointer tw-transition-[background] tw-select-none hover:tw-bg-[linear-gradient(135deg,rgba(62,34,22,0.45),rgba(16,20,28,0.2))]" data-action="toggleSection" data-section="ammunition">
           <i class="fa-solid fa-box-archive"></i>
@@ -533,7 +533,7 @@
               <select name="system.reload" id="reload-time"
                       class="{{#unless inEditMode}}wh40k-input--readonly{{/unless}}"
                       {{#unless inEditMode}}disabled{{/unless}}>
-                {{selectOptions reloadTimes selected=source.reload labelAttr="label"}}
+                {{selectOptions reloadTimes selected=source.reload labelAttr="label" localize=true}}
               </select>
               <label for="reload-time">{{localize "WH40K.Weapon.Reload"}}</label>
               <i class="fa-solid fa-chevron-down wh40k-float-field__arrow"></i>
@@ -552,8 +552,54 @@
       </section>
       {{/if}}
 
-      {{!-- ACQUISITION --}}
+      {{!-- QUALITIES (authoring: pick from the weapon-qualities compendium) --}}
+      {{#if inEditMode}}
       <section class="tw-mb-2 tw-bg-[rgba(12,16,24,0.5)] tw-border tw-border-[rgba(255,255,255,0.06)] tw-rounded-[var(--wh40k-radius-lg)] tw-overflow-hidden">
+        <header class="tw-group tw-flex tw-items-center tw-gap-[var(--wh40k-space-sm)] tw-py-2 tw-px-3 tw-bg-[linear-gradient(135deg,rgba(62,34,22,0.35),rgba(16,20,28,0.15))] tw-border-b tw-border-[rgba(255,255,255,0.05)] tw-cursor-pointer tw-transition-[background] tw-select-none hover:tw-bg-[linear-gradient(135deg,rgba(62,34,22,0.45),rgba(16,20,28,0.2))]" data-action="toggleSection" data-section="qualities">
+          <i class="fa-solid fa-star"></i>
+          <span>{{localize "WH40K.ItemSheet.Weapon.Qualities"}}</span>
+          <i class="fa-solid fa-chevron-down wh40k-section__toggle tw-text-[0.7rem] tw-text-[rgba(214,221,235,0.5)] tw-transition-transform group-hover:tw-text-[color:var(--wh40k-gold)]"></i>
+        </header>
+        <div class="wh40k-section__body tw-animate-slide-in-up tw-p-[10px_12px] tw-transition-all" data-section-content="qualities">
+          <div class="tw-flex tw-flex-wrap tw-gap-[6px] tw-mb-2">
+            {{#each ownQualities}}
+            <span class="tw-inline-flex tw-items-center tw-gap-[6px] tw-py-1 tw-px-2 tw-bg-[rgba(58,93,132,0.2)] tw-border tw-border-[rgba(98,142,185,0.45)] tw-rounded-sm tw-text-[0.75rem] tw-text-[rgba(178,208,234,0.95)]">
+              {{label}}
+              <button type="button" class="tw-bg-transparent tw-border-none tw-p-0 tw-cursor-pointer tw-text-[color:var(--wh40k-red-bright)]" data-action="removeQuality" data-identifier="{{identifier}}" title="{{localize 'WH40K.ItemSheet.Weapon.RemoveQuality'}}">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </span>
+            {{else}}
+            <span class="tw-text-[0.75rem] tw-italic tw-text-[color:var(--wh40k-text-muted)]">{{localize "WH40K.ItemSheet.Weapon.NoQualities"}}</span>
+            {{/each}}
+          </div>
+          <div class="tw-flex tw-items-end tw-gap-[var(--wh40k-space-sm)]">
+            <div class="wh40k-float-field wh40k-float-field--select tw-flex-1">
+              <select id="quality-choice">
+                <option value=""></option>
+                {{#each qualityChoices}}
+                <option value="{{identifier}}" data-has-level="{{hasLevel}}">{{name}}</option>
+                {{/each}}
+              </select>
+              <label for="quality-choice">{{localize "WH40K.ItemSheet.Weapon.ChooseQuality"}}</label>
+              <i class="fa-solid fa-chevron-down wh40k-float-field__arrow"></i>
+            </div>
+            <div class="wh40k-float-field wh40k-float-field--narrow">
+              <input type="text" id="quality-level" placeholder=" " />
+              <label for="quality-level">{{localize "WH40K.ItemSheet.Weapon.QualityRating"}}</label>
+              <span class="wh40k-float-field__bar"></span>
+            </div>
+            <button type="button" class="tw-py-2 tw-px-3 tw-bg-transparent tw-border tw-border-[rgba(212,175,55,0.4)] tw-rounded-[6px] tw-text-[color:var(--wh40k-gold)] tw-cursor-pointer" data-action="addQuality">
+              <i class="fa-solid fa-plus"></i> {{localize "WH40K.ItemSheet.Weapon.AddQuality"}}
+            </button>
+          </div>
+          <p class="tw-text-[0.7rem] tw-italic tw-mt-1 tw-text-[color:var(--wh40k-text-muted)]">{{localize "WH40K.ItemSheet.Weapon.QualityRatingHint"}}</p>
+        </div>
+      </section>
+      {{/if}}
+
+      {{!-- ACQUISITION --}}
+      <section class="tw-mb-2tw-bg-[rgba(12,16,24,0.5)] tw-border tw-border-[rgba(255,255,255,0.06)] tw-rounded-[var(--wh40k-radius-lg)] tw-overflow-hidden">
         <header class="tw-group tw-flex tw-items-center tw-gap-[var(--wh40k-space-sm)] tw-py-2 tw-px-3 tw-bg-[linear-gradient(135deg,rgba(62,34,22,0.35),rgba(16,20,28,0.15))] tw-border-b tw-border-[rgba(255,255,255,0.05)] tw-cursor-pointer tw-transition-[background] tw-select-none hover:tw-bg-[linear-gradient(135deg,rgba(62,34,22,0.45),rgba(16,20,28,0.2))]" data-action="toggleSection" data-section="acquisition">
           <i class="fa-solid fa-coins"></i>
           <span>{{localize "WH40K.ItemSheet.Weapon.Acquisition"}}</span>
@@ -566,7 +612,7 @@
               <select name="system.availability" id="availability"
                       class="{{#unless inEditMode}}wh40k-input--readonly{{/unless}}"
                       {{#unless inEditMode}}disabled{{/unless}}>
-                {{selectOptions availabilities selected=source.availability labelAttr="label"}}
+                {{selectOptions availabilities selected=source.availability labelAttr="label" localize=true}}
               </select>
               <label for="availability">{{localize "WH40K.Availability.Label"}}</label>
               <i class="fa-solid fa-chevron-down wh40k-float-field__arrow"></i>
@@ -577,7 +623,7 @@
               <select name="system.craftsmanship" id="craftsmanship"
                       class="{{#unless inEditMode}}wh40k-input--readonly{{/unless}}"
                       {{#unless inEditMode}}disabled{{/unless}}>
-                {{selectOptions craftsmanships selected=source.craftsmanship labelAttr="label"}}
+                {{selectOptions craftsmanships selected=source.craftsmanship labelAttr="label" localize=true}}
               </select>
               <label for="craftsmanship">{{localize "WH40K.Craftsmanship.Label"}}</label>
               <i class="fa-solid fa-chevron-down wh40k-float-field__arrow"></i>
@@ -593,15 +639,57 @@
               <span class="wh40k-float-field__bar"></span>
             </div>
 
-            {{!-- Source --}}
+            {{!-- Source book --}}
             <div class="wh40k-float-field">
-              <input type="text" name="system.source" value="{{source.source}}"
-                     placeholder=" " id="source"
+              <input type="text" name="system.source.book" value="{{source.source.book}}"
+                     placeholder=" " id="source-book"
                      class="{{#unless inEditMode}}wh40k-input--readonly{{/unless}}"
                      {{#unless inEditMode}}readonly{{/unless}} />
-              <label for="source">{{localize "WH40K.Common.Source"}}</label>
+              <label for="source-book">{{localize "WH40K.Common.Source"}}</label>
               <span class="wh40k-float-field__bar"></span>
             </div>
+
+            {{!-- Source page --}}
+            <div class="wh40k-float-field wh40k-float-field--narrow">
+              <input type="text" name="system.source.page" value="{{source.source.page}}"
+                     placeholder=" " id="source-page"
+                     class="{{#unless inEditMode}}wh40k-input--readonly{{/unless}}"
+                     {{#unless inEditMode}}readonly{{/unless}} />
+              <label for="source-page">{{localize "WH40K.Common.Page"}}</label>
+              <span class="wh40k-float-field__bar"></span>
+            </div>
+
+            {{!-- Acquisition cost (logistics) --}}
+            <div class="wh40k-float-field wh40k-float-field--narrow">
+              <input type="number" name="system.cost.logistics" value="{{source.cost.logistics}}"
+                     step="1" min="0" placeholder=" " id="cost-logistics"
+                     class="{{#unless inEditMode}}wh40k-input--readonly{{/unless}}"
+                     {{#unless inEditMode}}readonly{{/unless}} />
+              <label for="cost-logistics">{{localize "WH40K.ItemSheet.Weapon.Logistics"}}</label>
+              <span class="wh40k-float-field__bar"></span>
+            </div>
+
+            {{!-- Required training --}}
+            <div class="wh40k-float-field">
+              <input type="text" name="system.requiredTraining" value="{{source.requiredTraining}}"
+                     placeholder=" " id="required-training"
+                     class="{{#unless inEditMode}}wh40k-input--readonly{{/unless}}"
+                     {{#unless inEditMode}}readonly{{/unless}} />
+              <label for="required-training">{{localize "WH40K.ItemSheet.Weapon.RequiredTraining"}}</label>
+              <span class="wh40k-float-field__bar"></span>
+            </div>
+
+            {{!-- Identifier: the stable id other documents refer to; authored on world and compendium weapons only --}}
+            {{#unless isOwnedByActor}}
+            <div class="wh40k-float-field">
+              <input type="text" name="system.identifier" value="{{source.identifier}}"
+                     placeholder=" " id="identifier"
+                     class="{{#unless inEditMode}}wh40k-input--readonly{{/unless}}"
+                     {{#unless inEditMode}}readonly{{/unless}} />
+              <label for="identifier">{{localize "WH40K.ItemSheet.Weapon.Identifier"}}</label>
+              <span class="wh40k-float-field__bar"></span>
+            </div>
+            {{/unless}}
           </div>
         </div>
       </section>

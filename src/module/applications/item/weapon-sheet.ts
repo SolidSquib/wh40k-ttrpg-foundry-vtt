@@ -11,8 +11,8 @@ import { DEFAULT_HIT_LOCATION } from '../../rules/hit-locations.ts';
 import { consumeRounds } from '../../rules/magazine.ts';
 import type { WH40KItemDocument } from '../../types/global.d.ts';
 import { firstSystemId } from '../../utils/chat-system-id.ts';
-import { gameSystemPackPrefix } from '../../utils/game-system-pack-prefix.ts';
 import { parseQualityLevel } from '../../utils/quality-id.ts';
+import { loadQualityChoices, type QualityChoice, weaponQualityPack } from '../../utils/weapon-quality-choices.ts';
 import { WH40KSettings } from '../../wh40k-rpg-settings.ts';
 import { prepareQualityTooltipData } from '../components/wh40k-tooltip.ts';
 import ClipBuilderDialog from '../dialogs/clip-builder-dialog.ts';
@@ -67,6 +67,10 @@ interface WeaponSheetContext extends Record<string, unknown> {
     reloadTimes: Record<string, { label: string }>;
     bodyCollapsed: boolean;
     qualitiesArray: Array<{ identifier: string; label: string; description: string; level: number | null }>;
+    /** The qualities written on this weapon itself (not those added by ammo or modifications), for the editor. */
+    ownQualities: Array<{ identifier: string; label: string }>;
+    /** Every quality the weapon-qualities compendium offers, for the editor's picker. */
+    qualityChoices: QualityChoice[];
     prepareQualityTooltip: (identifier: string, level?: number | null) => string;
     effectiveDamageLabel: string;
     effectivePenetration: number;
@@ -108,6 +112,8 @@ export default class WeaponSheet extends ContainerItemSheet<WeaponItem> {
             rollDamage: WeaponSheet.#rollDamage,
             expendAmmo: WeaponSheet.#expendAmmo,
             openQuality: WeaponSheet.#openQuality,
+            addQuality: WeaponSheet.#addQuality,
+            removeQuality: WeaponSheet.#removeQuality,
             nestedItemEdit: WeaponSheet.#nestedItemEdit,
             nestedItemDelete: WeaponSheet.#nestedItemDelete,
             toggleModificationActive: WeaponSheet.#toggleModificationActive,
@@ -122,8 +128,8 @@ export default class WeaponSheet extends ContainerItemSheet<WeaponItem> {
             toggleBody: WeaponSheet.#toggleBody,
         },
         position: {
-            width: 500,
-            height: 300,
+            width: 640,
+            height: 820,
         },
         window: {
             resizable: true,
@@ -157,10 +163,11 @@ export default class WeaponSheet extends ContainerItemSheet<WeaponItem> {
     #fabExpanded = false;
 
     /**
-     * Track body collapsed state (starts collapsed by default).
+     * Track body collapsed state. Starts collapsed for a weapon carried by an actor; a world or
+     * compendium weapon is being authored, so its fields start open.
      * @type {boolean}
      */
-    #bodyCollapsed = true;
+    #bodyCollapsed = this.isOwnedByActor;
 
     /* -------------------------------------------- */
     /*  Properties                                  */
@@ -226,6 +233,13 @@ export default class WeaponSheet extends ContainerItemSheet<WeaponItem> {
                 level,
             };
         });
+
+        // Quality editor: the weapon's own qualities and the compendium's picker list (authoring only)
+        context.ownQualities = Array.from(system.special).map((q: string) => ({
+            identifier: q,
+            label: CONFIG.wh40k.getQualityLabel(q, parseQualityLevel(q).level),
+        }));
+        context.qualityChoices = this.canEdit ? await loadQualityChoices(this.#qualityPack()) : [];
 
         // Bind prepareQualityTooltip helper for template
         context.prepareQualityTooltip = this.prepareQualityTooltip.bind(this);
@@ -293,6 +307,11 @@ export default class WeaponSheet extends ContainerItemSheet<WeaponItem> {
 
         // Set up drag-and-drop visual feedback
         this._setupDragDropFeedback();
+
+        // The quality picker's controls are not document fields: keep their changes from submitting (and re-rendering) the form
+        this.element.querySelectorAll<HTMLElement>('#quality-choice, #quality-level').forEach((control) => {
+            control.addEventListener('change', (event) => event.stopPropagation());
+        });
 
         // Iconic stat hover: burst-pulse on __shape
         this.element.querySelectorAll<HTMLElement>('.wh40k-iconic-stat').forEach((stat) => {
@@ -581,6 +600,44 @@ export default class WeaponSheet extends ContainerItemSheet<WeaponItem> {
     /* -------------------------------------------- */
 
     /**
+     * The weapon-qualities compendium. The pack is per game system (`<prefix>-core-items-weapon-qualities`);
+     * resolve it by the owning actor's system, falling back to the world's primary line for an
+     * unowned/world weapon (#403).
+     */
+    #qualityPack(): ReturnType<typeof game.packs.find> {
+        const gameSystem = (this.item.actor?.system as { gameSystem?: string } | undefined)?.gameSystem ?? WH40KSettings.getPrimaryGameSystem();
+        return weaponQualityPack(gameSystem);
+    }
+
+    /**
+     * Add the quality picked in the editor to this weapon, with the typed rating (`3`, `x`, `10+1d10`).
+     * A quality that takes a rating and is given none is stored unrated-but-open (`-x`).
+     * @this {WeaponSheet}
+     */
+    static async #addQuality(this: WeaponSheet): Promise<void> {
+        const select = this.element.querySelector<HTMLSelectElement>('#quality-choice');
+        const rating = this.element.querySelector<HTMLInputElement>('#quality-level')?.value.trim().toLowerCase() ?? '';
+        const identifier = select?.value ?? '';
+        if (select === null || identifier === '') return;
+        const hasLevel = select.selectedOptions.item(0)?.dataset['hasLevel'] === 'true';
+        const suffix = rating !== '' ? `-${rating}` : hasLevel ? '-x' : '';
+        const current = Array.from(this.item.system.special).filter((q) => parseQualityLevel(q).baseId !== identifier);
+        await this.item.update({ 'system.special': [...current, `${identifier}${suffix}`] });
+    }
+
+    /**
+     * Remove a quality from this weapon.
+     * @this {WeaponSheet}
+     * @param {Event} _event        Triggering click event.
+     * @param {HTMLElement} target  The chip's remove button, carrying `data-identifier`.
+     */
+    static async #removeQuality(this: WeaponSheet, _event: Event, target: HTMLElement): Promise<void> {
+        const identifier = target.dataset['identifier'];
+        if (identifier === undefined) return;
+        await this.item.update({ 'system.special': Array.from(this.item.system.special).filter((q) => q !== identifier) });
+    }
+
+    /**
      * Open a weapon quality compendium entry.
      * @this {WeaponSheet}
      * @param {Event} event         Triggering click event.
@@ -590,13 +647,7 @@ export default class WeaponSheet extends ContainerItemSheet<WeaponItem> {
         const identifier = target.dataset['identifier'];
         if (identifier === undefined || identifier === '') return;
 
-        // The weapon-qualities pack is per game system (dh2-core-items-weapon-qualities,
-        // rt-core-items-weapon-qualities, …); resolve it by the owning actor's system,
-        // falling back to the world's primary line for an unowned/world weapon (#403).
-        // The previous hardcoded 'wh40k-rpg.wh40k-items-weapon-qualities' id never existed.
-        const gameSystem = (this.item.actor?.system as { gameSystem?: string } | undefined)?.gameSystem ?? WH40KSettings.getPrimaryGameSystem();
-        const packName = `${gameSystemPackPrefix(gameSystem)}-core-items-weapon-qualities`;
-        const pack = game.packs.find((p) => p.metadata.name === packName && p.documentName === 'Item');
+        const pack = this.#qualityPack();
         if (pack === undefined) {
             ui.notifications.warn(game.i18n.localize('WH40K.WeaponSheet.QualitiesCompendiumMissing'));
             return;

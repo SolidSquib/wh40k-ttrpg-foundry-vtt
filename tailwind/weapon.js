@@ -133,6 +133,7 @@ module.exports = {
                 "width": "100%",
                 "min-height": "42px",
                 "padding": "24px 12px 8px",
+                "line-height": "1.2",
                 "background": "rgba(0, 0, 0, 0.25)",
                 "border": "1px solid rgba(255, 255, 255, 0.12)",
                 "border-radius": "6px",
@@ -207,6 +208,7 @@ module.exports = {
             "&--select": {
                 "select": {
                     "appearance": "none",
+                    "min-height": "50px",
                     "padding-right": "32px",
                     "cursor": "pointer",
                     "option": {

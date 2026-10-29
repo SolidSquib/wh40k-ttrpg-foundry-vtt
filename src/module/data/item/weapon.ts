@@ -30,7 +30,9 @@ import DamageTemplate from '../shared/damage-template.ts';
 import DescriptionTemplate from '../shared/description-template.ts';
 import EquippableTemplate, { type EquippableState } from '../shared/equippable-template.ts';
 import { renameKeys } from '../shared/migrate-rename.ts';
+import { normalizeToArrayOrEmpty } from '../shared/normalize-to-array.ts';
 import PhysicalItemTemplate from '../shared/physical-item-template.ts';
+import type { RawSource } from '../shared/raw-source.ts';
 import { WEAPON_FACING_CHOICES, WEAPON_MOUNTING_CHOICES, type WeaponFacing, type WeaponMounting } from '../shared/vehicle-mounting.ts';
 import { isWeaponClass, WEAPON_CLASS_CHOICES } from '../shared/weapon-class.ts';
 
@@ -639,18 +641,12 @@ export default class WeaponData extends ItemDataModel.mixin(DescriptionTemplate,
     }
 
     /**
-     * Ensure special is an array for SetField compatibility.
+     * Ensure special is an array for SetField compatibility (an absent `special` stays absent; see
+     * {@link normalizeToArrayOrEmpty}).
      * @param {object} source  The source data
      */
-    // eslint-disable-next-line no-restricted-syntax -- boundary: mirrors _migrateData source signature for internal migration helpers
-    static #migrateSpecial(source: Record<string, unknown>): void {
-        const special = source['special'];
-        if (Array.isArray(special)) return;
-        if (special !== null && special !== undefined && typeof special === 'object' && Symbol.iterator in special) {
-            source['special'] = Array.from(special as Iterable<string>);
-        } else {
-            source['special'] = [];
-        }
+    static #migrateSpecial(source: RawSource): void {
+        normalizeToArrayOrEmpty(source, 'special');
     }
 
     /**
