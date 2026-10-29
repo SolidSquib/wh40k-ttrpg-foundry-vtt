@@ -8,8 +8,10 @@
 
 import type { GameSystemId, SidebarHeaderField } from '../../config/game-systems/types.ts';
 import type { WH40KNPC } from '../../documents/npc.ts';
+import { applyNpcLoadout, loadoutsOf } from '../../managers/npc-loadout-manager.ts';
 import { getInteractionCap } from '../../rules/disposition.ts';
 import { HIT_LOCATION_IDS, hitLocationLabel } from '../../rules/hit-locations.ts';
+import { resolveActiveLoadout } from '../../rules/npc-loadout.ts';
 import { resolveSenses, senseBearersOf, tokenSensesUpdate } from '../../rules/token-senses.ts';
 import { tokenPresetFromActor } from '../../utils/token-footprint.ts';
 import ConfirmationDialog from '../dialogs/confirmation-dialog.ts';
@@ -65,6 +67,9 @@ function resolveSkillChar(existing: NPCV2TrainedSkillData | undefined, catalogCh
 
 /** Ranks in the DH2 ladder above untrained: Known, +10, +20, +30 (#503). */
 const MAX_SKILL_RANK = 4;
+
+/** More loadouts than this are offered as a dropdown rather than a row of buttons. */
+const MAX_LOADOUT_BUTTONS = 6;
 
 /**
  * Build a trained-skill entry at the requested rank, preserving characteristic and
@@ -289,6 +294,7 @@ export default class NPCSheet extends CharacterSheet {
             toggleGMTools: NPCSheet.#toggleGMTools,
             toggleAbilityDesc: NPCSheet.#toggleAbilityDesc,
             generateInventory: NPCSheet.#generateInventory,
+            applyLoadout: NPCSheet.#applyLoadout,
             // Interaction tally (DH2 errata p.125, #145)
             adjustInteractionCount: NPCSheet.#adjustInteractionCount,
         },
@@ -375,6 +381,12 @@ export default class NPCSheet extends CharacterSheet {
         context['threatTier'] = this.npcActor.system.threatTier;
         context['npcTierOptions'] = npcTierOptions();
         context['npcNatureOptions'] = npcNatureOptions();
+        // Weapon loadouts: always one in force when the NPC has any (the stored one, else the first listed)
+        const loadouts = await loadoutsOf(this.npcActor);
+        const loadoutInForce = resolveActiveLoadout(loadouts, this.npcActor.system.activeLoadout);
+        context['loadouts'] = loadouts.map((loadout) => ({ id: loadout.id, name: loadout.name, active: loadout.id === loadoutInForce }));
+        context['hasLoadouts'] = loadouts.length > 0;
+        context['loadoutsAsSelect'] = loadouts.length > MAX_LOADOUT_BUTTONS;
         context['statBlockCharacteristics'] = Object.entries(CONFIG.wh40k.characteristics)
             .filter(([key]) => key in this.npcActor.system.characteristics)
             .map(([key, config]) => ({ key, label: config.label, short: config.abbreviation }));
@@ -1567,6 +1579,32 @@ export default class NPCSheet extends CharacterSheet {
         // Rotate chevron
         const icon = target.querySelector('i');
         if (icon) icon.classList.toggle('fa-rotate-180');
+    }
+
+    /* -------------------------------------------- */
+
+    /** Wire the loadout dropdown (shown instead of buttons when an NPC has many loadouts). */
+    // eslint-disable-next-line no-restricted-syntax -- boundary: Foundry ApplicationV2 _onRender signature uses Record<string, unknown>
+    override async _onRender(context: Record<string, unknown>, options: Record<string, unknown>): Promise<void> {
+        await super._onRender(context, options);
+        const select = this.element.querySelector<HTMLSelectElement>('select[data-loadout-select]');
+        select?.addEventListener('change', () => {
+            if (select.value !== '') void applyNpcLoadout(this.npcActor, select.value).then(async () => this.render(false));
+        });
+    }
+
+    /* -------------------------------------------- */
+
+    /**
+     * Make the clicked loadout this NPC's active weapon loadout, replacing the one in force.
+     * @param {Event} event - The triggering event.
+     * @param {HTMLElement} target - The loadout button, carrying `data-loadout`.
+     */
+    static async #applyLoadout(this: NPCSheet, event: Event, target: HTMLElement): Promise<void> {
+        event.preventDefault();
+        const loadoutId = target.dataset['loadout'];
+        if (loadoutId === undefined || loadoutId === '') return;
+        if (await applyNpcLoadout(this.npcActor, loadoutId)) await this.render(false);
     }
 
     /* -------------------------------------------- */

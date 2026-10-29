@@ -3602,6 +3602,12 @@
             "Acute": "Acute"
         },
         "NPC": {
+            "Loadouts": {
+                "PanelTitle": "Loadouts",
+                "Hint": "Choosing a loadout replaces the weapons the previous one brought. Fixed gear is untouched.",
+                "Applied": "{npc} now uses the {loadout} loadout.",
+                "ItemMissing": "Loadout {loadout}: could not find {uuid}."
+            },
             "StatBlock": {
                 "Title": "Stat Block",
                 "Characteristic": "Characteristic",
@@ -4327,6 +4333,7 @@
                 "DamageShort": "Dmg",
                 "CombatStatistics": "Combat Statistics",
                 "DamageDice": "Damage Dice",
+                "AddsStrengthBonus": "Melee damage adds the wielder's Strength Bonus",
                 "Bonus": "Bonus",
                 "WeaponClass": "Weapon Class",
                 "WeaponType": "Weapon Type",

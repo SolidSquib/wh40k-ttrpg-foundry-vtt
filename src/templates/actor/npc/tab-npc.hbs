@@ -133,6 +133,34 @@
       {{/if}}
     </div>
 
+    {{!-- ═══ LOADOUTS ═══ --}}
+    {{#if isGM}}
+    {{#if hasLoadouts}}
+    <div class="wh40k-panel">
+      <div class="wh40k-panel-header">
+        <i class="fa-solid fa-crosshairs"></i>
+        <span>{{localize "WH40K.NPC.Loadouts.PanelTitle"}}</span>
+      </div>
+      <div class="wh40k-panel-body">
+        {{#if loadoutsAsSelect}}
+        <select data-loadout-select class="tw-w-full">
+          {{#each loadouts}}
+          <option value="{{id}}" {{#if active}}selected{{/if}}>{{name}}</option>
+          {{/each}}
+        </select>
+        {{else}}
+        <div class="tw-flex tw-flex-wrap tw-gap-1.5">
+          {{#each loadouts}}
+          <button type="button" class="tw-px-3 tw-py-1.5 tw-rounded-md tw-border tw-text-xs tw-font-semibold tw-uppercase tw-cursor-pointer {{#if active}}tw-border-amber-500 tw-bg-amber-700/50 tw-text-amber-100{{else}}tw-border-amber-600 tw-bg-amber-700/10 tw-text-amber-200 hover:tw-bg-amber-700/40{{/if}}" data-action="applyLoadout" data-loadout="{{id}}" aria-pressed="{{active}}">{{name}}</button>
+          {{/each}}
+        </div>
+        {{/if}}
+        <p class="tw-mt-1.5 tw-text-[0.75rem] tw-italic tw-text-[color:var(--color-text-light-secondary,#888)]">{{localize "WH40K.NPC.Loadouts.Hint"}}</p>
+      </div>
+    </div>
+    {{/if}}
+    {{/if}}
+
     {{!-- ═══ INVENTORY GENERATOR ═══ --}}
     {{!-- Merchant/barter trading is handled by the Item Piles module (a hard
           dependency); configure this NPC as a merchant via Item Piles. --}}

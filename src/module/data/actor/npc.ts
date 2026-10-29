@@ -204,6 +204,8 @@ export default class NPCData extends HordeTemplate(ActorDataModel) {
     declare threatLevel: number;
     declare fate: { value: number; max: number };
     declare fatigue: { value: number; max: number };
+    declare loadouts: Array<{ id: string; name: string; items: string[] }>;
+    declare activeLoadout: string;
     declare characteristics: {
         weaponSkill: NPCCharacteristicData;
         ballisticSkill: NPCCharacteristicData;
@@ -418,6 +420,18 @@ export default class NPCData extends HordeTemplate(ActorDataModel) {
 
             // === WOUNDS ===
             wounds: woundsField({ max: 10, value: 10, critical: 0, nullable: true }),
+
+            // Weapon loadouts the stat block prints as alternatives ("Slugga Boy", "Shoota Boy"). Authored in the compendium
+            // actor; the first is the default. `activeLoadout` names the one in force, and the items it added carry its id.
+            loadouts: new ArrayField(
+                new SchemaField({
+                    id: new StringField({ required: true, blank: false }),
+                    name: new StringField({ required: true, blank: false }),
+                    items: new ArrayField(new StringField({ required: true, blank: false }), { required: true, initial: [] }),
+                }),
+                { required: true, initial: [] },
+            ),
+            activeLoadout: new StringField({ required: true, blank: true, initial: '' }),
 
             // Fatigue. The fatigue panel on the NPC tab, the Assign Damage dialog and damage assignment (which adds
             // fatigue damage to `value`) all read `system.fatigue`, so an NPC must carry it like a character does.
