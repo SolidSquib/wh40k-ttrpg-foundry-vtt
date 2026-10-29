@@ -6,7 +6,7 @@
  * fail SetField validation, dropping the item on `Item.create`.
  */
 import { describe, expect, it } from 'vitest';
-import { normalizeNestedToArray, normalizeToArray } from './normalize-to-array.ts';
+import { normalizeNestedToArray, normalizeToArray, normalizeToArrayOrEmpty } from './normalize-to-array.ts';
 import type { RawSource } from './raw-source.ts';
 
 describe('normalizeToArray', () => {
@@ -101,5 +101,34 @@ describe('normalizeNestedToArray', () => {
 
     it('is a no-op when source is undefined', () => {
         expect(() => normalizeNestedToArray(undefined, 'restrictions', 'armourTypes')).not.toThrow();
+    });
+});
+
+describe('normalizeToArrayOrEmpty', () => {
+    it('leaves an absent key absent, so an update diff that omits it cannot wipe the stored value', () => {
+        const source: RawSource = { name: 'diff only' };
+        normalizeToArrayOrEmpty(source, 'special');
+        expect('special' in source).toBe(false);
+    });
+
+    it('keeps an array and converts a Set to an array', () => {
+        const kept: RawSource = { special: ['blast-3', 'reliable'] };
+        normalizeToArrayOrEmpty(kept, 'special');
+        expect(kept['special']).toEqual(['blast-3', 'reliable']);
+        const converted: RawSource = { special: new Set(['tearing']) };
+        normalizeToArrayOrEmpty(converted, 'special');
+        expect(converted['special']).toEqual(['tearing']);
+    });
+
+    it('replaces a present but unusable value with an empty array', () => {
+        for (const junk of [42, null, {}, 'razor-sharp']) {
+            const source: RawSource = { special: junk };
+            normalizeToArrayOrEmpty(source, 'special');
+            expect(source['special']).toEqual([]);
+        }
+    });
+
+    it('is a no-op when source is undefined', () => {
+        expect(() => normalizeToArrayOrEmpty(undefined, 'special')).not.toThrow();
     });
 });

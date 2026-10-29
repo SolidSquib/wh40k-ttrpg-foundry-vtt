@@ -6,6 +6,7 @@
 import WH40K from '../../config.ts';
 import type { WH40KItemDocument } from '../../types/global.d.ts';
 import { flattenNestedForms } from '../../utils/dom-forms.ts';
+import { dropBlankStrings } from '../../utils/submit-data.ts';
 import { WH40KSettings } from '../../wh40k-rpg-settings.ts';
 import ApplicationV2Mixin, { setupNumberInputAutoSelect } from '../api/application-v2-mixin.ts';
 import * as EffectActions from '../api/effect-actions.ts';
@@ -19,6 +20,9 @@ const { ItemSheetV2 } = foundry.applications.sheets;
 /** Tab label localization keys, hoisted so the static TABS entries reference identifiers. */
 const TAB_LABEL_DESCRIPTION = 'WH40K.Tabs.Description';
 const TAB_LABEL_EFFECTS = 'WH40K.Tabs.Effects';
+
+/** Buttons that only change what an item sheet shows; they stay enabled on a read-only sheet. */
+const NAVIGATION_CONTROLS = '.wh40k-tabs button, [data-action="toggleBody"], [data-action="toggleSection"]';
 
 /**
  * Base item sheet built on ApplicationV2.
@@ -140,13 +144,13 @@ export default class BaseItemSheet<TItem extends WH40KItemDocument = WH40KItemDo
 
     /**
      * Whether the sheet is in edit mode.
-     * Compendium items are always in view mode.
+     * Compendium items are editable while their pack is unlocked.
      * @private
      */
     #editMode = false;
 
     /**
-     * Whether this item is from a compendium (read-only).
+     * Whether this item is from a compendium.
      */
     get isCompendiumItem(): boolean {
         return this.item.pack !== null;
@@ -163,7 +167,7 @@ export default class BaseItemSheet<TItem extends WH40KItemDocument = WH40KItemDo
      * Whether the sheet should show edit controls.
      */
     get canEdit(): boolean {
-        if (this.isCompendiumItem) return false;
+        // `isEditable` already honours the compendium's lock: it is false while the pack is locked.
         return this.isEditable;
     }
 
@@ -171,10 +175,8 @@ export default class BaseItemSheet<TItem extends WH40KItemDocument = WH40KItemDo
      * Whether the sheet is currently in edit mode.
      */
     get inEditMode(): boolean {
-        // Compendium items are never in edit mode
-        if (this.isCompendiumItem) return false;
         // For actor-owned items, use toggle state
-        // For world items, always allow editing if editable
+        // For world and unlocked-compendium items, always allow editing if editable
         if (!this.isOwnedByActor) return this.isEditable;
         return this.#editMode && this.isEditable;
     }
@@ -292,6 +294,7 @@ export default class BaseItemSheet<TItem extends WH40KItemDocument = WH40KItemDo
         };
         const proto = Object.getPrototypeOf(BaseItemSheet.prototype) as SuperWithPrepare;
         const submitData = proto._prepareSubmitData?.call(this, event, form, formData, updateData) ?? {};
+        dropBlankStrings(submitData);
 
         // CRITICAL FIX: Clean img field if present to prevent validation errors
         // Foundry V13 has very strict validation on img field
@@ -323,6 +326,11 @@ export default class BaseItemSheet<TItem extends WH40KItemDocument = WH40KItemDo
     // eslint-disable-next-line no-restricted-syntax -- boundary: ApplicationV2 _onRender accepts untyped context record
     override async _onRender(context: Record<string, unknown>, options: ApplicationV2Config.RenderOptions): Promise<void> {
         await super._onRender(context, options);
+
+        // Foundry disables every form element, buttons included, on a sheet that is not editable (a locked
+        // compendium, a document the user may only observe). Controls that only change what the sheet shows
+        // (tab buttons, collapse toggles) never touch the document, so they stay usable for browsing.
+        for (const control of this.element.querySelectorAll<HTMLButtonElement>(NAVIGATION_CONTROLS)) control.disabled = false;
 
         // Many item templates wrap themselves in a second <form>; its fields would not belong to this sheet's
         // root form, so the form reader would skip them and an edit would never save (see flattenNestedForms).

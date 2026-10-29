@@ -73,6 +73,25 @@ export function normalizeToArray(source: RawSource | undefined, key: string, opt
 }
 
 /**
+ * {@link normalizeToArray}, and a value that is present but cannot become an array (a number, an object
+ * with no iterator, `null`) is replaced by `[]`. An **absent** key stays absent: Foundry also migrates the
+ * partial diff of every `update()`, and defaulting the key there would overwrite the stored value on each
+ * unrelated edit (the schema's own `initial` already covers a brand-new document).
+ *
+ * @param source  The raw `migrateData` source object (may be undefined).
+ * @param key     The top-level field key to normalize.
+ */
+export function normalizeToArrayOrEmpty(source: RawSource | undefined, key: string): void {
+    if (!source || !(key in source)) return;
+    const value = source[key];
+    if (value !== null && typeof value === 'object' && !Array.isArray(value) && Symbol.iterator in value) {
+        source[key] = Array.from(value as Iterable<RawValue>);
+    } else if (!Array.isArray(value)) {
+        source[key] = [];
+    }
+}
+
+/**
  * Normalize `source[parentKey][childKey]` from a Set (or string) to a plain
  * array in place — the nested variant for `restrictions.*` SetFields. No-op
  * when the parent is missing/not an object or the child value is absent.
