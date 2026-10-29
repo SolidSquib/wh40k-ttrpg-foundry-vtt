@@ -4,6 +4,8 @@
 
 import type AmmunitionData from '../../data/item/ammunition.ts';
 import type { WH40KItemDocument } from '../../types/global.d.ts';
+import { loadQualityChoices, weaponQualityPack } from '../../utils/weapon-quality-choices.ts';
+import { WH40KSettings } from '../../wh40k-rpg-settings.ts';
 import SetFieldActionsMixin from '../api/set-field-actions-mixin.ts';
 import BaseItemSheet from './base-item-sheet.ts';
 
@@ -27,8 +29,8 @@ export default class AmmoSheet extends SetFieldActionsMixin(BaseItemSheet<AmmoIt
         ...BaseItemSheet.DEFAULT_OPTIONS,
         classes: ['wh40k-rpg', 'sheet', 'item', 'ammunition'],
         position: {
-            width: 580,
-            height: 660,
+            width: 620,
+            height: 760,
         },
         actions: {
             ...BaseItemSheet.DEFAULT_OPTIONS.actions,
@@ -78,11 +80,34 @@ export default class AmmoSheet extends SetFieldActionsMixin(BaseItemSheet<AmmoIt
         // Add CONFIG reference for templates
         context['CONFIG'] = CONFIG;
 
-        // Add helper for Set checking
-        context['setIncludes'] = (value: string, set: Set<string>) => set.has(value);
-        context['setToArray'] = (set: Set<string>) => Array.from(set);
+        // The Set fields as plain lists: Handlebars cannot call a context function as a helper
+        const system = this.item.system;
+        context['addedQualities'] = Array.from(system.addedQualities);
+        context['removedQualities'] = Array.from(system.removedQualities);
+        context['weaponTypeOptions'] = Object.entries(CONFIG.wh40k.weaponTypes).map(([key, config]) => ({
+            key,
+            label: config.label,
+            selected: system.weaponTypes.has(key),
+        }));
+
+        // Quality picker (authoring only) and the damage-type options of the override profile
+        context['qualityChoices'] = this.canEdit ? await loadQualityChoices(weaponQualityPack(WH40KSettings.getPrimaryGameSystem())) : [];
+        context['damageTypes'] = CONFIG.wh40k.damageTypes;
 
         return context;
+    }
+
+    /* -------------------------------------------- */
+
+    /** @override */
+    // eslint-disable-next-line no-restricted-syntax -- boundary: ApplicationV2 _onRender accepts the untyped context record
+    override async _onRender(context: Record<string, unknown>, options: ApplicationV2Config.RenderOptions): Promise<void> {
+        await super._onRender(context, options);
+
+        // The new-quality inputs are not document fields: typing in them must not submit (and re-render) the form
+        this.element.querySelectorAll<HTMLInputElement>('[name="new-added-quality"], [name="new-removed-quality"]').forEach((input) => {
+            input.addEventListener('change', (event) => event.stopPropagation());
+        });
     }
 
     /* -------------------------------------------- */

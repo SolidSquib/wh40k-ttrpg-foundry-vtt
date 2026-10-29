@@ -96,6 +96,50 @@
                                class="{{#unless inEditMode}}wh40k-input--readonly{{/unless}}" {{#unless inEditMode}}readonly{{/unless}} />
                         <small class="tw-text-xs tw-opacity-70">{{localize "WH40K.Ammunition.ClipModifierHelp"}}</small>
                     </div>
+                    <div class="tw-flex tw-flex-col tw-gap-1">
+                        <label class="tw-text-sm tw-font-medium tw-text-[var(--wh40k-text-dark)]">{{localize "WH40K.Ammunition.ToHitModifier"}}</label>
+                        <input type="number" name="system.modifiers.attack" value="{{item.system.modifiers.attack}}" data-dtype="Number" step="1"
+                               class="{{#unless inEditMode}}wh40k-input--readonly{{/unless}}" {{#unless inEditMode}}readonly{{/unless}} />
+                        <small class="tw-text-xs tw-opacity-70">{{localize "WH40K.Ammunition.ToHitModifierHelp"}}</small>
+                    </div>
+                    <div class="tw-flex tw-flex-col tw-gap-1">
+                        <label class="tw-text-sm tw-font-medium tw-text-[var(--wh40k-text-dark)]">{{localize "WH40K.Ammunition.FireRateOverride"}}</label>
+                        <input type="number" name="system.fireRateOverride" value="{{item.system.fireRateOverride}}" data-dtype="Number" step="1" min="0"
+                               class="{{#unless inEditMode}}wh40k-input--readonly{{/unless}}" {{#unless inEditMode}}readonly{{/unless}} />
+                        <small class="tw-text-xs tw-opacity-70">{{localize "WH40K.Ammunition.FireRateOverrideHelp"}}</small>
+                    </div>
+                </div>
+            </div>
+
+            {{!-- Full-profile override: a round that replaces the weapon's damage profile instead of adjusting it --}}
+            <div class="tw-mb-4">
+                <h3 class="tw-flex tw-items-center tw-gap-2 tw-text-sm tw-font-display tw-mb-1">
+                    <i class="fas fa-burst"></i>
+                    {{localize "WH40K.Ammunition.OverrideProfile"}}
+                </h3>
+                <p class="tw-text-xs tw-opacity-70 tw-mb-3">{{localize "WH40K.Ammunition.OverrideProfileHelp"}}</p>
+                <div class="tw-grid tw-grid-cols-4 tw-gap-3">
+                    <div class="tw-flex tw-flex-col tw-gap-1">
+                        <label class="tw-text-sm tw-font-medium tw-text-[var(--wh40k-text-dark)]">{{localize "WH40K.Ammunition.OverrideFormula"}}</label>
+                        <input type="text" name="system.damage.formula" value="{{item.system.damage.formula}}"
+                               class="{{#unless inEditMode}}wh40k-input--readonly{{/unless}}" {{#unless inEditMode}}readonly{{/unless}} />
+                    </div>
+                    <div class="tw-flex tw-flex-col tw-gap-1">
+                        <label class="tw-text-sm tw-font-medium tw-text-[var(--wh40k-text-dark)]">{{localize "WH40K.Ammunition.OverrideBonus"}}</label>
+                        <input type="number" name="system.damage.bonus" value="{{item.system.damage.bonus}}" data-dtype="Number" step="1"
+                               class="{{#unless inEditMode}}wh40k-input--readonly{{/unless}}" {{#unless inEditMode}}readonly{{/unless}} />
+                    </div>
+                    <div class="tw-flex tw-flex-col tw-gap-1">
+                        <label class="tw-text-sm tw-font-medium tw-text-[var(--wh40k-text-dark)]">{{localize "WH40K.Combat.Penetration"}}</label>
+                        <input type="number" name="system.damage.penetration" value="{{item.system.damage.penetration}}" data-dtype="Number" step="1" min="0"
+                               class="{{#unless inEditMode}}wh40k-input--readonly{{/unless}}" {{#unless inEditMode}}readonly{{/unless}} />
+                    </div>
+                    <div class="tw-flex tw-flex-col tw-gap-1">
+                        <label class="tw-text-sm tw-font-medium tw-text-[var(--wh40k-text-dark)]">{{localize "WH40K.DamageType.Label"}}</label>
+                        <select name="system.damage.type" {{#unless inEditMode}}disabled{{/unless}}>
+                            {{selectOptions damageTypes selected=item.system.damage.type labelAttr="label" localize=true}}
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -134,11 +178,10 @@
                 </h3>
                 <p class="tw-text-sm tw-opacity-70 tw-mb-3">{{localize "WH40K.Ammunition.CompatibleWeaponTypesHelp"}}</p>
                 <div class="tw-flex tw-flex-wrap tw-gap-2">
-                    {{#each CONFIG.WH40K.weaponTypes as |type key|}}
-                    <label class="tw-inline-flex tw-items-center tw-gap-1.5 tw-px-3 tw-py-1.5 tw-rounded-md tw-border {{#unless ../inEditMode}}tw-cursor-default tw-opacity-80{{else}}tw-cursor-pointer{{/unless}} {{#if (setIncludes key system.weaponTypes)}}tw-border-[var(--wh40k-gold)] tw-bg-[rgba(212,175,55,0.15)]{{else}}tw-border-[var(--wh40k-border-color)] tw-bg-[var(--wh40k-panel-bg-translucent)]{{/if}}">
-                        <input type="checkbox" name="system.weaponTypes" value="{{key}}" class="tw-hidden" {{#if (setIncludes key system.weaponTypes)}}checked{{/if}} {{#unless ../inEditMode}}disabled{{/unless}} />
-                        <i class="{{type.icon}}"></i>
-                        <span class="tw-text-sm">{{type.label}}</span>
+                    {{#each weaponTypeOptions as |type|}}
+                    <label class="tw-inline-flex tw-items-center tw-gap-1.5 tw-px-3 tw-py-1.5 tw-rounded-md tw-border {{#unless ../inEditMode}}tw-cursor-default tw-opacity-80{{else}}tw-cursor-pointer{{/unless}} {{#if type.selected}}tw-border-[var(--wh40k-gold)] tw-bg-[rgba(212,175,55,0.15)]{{else}}tw-border-[var(--wh40k-border-color)] tw-bg-[var(--wh40k-panel-bg-translucent)]{{/if}}">
+                        <input type="checkbox" name="system.weaponTypes" value="{{type.key}}" class="tw-hidden" {{#if type.selected}}checked{{/if}} {{#unless ../inEditMode}}disabled{{/unless}} />
+                        <span class="tw-text-sm">{{localize type.label}}</span>
                     </label>
                     {{/each}}
                 </div>
@@ -156,7 +199,7 @@
                 </h3>
                 {{#if item.system.addedQualities.size}}
                 <div class="tw-flex tw-flex-wrap tw-items-center tw-gap-1 tw-mb-2">
-                    {{#each (setToArray item.system.addedQualities) as |quality|}}
+                    {{#each addedQualities as |quality|}}
                     <div class="tw-inline-flex tw-items-center tw-gap-1 tw-rounded-full tw-border tw-border-[rgba(34,197,94,0.35)] tw-bg-[rgba(34,197,94,0.15)] tw-px-2.5 tw-py-1 tw-text-sm tw-text-[#86efac]">
                         <span class="tw-font-medium">{{quality}}</span>
                         {{#if ../canEdit}}
@@ -173,7 +216,10 @@
                 {{/if}}
                 {{#if canEdit}}
                 <div class="tw-flex tw-gap-2">
-                    <input type="text" class="tw-flex-1" name="new-added-quality" placeholder="{{localize "WH40K.Ammunition.QualityPlaceholder"}}" />
+                    <input type="text" class="tw-flex-1" name="new-added-quality" list="ammo-quality-choices" placeholder="{{localize "WH40K.Ammunition.QualityPlaceholder"}}" />
+                    <datalist id="ammo-quality-choices">
+                        {{#each qualityChoices}}<option value="{{identifier}}">{{name}}</option>{{/each}}
+                    </datalist>
                     <button type="button" class="tw-inline-flex tw-items-center tw-gap-1 tw-px-3 tw-py-2 tw-bg-gradient-to-br tw-from-[var(--wh40k-gold-dark)] tw-to-[var(--wh40k-gold)] tw-border tw-border-[var(--wh40k-gold)] tw-rounded-md tw-text-[#1a1a1a] tw-text-sm tw-cursor-pointer" data-action="addQuality" data-type="added">
                         <i class="fas fa-plus"></i>
                         {{localize "WH40K.Ammunition.AddQuality"}}
@@ -190,7 +236,7 @@
                 </h3>
                 {{#if item.system.removedQualities.size}}
                 <div class="tw-flex tw-flex-wrap tw-items-center tw-gap-1 tw-mb-2">
-                    {{#each (setToArray item.system.removedQualities) as |quality|}}
+                    {{#each removedQualities as |quality|}}
                     <div class="tw-inline-flex tw-items-center tw-gap-1 tw-rounded-full tw-border tw-border-[rgba(248,113,113,0.35)] tw-bg-[rgba(248,113,113,0.15)] tw-px-2.5 tw-py-1 tw-text-sm tw-text-[#fca5a5]">
                         <span class="tw-font-medium">{{quality}}</span>
                         {{#if ../canEdit}}
@@ -207,7 +253,7 @@
                 {{/if}}
                 {{#if canEdit}}
                 <div class="tw-flex tw-gap-2">
-                    <input type="text" class="tw-flex-1" name="new-removed-quality" placeholder="{{localize "WH40K.Ammunition.QualityPlaceholder"}}" />
+                    <input type="text" class="tw-flex-1" name="new-removed-quality" list="ammo-quality-choices" placeholder="{{localize "WH40K.Ammunition.QualityPlaceholder"}}" />
                     <button type="button" class="tw-inline-flex tw-items-center tw-gap-1 tw-px-3 tw-py-2 tw-bg-gradient-to-br tw-from-[var(--wh40k-gold-dark)] tw-to-[var(--wh40k-gold)] tw-border tw-border-[var(--wh40k-gold)] tw-rounded-md tw-text-[#1a1a1a] tw-text-sm tw-cursor-pointer" data-action="addQuality" data-type="removed">
                         <i class="fas fa-plus"></i>
                         {{localize "WH40K.Ammunition.AddQuality"}}
@@ -272,6 +318,18 @@
 
             <div class="tw-mb-4">
                 <h3 class="tw-flex tw-items-center tw-gap-2 tw-text-sm tw-font-display tw-mb-3">
+                    <i class="fas fa-crosshairs"></i>
+                    {{localize "WH40K.Ammunition.HitEffect"}}
+                </h3>
+                {{#if inEditMode}}
+                {{editor system.hitEffect target="system.hitEffect" button=true editable=editable engine="prosemirror"}}
+                {{else}}
+                <div class="tw-text-[color:var(--wh40k-text-dark)] tw-leading-[1.5] tw-text-sm [&_p]:tw-mb-2">{{{system.hitEffect}}}</div>
+                {{/if}}
+            </div>
+
+            <div class="tw-mb-4">
+                <h3 class="tw-flex tw-items-center tw-gap-2 tw-text-sm tw-font-display tw-mb-3">
                     <i class="fas fa-book"></i>
                     {{localize "WH40K.Ammunition.Description"}}
                 </h3>
@@ -296,9 +354,24 @@
                     <i class="fas fa-book-open"></i>
                     {{localize "WH40K.Ammunition.Source"}}
                 </h3>
-                <input type="text" name="system.source" value="{{item.system.source}}" placeholder="{{localize "WH40K.Ammunition.SourcePlaceholder"}}"
-                       class="{{#unless inEditMode}}wh40k-input--readonly{{/unless}}" {{#unless inEditMode}}readonly{{/unless}} />
+                <div class="tw-flex tw-gap-2">
+                    <input type="text" name="system.source.book" value="{{item.system.source.book}}" placeholder="{{localize "WH40K.Ammunition.SourcePlaceholder"}}"
+                           class="tw-flex-1 {{#unless inEditMode}}wh40k-input--readonly{{/unless}}" {{#unless inEditMode}}readonly{{/unless}} />
+                    <input type="text" name="system.source.page" value="{{item.system.source.page}}" placeholder="{{localize "WH40K.Common.Page"}}"
+                           class="tw-w-20 {{#unless inEditMode}}wh40k-input--readonly{{/unless}}" {{#unless inEditMode}}readonly{{/unless}} />
+                </div>
             </div>
+
+            {{!-- Identifier: the stable id other documents refer to; authored on world and compendium ammunition only --}}
+            {{#if inEditMode}}
+            <div class="tw-mb-4">
+                <h3 class="tw-flex tw-items-center tw-gap-2 tw-text-sm tw-font-display tw-mb-3">
+                    <i class="fas fa-fingerprint"></i>
+                    {{localize "WH40K.ItemSheet.Weapon.Identifier"}}
+                </h3>
+                <input type="text" name="system.identifier" value="{{item.system.identifier}}" />
+            </div>
+            {{/if}}
 
         </div>
 
