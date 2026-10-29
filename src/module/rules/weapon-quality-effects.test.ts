@@ -11,7 +11,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
 import type { WeaponQualityMechanics } from '../data/item/weapon-quality-mechanics.ts';
-import { HAS_PRIVATE_CONTENT } from '../testing/private-content.ts';
+import { ADVERSARY_DEFINED_QUALITIES, HAS_PRIVATE_CONTENT } from '../testing/private-content.ts';
 import { weaponDestroysOnCriticalFail } from './weapon-destroy.ts';
 import {
     applyKeepHighestToDie,
@@ -67,8 +67,8 @@ describe.skipIf(!HAS_PRIVATE_CONTENT)('weaponQuality pack is populated with mech
         expect(mechanicsById.size).toBeGreaterThan(0);
     });
 
-    it('holds the qualities printed on core rulebook pp. 169–173 and those an adversary entry defines (Threshing, p. 356)', () => {
-        expect(mechanicsById.size).toBe(40);
+    it('holds the qualities printed on core rulebook pp. 169–173 and those an adversary entry defines (Threshing, Eyeburst)', () => {
+        expect(mechanicsById.size).toBe(39 + ADVERSARY_DEFINED_QUALITIES);
     });
 
     it('pins the parry/attack scalars the book prints', () => {

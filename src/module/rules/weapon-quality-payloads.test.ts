@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { HAS_PRIVATE_CONTENT } from '../testing/private-content.ts';
+import { ADVERSARY_DEFINED_QUALITIES, HAS_PRIVATE_CONTENT } from '../testing/private-content.ts';
 import {
     buildWeaponQualityPayloadIndex,
     getWeaponQualityHasLevel,
@@ -95,9 +95,9 @@ describe.skipIf(!HAS_PRIVATE_CONTENT)('weaponQuality index resolution (Only War)
 describe.skipIf(!HAS_PRIVATE_CONTENT)('weaponQuality pack content (Only War)', () => {
     const docs = loadDocs();
 
-    it('holds the 39 qualities of core rulebook pp. 169–173 plus Threshing (defined in a Dark Eldar footnote, p. 356), each with a unique identifier', () => {
+    it('holds the 39 qualities of core rulebook pp. 169–173 plus those adversary entries define in footnotes (Threshing, Eyeburst), each with a unique identifier', () => {
         const identifiers = docs.map((d) => d.system?.identifier);
-        expect(identifiers).toHaveLength(40);
-        expect(new Set(identifiers).size).toBe(40);
+        expect(identifiers).toHaveLength(39 + ADVERSARY_DEFINED_QUALITIES);
+        expect(new Set(identifiers).size).toBe(39 + ADVERSARY_DEFINED_QUALITIES);
     });
 });

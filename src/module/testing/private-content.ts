@@ -22,3 +22,6 @@ const PRIVATE_CONTENT_ROOT = resolve(__dirname, '..', '..', '..', 'src', 'packs-
  * every populated checkout carries (an uninitialised submodule is an empty dir).
  */
 export const HAS_PRIVATE_CONTENT = existsSync(resolve(PRIVATE_CONTENT_ROOT, 'system.packs.json'));
+
+/** Weapon qualities adversary entries define in their own footnotes (Threshing, Eyeburst), on top of the core rulebook's 39. */
+export const ADVERSARY_DEFINED_QUALITIES = 2;
