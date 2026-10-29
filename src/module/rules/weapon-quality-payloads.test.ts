@@ -95,9 +95,9 @@ describe.skipIf(!HAS_PRIVATE_CONTENT)('weaponQuality index resolution (Only War)
 describe.skipIf(!HAS_PRIVATE_CONTENT)('weaponQuality pack content (Only War)', () => {
     const docs = loadDocs();
 
-    it('holds the 39 qualities of core rulebook pp. 169–173, each with a unique identifier', () => {
+    it('holds the 39 qualities of core rulebook pp. 169–173 plus Threshing (defined in a Dark Eldar footnote, p. 356), each with a unique identifier', () => {
         const identifiers = docs.map((d) => d.system?.identifier);
-        expect(identifiers).toHaveLength(39);
-        expect(new Set(identifiers).size).toBe(39);
+        expect(identifiers).toHaveLength(40);
+        expect(new Set(identifiers).size).toBe(40);
     });
 });

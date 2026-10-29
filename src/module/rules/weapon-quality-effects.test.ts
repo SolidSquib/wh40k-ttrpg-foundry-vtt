@@ -67,8 +67,8 @@ describe.skipIf(!HAS_PRIVATE_CONTENT)('weaponQuality pack is populated with mech
         expect(mechanicsById.size).toBeGreaterThan(0);
     });
 
-    it('holds exactly the qualities printed on core rulebook pp. 169–173', () => {
-        expect(mechanicsById.size).toBe(39);
+    it('holds the qualities printed on core rulebook pp. 169–173 and those an adversary entry defines (Threshing, p. 356)', () => {
+        expect(mechanicsById.size).toBe(40);
     });
 
     it('pins the parry/attack scalars the book prints', () => {
