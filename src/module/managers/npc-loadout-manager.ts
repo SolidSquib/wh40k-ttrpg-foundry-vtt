@@ -9,7 +9,7 @@
 import { SYSTEM_ID } from '../constants.ts';
 import type { WH40KNPC } from '../documents/npc.ts';
 import { t } from '../i18n/t.ts';
-import { LOADOUT_FLAG, loadoutOfOwnedItem, type NpcLoadout, planLoadoutSwap } from '../rules/npc-loadout.ts';
+import { LOADOUT_FLAG, type LoadoutItem, loadoutOfOwnedItem, type NpcLoadout, planLoadoutSwap } from '../rules/npc-loadout.ts';
 
 /** An item's source data, narrowed to the fields a loadout writes. */
 interface ItemSource {
@@ -17,14 +17,16 @@ interface ItemSource {
     type: string;
     flags?: Record<string, object> | undefined;
     _stats?: object | undefined;
-    system?: { state?: object | undefined } | undefined;
+    system?:
+        | { state?: object | undefined; quantity?: number | undefined; craftsmanship?: string | undefined; special?: Iterable<string> | undefined }
+        | undefined;
 }
 
 /** Item types a loadout puts into use immediately. */
 const EQUIPPED_ON_ARRIVAL = new Set(['weapon', 'armour']);
 
-/** The item at `uuid` as data for a new embedded item, marked as added by `loadoutId`; `null` when it cannot be read. */
-async function itemDataFor(uuid: string, loadoutId: string): Promise<object | null> {
+/** The loadout item as data for a new embedded item, marked as added by `loadoutId`; `null` when it cannot be read. */
+async function itemDataFor({ uuid, quantity, craftsmanship, special }: LoadoutItem, loadoutId: string): Promise<object | null> {
     const doc = await fromUuid(uuid);
     // eslint-disable-next-line no-restricted-syntax -- boundary: fromUuid returns a Document | InvalidUuid | null union; toObject is feature-detected before use
     const toObject = (doc as { toObject?: () => ItemSource } | null)?.toObject;
@@ -36,7 +38,13 @@ async function itemDataFor(uuid: string, loadoutId: string): Promise<object | nu
         ...source,
         _stats: { ...source._stats, compendiumSource: uuid },
         flags: { ...source.flags, [SYSTEM_ID]: { ...source.flags?.[SYSTEM_ID], [LOADOUT_FLAG]: loadoutId } },
-        ...(EQUIPPED_ON_ARRIVAL.has(source.type) ? { system: { ...source.system, state: { ...source.system?.state, equipped: true } } } : {}),
+        system: {
+            ...source.system,
+            ...(quantity > 1 ? { quantity } : {}),
+            ...(craftsmanship === '' ? {} : { craftsmanship }),
+            ...(special.length === 0 ? {} : { special: [...new Set([...(source.system?.special ?? []), ...special])] }),
+            ...(EQUIPPED_ON_ARRIVAL.has(source.type) ? { state: { ...source.system?.state, equipped: true } } : {}),
+        },
     };
 }
 
@@ -55,14 +63,14 @@ export async function loadoutsOf(actor: WH40KNPC): Promise<readonly NpcLoadout[]
     if (source === null) return [];
     // eslint-disable-next-line no-restricted-syntax -- boundary: fromUuid returns a Document | InvalidUuid | null union; only its system loadouts are read
     const doc = (await fromUuid(source)) as LoadoutSource | null;
-    return doc?.system?.loadouts?.map(({ id, name, items }) => ({ id, name, items: [...items] })) ?? [];
+    return doc?.system?.loadouts?.map(({ id, name, items }) => ({ id, name, items: items.map((item) => ({ ...item, special: [...item.special] })) })) ?? [];
 }
 
 /** Item name to the id of the loadout that lists it, for copies that kept no compendium source. */
 async function loadoutNames(loadouts: readonly NpcLoadout[]): Promise<Map<string, string>> {
     const names = new Map<string, string>();
     for (const loadout of loadouts) {
-        for (const uuid of loadout.items) {
+        for (const { uuid } of loadout.items) {
             // eslint-disable-next-line no-await-in-loop -- a loadout has a handful of items, read one after another
             const doc = await fromUuid(uuid);
             // eslint-disable-next-line no-restricted-syntax -- boundary: fromUuid returns a Document | InvalidUuid | null union; only a string name is read
@@ -101,10 +109,10 @@ export async function applyNpcLoadout(actor: WH40KNPC, loadoutId: string): Promi
     if (swap === undefined) return false;
 
     const created: object[] = [];
-    for (const uuid of swap.add) {
+    for (const item of swap.add) {
         // eslint-disable-next-line no-await-in-loop -- a loadout has a handful of items, read one after another
-        const data = await itemDataFor(uuid, swap.loadout.id);
-        if (data === null) ui.notifications.warn(t('WH40K.NPC.Loadouts.ItemMissing', { loadout: swap.loadout.name, uuid }));
+        const data = await itemDataFor(item, swap.loadout.id);
+        if (data === null) ui.notifications.warn(t('WH40K.NPC.Loadouts.ItemMissing', { loadout: swap.loadout.name, uuid: item.uuid }));
         else created.push(data);
     }
 
@@ -112,7 +120,10 @@ export async function applyNpcLoadout(actor: WH40KNPC, loadoutId: string): Promi
     await actor.update(
         actor.system.loadouts.length > 0
             ? { 'system.activeLoadout': swap.loadout.id }
-            : { 'system.activeLoadout': swap.loadout.id, 'system.loadouts': loadouts.map((l) => ({ ...l, items: [...l.items] })) },
+            : {
+                  'system.activeLoadout': swap.loadout.id,
+                  'system.loadouts': loadouts.map((l) => ({ ...l, items: l.items.map((item) => ({ ...item, special: [...item.special] })) })),
+              },
     );
     if (swap.remove.length > 0) await actor.deleteEmbeddedDocuments('Item', swap.remove);
     if (created.length > 0) {

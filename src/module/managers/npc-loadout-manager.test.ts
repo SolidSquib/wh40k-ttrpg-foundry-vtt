@@ -1,19 +1,31 @@
 import { afterEach, describe, expect, it, type Mock, vi } from 'vitest';
+import type { NpcLoadout } from '../rules/npc-loadout.ts';
 import { applyNpcLoadout } from './npc-loadout-manager.ts';
 
 interface Source {
     _id: string;
     type: string;
     flags: Record<string, object>;
-    system: { state: object };
+    system: { state: object; special?: string[] };
 }
 
 const notifications = { warn: vi.fn(), info: vi.fn() };
 type Npc = Parameters<typeof applyNpcLoadout>[0];
 
-const LOADOUTS = [
-    { id: 'slugga', name: 'Slugga Boy', items: ['Compendium.x.Item.slugga'] },
-    { id: 'shoota', name: 'Shoota Boy', items: ['Compendium.x.Item.shoota', 'Compendium.x.Item.pack'] },
+const item = (uuid: string, extra: { quantity?: number; craftsmanship?: string; special?: string[] } = {}): NpcLoadout['items'][number] => ({
+    uuid,
+    quantity: 1,
+    craftsmanship: '',
+    special: [],
+    ...extra,
+});
+const LOADOUTS: NpcLoadout[] = [
+    { id: 'slugga', name: 'Slugga Boy', items: [item('Compendium.x.Item.slugga')] },
+    {
+        id: 'shoota',
+        name: 'Shoota Boy',
+        items: [item('Compendium.x.Item.shoota', { quantity: 2, craftsmanship: 'good', special: ['twin-linked'] }), item('Compendium.x.Item.pack')],
+    },
 ];
 
 const sources: Record<string, Source> = {
@@ -67,6 +79,10 @@ describe('applyNpcLoadout', () => {
         expect(created.map((c) => c._id)).toEqual([undefined, undefined]);
         expect(created.map((c) => c.flags['wh40k-rpg'])).toEqual([{ loadout: 'shoota' }, { loadout: 'shoota' }]);
         expect(created.map((c) => c.system.state.equipped)).toEqual([true, undefined]);
+        // what a loadout says of its item (how many, at what craftsmanship, with which extra qualities) survives the swap
+        expect(created.map((c) => (c.system as { quantity?: number }).quantity)).toEqual([2, undefined]);
+        expect(created.map((c) => (c.system as { craftsmanship?: string }).craftsmanship)).toEqual(['good', undefined]);
+        expect(created.map((c) => c.system.special)).toEqual([['twin-linked'], undefined]);
     });
 
     it('does nothing and warns when the user does not own the NPC', async () => {

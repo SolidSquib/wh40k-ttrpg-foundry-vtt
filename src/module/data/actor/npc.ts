@@ -204,7 +204,7 @@ export default class NPCData extends HordeTemplate(ActorDataModel) {
     declare threatLevel: number;
     declare fate: { value: number; max: number };
     declare fatigue: { value: number; max: number };
-    declare loadouts: Array<{ id: string; name: string; items: string[] }>;
+    declare loadouts: Array<{ id: string; name: string; items: Array<{ uuid: string; quantity: number; craftsmanship: string; special: string[] }> }>;
     declare activeLoadout: string;
     declare characteristics: {
         weaponSkill: NPCCharacteristicData;
@@ -427,7 +427,15 @@ export default class NPCData extends HordeTemplate(ActorDataModel) {
                 new SchemaField({
                     id: new StringField({ required: true, blank: false }),
                     name: new StringField({ required: true, blank: false }),
-                    items: new ArrayField(new StringField({ required: true, blank: false }), { required: true, initial: [] }),
+                    items: new ArrayField(
+                        new SchemaField({
+                            uuid: new StringField({ required: true, blank: false }),
+                            quantity: new NumberField({ required: true, initial: 1, integer: true, min: 1 }),
+                            craftsmanship: new StringField({ required: true, blank: true, initial: '' }),
+                            special: new ArrayField(new StringField({ required: true, blank: false }), { required: true, initial: [] }),
+                        }),
+                        { required: true, initial: [] },
+                    ),
                 }),
                 { required: true, initial: [] },
             ),
@@ -1468,6 +1476,22 @@ export default class NPCData extends HordeTemplate(ActorDataModel) {
         NPCData.#migrateCharacteristics(source);
         NPCData.#migrateWeapons(source);
         NPCData.#migrateSkills(source);
+        NPCData.#migrateLoadoutItems(source);
+    }
+
+    /**
+     * Migrate loadout items stored as bare compendium UUIDs to `{ uuid, quantity, craftsmanship, special }`.
+     * @param {object} source  The source data
+     */
+    // eslint-disable-next-line no-restricted-syntax -- boundary: Foundry migration source data
+    static #migrateLoadoutItems(source: Record<string, unknown>): void {
+        const { loadouts } = source;
+        if (!Array.isArray(loadouts)) return;
+        type StoredItem = string | { uuid: string; quantity: number; craftsmanship: string; special: string[] };
+        for (const loadout of loadouts as Array<{ items?: StoredItem[] }>) {
+            if (!Array.isArray(loadout.items)) continue;
+            loadout.items = loadout.items.map((item) => (typeof item === 'string' ? { uuid: item, quantity: 1, craftsmanship: '', special: [] } : item));
+        }
     }
 
     /**

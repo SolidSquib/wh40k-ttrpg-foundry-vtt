@@ -12,12 +12,21 @@
 /** The flag (under the system scope) on an item that a loadout added; its value is that loadout's id. */
 export const LOADOUT_FLAG = 'loadout';
 
+/** One compendium item a loadout brings, and how many of it, at what craftsmanship, with which extra qualities. */
+export interface LoadoutItem {
+    uuid: string;
+    quantity: number;
+    /** A craftsmanship to set on the item, or blank to leave the compendium item's own. */
+    craftsmanship: string;
+    /** Quality identifiers added to the item's own (a twin-linked weapon). */
+    special: readonly string[];
+}
+
 /** One weapon loadout of an NPC. */
 export interface NpcLoadout {
     id: string;
     name: string;
-    /** UUIDs of the compendium items this loadout brings. */
-    items: readonly string[];
+    items: readonly LoadoutItem[];
 }
 
 /** An item the NPC owns, reduced to what a loadout swap needs. */
@@ -32,8 +41,8 @@ export interface LoadoutSwap {
     loadout: NpcLoadout;
     /** Ids of the owned items an earlier loadout added, to remove. */
     remove: string[];
-    /** UUIDs of the items the chosen loadout adds. */
-    add: string[];
+    /** The items the chosen loadout adds. */
+    add: LoadoutItem[];
 }
 
 /** The loadout that applies unless another is chosen: the first the NPC lists. */
@@ -71,6 +80,7 @@ export function loadoutOfOwnedItem(
     loadoutByName: ReadonlyMap<string, string>,
 ): string | null {
     if (item.flag !== null) return item.flag;
-    if (item.compendiumSource !== null) return loadouts.find((loadout) => loadout.items.includes(item.compendiumSource ?? ''))?.id ?? null;
+    if (item.compendiumSource !== null)
+        return loadouts.find((loadout) => loadout.items.some((loadoutItem) => loadoutItem.uuid === item.compendiumSource))?.id ?? null;
     return loadoutByName.get(item.name) ?? null;
 }
