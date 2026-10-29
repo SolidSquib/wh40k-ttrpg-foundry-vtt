@@ -3602,6 +3602,18 @@
             "Acute": "Acute"
         },
         "NPC": {
+            "StatBlock": {
+                "Title": "Stat Block",
+                "Characteristic": "Characteristic",
+                "Base": "Base",
+                "Unnatural": "Unnatural",
+                "UnnaturalHint": "Multiplies the characteristic bonus (2 for Unnatural ×2); 0 for none.",
+                "WoundsMax": "Wounds",
+                "Size": "Size",
+                "Armour": "Armour",
+                "ArmourAuthored": "Set armour by hand",
+                "ArmourAuthoredHint": "Off: armour comes from Toughness and the armour the NPC wears. On: the values below are used as typed."
+            },
             "Created": "Created NPC: {name}",
             "TagName": "Tag Name",
             "TagPlaceholder": "e.g., Boss, Minion, Ranged",

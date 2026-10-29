@@ -87,15 +87,15 @@ export default class WeaponSheet extends ContainerItemSheet<WeaponItem> {
     /**
      * Editing a weapon **owned by a character** is a direct-edit bypass of the
      * sanctioned path (compendium import), so it requires the "Freeform
-     * Characters" world setting (#571). Authoring a world / compendium weapon is
-     * unaffected. See {@link freeformOwnedGate}.
+     * Characters" world setting (#571). Authoring a world / compendium weapon, or
+     * tuning one carried by an NPC, is unaffected. See {@link freeformOwnedGate}.
      */
     override get canEdit(): boolean {
-        return super.canEdit && WH40KSettings.freeformOwnedGate(this.isOwnedByActor);
+        return super.canEdit && WH40KSettings.freeformOwnedGate(this.isOwnedByCharacter);
     }
 
     override get inEditMode(): boolean {
-        return super.inEditMode && WH40KSettings.freeformOwnedGate(this.isOwnedByActor);
+        return super.inEditMode && WH40KSettings.freeformOwnedGate(this.isOwnedByCharacter);
     }
 
     /** @override */

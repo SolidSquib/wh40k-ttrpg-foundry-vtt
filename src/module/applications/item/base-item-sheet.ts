@@ -164,6 +164,15 @@ export default class BaseItemSheet<TItem extends WH40KItemDocument = WH40KItemDo
     }
 
     /**
+     * Whether this item is carried by a player character. Gear on an NPC is part of its authored stat block, not
+     * a character's own copy, so it is not subject to the freeform-character edit gate.
+     */
+    get isOwnedByCharacter(): boolean {
+        const owner = this.item.actor;
+        return owner !== null && owner.type !== 'ow-npc';
+    }
+
+    /**
      * Whether the sheet should show edit controls.
      */
     get canEdit(): boolean {

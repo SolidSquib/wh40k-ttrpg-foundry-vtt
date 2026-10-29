@@ -9,6 +9,7 @@
 import type { GameSystemId, SidebarHeaderField } from '../../config/game-systems/types.ts';
 import type { WH40KNPC } from '../../documents/npc.ts';
 import { getInteractionCap } from '../../rules/disposition.ts';
+import { HIT_LOCATION_IDS, hitLocationLabel } from '../../rules/hit-locations.ts';
 import { resolveSenses, senseBearersOf, tokenSensesUpdate } from '../../rules/token-senses.ts';
 import { tokenPresetFromActor } from '../../utils/token-footprint.ts';
 import ConfirmationDialog from '../dialogs/confirmation-dialog.ts';
@@ -374,6 +375,14 @@ export default class NPCSheet extends CharacterSheet {
         context['threatTier'] = this.npcActor.system.threatTier;
         context['npcTierOptions'] = npcTierOptions();
         context['npcNatureOptions'] = npcNatureOptions();
+        context['statBlockCharacteristics'] = Object.entries(CONFIG.wh40k.characteristics)
+            .filter(([key]) => key in this.npcActor.system.characteristics)
+            .map(([key, config]) => ({ key, label: config.label, short: config.abbreviation }));
+        context['statBlockArmourLocations'] = HIT_LOCATION_IDS.map((key) => ({
+            key,
+            label: hitLocationLabel(key),
+            value: this.npcActor.system.armour.locations[key],
+        }));
         context['weaponClassOptions'] = {
             melee: 'Melee',
             pistol: 'Pistol',

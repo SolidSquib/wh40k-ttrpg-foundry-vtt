@@ -6,6 +6,53 @@
 <section class="tab {{#if tab.active}}active{{/if}} {{tab.cssClass}}" data-tab="{{tab.id}}" data-group="{{tab.group}}">
   <div>
 
+    {{!-- ═══ STAT BLOCK — characteristics, wounds, size and armour, for authoring an adversary. ═══ --}}
+    {{#if editable}}
+    <div class="wh40k-panel">
+      <div class="wh40k-panel-header">
+        <i class="fa-solid fa-table-list"></i>
+        <span class="tw-text-gold {{themeClassFor 'accent'}}">{{localize "WH40K.NPC.StatBlock.Title"}}</span>
+      </div>
+      <div class="wh40k-panel-body tw-flex tw-flex-col tw-gap-3">
+        <div class="tw-grid tw-grid-cols-[1fr_5rem_5rem] tw-items-center tw-gap-x-3 tw-gap-y-1 tw-text-[0.8rem]">
+          <span class="tw-text-[0.6rem] tw-font-bold tw-uppercase tw-tracking-wide tw-text-[color:var(--wh40k-text-muted)]">{{localize "WH40K.NPC.StatBlock.Characteristic"}}</span>
+          <span class="tw-text-[0.6rem] tw-font-bold tw-uppercase tw-tracking-wide tw-text-[color:var(--wh40k-text-muted)] tw-text-center">{{localize "WH40K.NPC.StatBlock.Base"}}</span>
+          <span class="tw-text-[0.6rem] tw-font-bold tw-uppercase tw-tracking-wide tw-text-[color:var(--wh40k-text-muted)] tw-text-center" title="{{localize 'WH40K.NPC.StatBlock.UnnaturalHint'}}">{{localize "WH40K.NPC.StatBlock.Unnatural"}}</span>
+          {{#each statBlockCharacteristics as |char|}}
+          <label class="tw-font-semibold" for="npc-char-{{char.key}}">{{localize char.label}}</label>
+          <input type="number" id="npc-char-{{char.key}}" name="system.characteristics.{{char.key}}.base" value="{{lookup (lookup ../system.characteristics char.key) 'base'}}"
+                 data-dtype="Number" min="0" step="1" class="tw-text-center" />
+          <input type="number" name="system.characteristics.{{char.key}}.unnatural" value="{{lookup (lookup ../system.characteristics char.key) 'unnatural'}}"
+                 data-dtype="Number" min="0" step="1" class="tw-text-center" />
+          {{/each}}
+        </div>
+
+        <div class="tw-grid tw-grid-cols-2 tw-gap-3">
+          <label class="tw-flex tw-flex-col tw-gap-1 tw-text-[0.8rem] tw-font-semibold">{{localize "WH40K.NPC.StatBlock.WoundsMax"}}
+            <input type="number" name="system.wounds.max" value="{{system.wounds.max}}" data-dtype="Number" min="0" step="1" />
+          </label>
+          <label class="tw-flex tw-flex-col tw-gap-1 tw-text-[0.8rem] tw-font-semibold">{{localize "WH40K.NPC.StatBlock.Size"}}
+            <input type="number" name="system.size" value="{{system.size}}" data-dtype="Number" min="0" step="1" />
+          </label>
+        </div>
+
+        <div class="tw-flex tw-flex-col tw-gap-2">
+          <label class="tw-flex tw-items-center tw-gap-2 tw-text-[0.8rem] tw-font-semibold" title="{{localize 'WH40K.NPC.StatBlock.ArmourAuthoredHint'}}">
+            <input type="checkbox" name="system.armour.authored" {{checked system.armour.authored}} />
+            {{localize "WH40K.NPC.StatBlock.ArmourAuthored"}}
+          </label>
+          <div class="tw-grid tw-grid-cols-6 tw-gap-2">
+            {{#each statBlockArmourLocations as |loc|}}
+            <label class="tw-flex tw-flex-col tw-gap-1 tw-text-[0.65rem] tw-font-bold tw-uppercase tw-tracking-wide tw-text-[color:var(--wh40k-text-muted)]">{{loc.label}}
+              <input type="number" name="system.armour.locations.{{loc.key}}" value="{{loc.value}}" data-dtype="Number" min="0" step="1" class="tw-text-center" />
+            </label>
+            {{/each}}
+          </div>
+        </div>
+      </div>
+    </div>
+    {{/if}}
+
     {{!-- ═══ VITALS — FATIGUE (#420) ═══
           Fatigue lives in the shared creature DataModel (system.fatigue), but the
           NPC body never surfaced it, so it couldn't be set on aberrants etc. Reuse

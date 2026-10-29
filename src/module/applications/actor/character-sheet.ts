@@ -54,6 +54,7 @@ import { firstSystemId } from '../../utils/chat-system-id.ts';
 import { errorMessage } from '../../utils/error-message.ts';
 import { capitalize, formatSigned } from '../../utils/format.ts';
 import { gameSystemPackPrefix } from '../../utils/game-system-pack-prefix.ts';
+import { type NpcArmourBag, npcLocationArmour } from '../../utils/npc-location-armour.ts';
 import { isOriginItemType } from '../../utils/origin-item-types.ts';
 import { uuidNameCache } from '../../utils/uuid-name-cache.ts';
 import { WH40KSettings } from '../../wh40k-rpg-settings.ts';
@@ -2008,9 +2009,11 @@ export default class CharacterSheet extends BaseActorSheet {
             const locationLabel = hitLocationLabel(locationKey);
             // eslint-disable-next-line no-restricted-syntax -- boundary: system.armour is typed loosely on WH40KActorSystemData; narrow per location key
             const rawArmour = system.armour?.[locationKey];
+            // An NPC keeps its derived armour as plain numbers under `armour.locations`, not as per-location objects
+            const npcTotal = npcLocationArmour(system.armour as NpcArmourBag | undefined, locationKey);
             const armourData: WH40KArmourLocation = {
-                value: rawArmour?.value ?? 0,
-                total: rawArmour?.total ?? 0,
+                value: rawArmour?.value ?? npcTotal,
+                total: rawArmour?.total ?? npcTotal,
                 toughnessBonus: rawArmour?.toughnessBonus ?? 0,
                 traitBonus: rawArmour?.traitBonus ?? 0,
             };

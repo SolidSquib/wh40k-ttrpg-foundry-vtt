@@ -372,16 +372,16 @@ export class WH40KSettings {
     }
 
     /**
-     * Freeform-bypass gate for an item that is **owned by an actor** (#571).
+     * Freeform-bypass gate for an item that is **owned by a player character** (#571).
      * Editing a character's own copy of content (a weapon, an origin-path step)
      * is a direct-edit bypass of the sanctioned path (compendium import /
      * origin-path creator), so it is only permitted when {@link
      * isFreeformCharactersEnabled} is on. A world / compendium copy (authoring,
-     * `isOwnedByActor === false`) is always allowed. Combine with a sheet's base
-     * `canEdit` / `inEditMode` via `&&`.
+     * `isOwnedByCharacter === false`) and gear carried by an NPC are always
+     * allowed. Combine with a sheet's base `canEdit` / `inEditMode` via `&&`.
      */
-    static freeformOwnedGate(isOwnedByActor: boolean): boolean {
-        return !isOwnedByActor || WH40KSettings.isFreeformCharactersEnabled();
+    static freeformOwnedGate(isOwnedByCharacter: boolean): boolean {
+        return !isOwnedByCharacter || WH40KSettings.isFreeformCharactersEnabled();
     }
 
     /** When true, the Build Clip action lets players compose an ordered mixed

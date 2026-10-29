@@ -59,6 +59,12 @@ describe('BaseItemSheet editability', () => {
         expect(sheetWith({ pack: null, actor: null, isEditable: false }).inEditMode).toBe(false);
     });
 
+    it('tells gear carried by a player character from gear on an NPC, which is authored stat-block content', () => {
+        expect(sheetWith({ pack: null, actor: { type: 'ow-character' }, isEditable: true }).isOwnedByCharacter).toBe(true);
+        expect(sheetWith({ pack: null, actor: { type: 'ow-npc' }, isEditable: true }).isOwnedByCharacter).toBe(false);
+        expect(sheetWith({ pack: null, actor: null, isEditable: true }).isOwnedByCharacter).toBe(false);
+    });
+
     it('leaves an actor-owned item in view mode until its edit toggle is used', () => {
         const sheet = sheetWith({ pack: null, actor: {}, isEditable: true });
         expect(sheet.canEdit).toBe(true);

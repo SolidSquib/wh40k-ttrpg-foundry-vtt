@@ -53,11 +53,11 @@ export default class OriginPathSheet extends BaseItemSheet {
      * origin path is unaffected. See {@link freeformOwnedGate}.
      */
     override get canEdit(): boolean {
-        return super.canEdit && WH40KSettings.freeformOwnedGate(this.isOwnedByActor);
+        return super.canEdit && WH40KSettings.freeformOwnedGate(this.isOwnedByCharacter);
     }
 
     override get inEditMode(): boolean {
-        return super.inEditMode && WH40KSettings.freeformOwnedGate(this.isOwnedByActor);
+        return super.inEditMode && WH40KSettings.freeformOwnedGate(this.isOwnedByCharacter);
     }
 
     /** @override */
