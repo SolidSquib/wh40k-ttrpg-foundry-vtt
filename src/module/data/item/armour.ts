@@ -115,8 +115,9 @@ export default class ArmourData extends ItemDataModel.mixin(DescriptionTemplate,
         if (typeof source['type'] === 'string' && !(ARMOUR_TYPE_CHOICES as readonly string[]).includes(source['type'])) {
             source['type'] = 'flak';
         }
-        // eslint-disable-next-line no-restricted-syntax -- migration: ??= is the correct operator here; default is set in migrateData not schema
-        source['properties'] ??= [];
+        // `properties` is deliberately not defaulted here: Foundry also migrates the partial diff of every
+        // `update()`, and a default would overwrite the stored properties on each unrelated edit. The schema's
+        // own initial value covers a brand-new armour.
         if (Array.isArray(source['coverage'])) {
             source['coverage'] = new Set(source['coverage']);
         }

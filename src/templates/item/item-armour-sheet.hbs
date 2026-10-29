@@ -281,6 +281,21 @@
                   {{localize "WH40K.Item.Bound"}}
                 </label>
               </div>
+              <div class="tw-col-span-2 tw-flex tw-flex-col tw-gap-1">
+                <label class="tw-flex tw-items-center tw-gap-2 tw-cursor-pointer tw-text-sm tw-font-medium" title="{{localize "WH40K.ItemSheet.Armour.PrimitiveHint"}}">
+                  <input type="checkbox" name="system.primitive" {{checked item.system.primitive}} class="tw-w-3.5 tw-h-3.5 [accent-color:var(--wh40k-gold)]" />
+                  <i class="fas fa-hammer"></i>
+                  {{localize "WH40K.ItemSheet.Armour.Primitive"}}
+                </label>
+              </div>
+              {{!-- Identifier: the stable id other documents refer to; authored on world and compendium armour only --}}
+              {{#unless isOwnedByActor}}
+              <div class="tw-col-span-2 tw-flex tw-flex-col tw-gap-1">
+                <label class="tw-text-sm tw-font-medium" for="armour-identifier">{{localize "WH40K.ItemSheet.Weapon.Identifier"}}</label>
+                <input type="text" id="armour-identifier" name="system.identifier" value="{{item.system.identifier}}"
+                       class="tw-px-2 tw-py-1 tw-rounded-sm tw-text-sm" />
+              </div>
+              {{/unless}}
               {{/if}}
             </div>
           </div>
@@ -460,8 +475,12 @@
             <h3 class="tw-m-0 tw-text-base tw-font-semibold tw-flex-1">{{localize "WH40K.Common.Source"}}</h3>
           </div>
           <div class="tw-p-3">
-            <input type="text" name="system.source" value="{{item.system.source}}"
-                   placeholder="{{localize 'WH40K.Ammunition.SourcePlaceholder'}}" class="tw-w-full tw-px-2 tw-py-1 tw-rounded-sm tw-text-sm" />
+            <div class="tw-flex tw-gap-2">
+              <input type="text" name="system.source.book" value="{{item.system.source.book}}"
+                     placeholder="{{localize 'WH40K.Ammunition.SourcePlaceholder'}}" class="tw-flex-1 tw-px-2 tw-py-1 tw-rounded-sm tw-text-sm" />
+              <input type="text" name="system.source.page" value="{{item.system.source.page}}"
+                     placeholder="{{localize 'WH40K.Common.Page'}}" class="tw-w-20 tw-px-2 tw-py-1 tw-rounded-sm tw-text-sm" />
+            </div>
           </div>
         </div>
 

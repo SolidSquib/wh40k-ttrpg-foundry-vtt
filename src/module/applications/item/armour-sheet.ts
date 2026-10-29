@@ -27,8 +27,8 @@ export default class ArmourSheet extends SetFieldActionsMixin(ContainerItemSheet
         ...ContainerItemSheet.DEFAULT_OPTIONS,
         classes: ['wh40k-rpg', 'sheet', 'item', 'armour'],
         position: {
-            width: 560,
-            height: 580,
+            width: 620,
+            height: 760,
         },
         actions: {
             ...ContainerItemSheet.DEFAULT_OPTIONS.actions,
@@ -92,7 +92,7 @@ export default class ArmourSheet extends SetFieldActionsMixin(ContainerItemSheet
         context['coverageArray'] = Array.from(sys.coverage);
 
         // Add propertiesArray for safe template access
-        context['propertiesArray'] = Array.from(sys.properties);
+        context['propertiesArray'] = sys.propertiesArray;
 
         // Add modifications array for safe template access
         context['modificationsArray'] = sys.modifications;
