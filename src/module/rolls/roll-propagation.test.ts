@@ -113,7 +113,9 @@ function actor(gameSystem: string, modifierSources: ModifierSourcesShape = {}, i
 }
 
 /** A weapon carrying its qualities the way compendium weapons do: identifiers in `effectiveSpecial`, no embedded items. */
-function weapon(opts: { qualities?: string[]; ranged?: boolean; damage?: string; penetration?: number; items?: object[] } = {}): HitWeapon {
+function weapon(
+    opts: { qualities?: string[]; ranged?: boolean; damage?: string; penetration?: number; items?: object[]; addsStrengthBonus?: boolean } = {},
+): HitWeapon {
     const ranged = opts.ranged ?? true;
     return {
         name: 'Test Weapon',
@@ -121,6 +123,7 @@ function weapon(opts: { qualities?: string[]; ranged?: boolean; damage?: string;
             effectiveSpecial: new Set(opts.qualities ?? []),
             effectiveDamageFormula: opts.damage ?? '1d10',
             effectivePenetration: opts.penetration ?? 0,
+            ...(opts.addsStrengthBonus === undefined ? {} : { damage: { addsStrengthBonus: opts.addsStrengthBonus } }),
         },
         items: opts.items ?? [],
         isRanged: ranged,
@@ -408,6 +411,16 @@ describe.each(SYSTEMS)('damage / penetration propagation onto a hit (%s)', (game
         // WSB 3 → ceil(1.5) = 2 on top of 5 + SB 4.
         expect(hit.modifiers['crushing blow']).toBe(2);
         expect(hit.totalDamage).toBe(11);
+    });
+
+    it("a melee weapon adds the wielder's Strength Bonus unless it is flagged not to", async () => {
+        dieQueue.push(5, 5);
+        const normal = await Hit.createHit(attack(actor(gameSystem), weapon({ ranged: false })), 1);
+        const syringe = await Hit.createHit(attack(actor(gameSystem), weapon({ ranged: false, addsStrengthBonus: false })), 1);
+        expect(normal.modifiers['strength bonus']).toBe(4);
+        expect(normal.totalDamage).toBe(9);
+        expect(syringe.modifiers['strength bonus']).toBeUndefined();
+        expect(syringe.totalDamage).toBe(5);
     });
 
     // Regression: `createHit` ran the dynamic pass BEFORE `_calculatePenetration`, so a

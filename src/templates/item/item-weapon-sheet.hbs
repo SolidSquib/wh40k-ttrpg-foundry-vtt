@@ -363,6 +363,12 @@
               <span class="wh40k-float-field__bar"></span>
             </div>
 
+            {{!-- Melee damage adds the wielder's Strength Bonus --}}
+            <label class="tw-flex tw-items-center tw-gap-2 tw-col-span-2 tw-text-xs">
+              <input type="checkbox" name="system.damage.addsStrengthBonus" {{checked source.damage.addsStrengthBonus}} {{#unless inEditMode}}disabled{{/unless}} />
+              <span>{{localize "WH40K.ItemSheet.Weapon.AddsStrengthBonus"}}</span>
+            </label>
+
             {{!-- Penetration --}}
             <div class="wh40k-float-field wh40k-float-field--narrow">
               <input type="number" name="system.damage.penetration" value="{{source.damage.penetration}}"

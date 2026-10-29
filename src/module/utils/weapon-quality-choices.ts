@@ -22,7 +22,7 @@ export interface QualityChoice {
 }
 
 /** The index fields a pack must be asked for to build {@link QualityChoice}s. */
-export const QUALITY_INDEX_FIELDS = ['system.identifier', 'system.hasLevel'];
+const QUALITY_INDEX_FIELDS = ['system.identifier', 'system.hasLevel'];
 
 /** Picker entries from index entries: those with an identifier, ordered by name. */
 export function toQualityChoices(entries: Iterable<QualityIndexEntry>): QualityChoice[] {
